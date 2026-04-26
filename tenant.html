@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tenant Portal — Property Management</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="css/styles.css" rel="stylesheet">
+  <script>(function(){const t=localStorage.getItem('pma_theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+  <style>
+    .tenant-grid { display: grid; grid-template-columns: 280px 1fr; gap: 24px; }
+    @media (max-width: 768px) { .tenant-grid { grid-template-columns: 1fr; } }
+    .info-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #f5f5f5; font-size: .875rem; }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .lbl { color: #888; }
+    .info-row .val { font-weight: 600; color: #1a1a2e; }
+    .tx-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f5f5f5; }
+    .tx-row:last-child { border-bottom: none; }
+    .tx-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: .95rem; flex-shrink: 0; }
+    .tx-icon.credit { background: #d4f5e2; color: #1a6b3c; }
+    .tx-icon.debit  { background: #fde8e8; color: #9b0000; }
+    .tx-desc { flex: 1; }
+    .tx-desc .desc-text { font-weight: 600; font-size: .875rem; color: #1a1a2e; }
+    .tx-desc .desc-date { font-size: .75rem; color: #aaa; }
+    .tx-amount { font-weight: 700; font-size: .95rem; }
+    .tx-amount.credit { color: #1a6b3c; }
+    .tx-amount.debit  { color: #d62828; }
+    .form-section { border-top: 1px solid #f0f0f0; padding-top: 16px; margin-top: 16px; }
+    .form-section h6 { font-size: .9rem; font-weight: 700; color: #4361ee; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+<div class="dash-wrap">
+  <!-- Sidebar -->
+  <aside class="sidebar sidebar-tenant">
+    <div class="sidebar-brand">
+      <div class="app-name">Property Management</div>
+      <div class="role-name"><i class="fa-solid fa-person-shelter"></i> Tenant Portal</div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sb-avatar">T</div>
+      <div>
+        <div class="user-name" id="sb-name">Tenant</div>
+        <div class="user-role" id="sb-unit">Unit —</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <ul style="padding:0;margin:0;">
+        <li class="nav-item"><button class="nav-link-btn active" onclick="showView('dashboard')"><i class="fa-solid fa-gauge"></i> Dashboard</button></li>
+        <li class="nav-item"><button class="nav-link-btn" onclick="showView('profile')"><i class="fa-solid fa-user-pen"></i> My Profile</button></li>
+        <li class="nav-item"><button class="nav-link-btn" onclick="showView('post-tx')"><i class="fa-solid fa-money-bill-transfer"></i> Post Transaction</button></li>
+        <li class="nav-item"><button class="nav-link-btn" onclick="showView('transactions')"><i class="fa-solid fa-list-check"></i> My Transactions</button></li>
+      </ul>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <div class="topbar">
+      <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">&#9776;</button>
+      <h2 id="page-title">Dashboard</h2>
+      <div style="margin-left:auto;">
+        <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" title="Toggle dark / light mode"><i class="fa-solid fa-moon" id="theme-icon"></i></button>
+      </div>
+    </div>
+    <div class="page-content" id="view-container"></div>
+  </div>
+</div>
+
+<!-- Sidebar overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-hdr bg-tenant">
+      <h5 id="modal-title">Detail</h5>
+      <button class="btn-close-modal" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body-pad" id="modal-body"></div>
+    <div class="modal-footer-pad" id="modal-footer"></div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  DB.init();
+
+  function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const next = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('pma_theme', next);
+    document.getElementById('theme-icon').className = next === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+  }
+  (function(){ const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const i = document.getElementById('theme-icon'); if(i) i.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'; })();
+
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('open');
+  }
+  // Close sidebar when a nav item is clicked on mobile
+  document.querySelectorAll('.nav-link-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (window.innerWidth <= 768) toggleSidebar();
+    });
+  });
+  const sess = JSON.parse(sessionStorage.getItem('pma_session') || 'null');
+  if (!sess || sess.role !== 'tenant') { window.location.href = 'index.html'; }
+
+  let tenant = DB.findOne('tenants', { TenantID: sess.id });
+  if (!tenant) { window.location.href = 'index.html'; }
+
+  // Sidebar
+  document.getElementById('sb-avatar').textContent = tenant.FirstName[0].toUpperCase();
+  document.getElementById('sb-name').textContent = tenant.FirstName + ' ' + tenant.LastName;
+  document.getElementById('sb-unit').textContent = 'Unit ' + (DB.findOne('propunits',{UnitCode:tenant.UnitCode})||{UnitNumber:'?'}).UnitNumber;
+
+  function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+
+  function openModal(title, bodyHtml, footerHtml='') {
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-body').innerHTML = bodyHtml;
+    document.getElementById('modal-footer').innerHTML = footerHtml;
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+  function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+  document.addEventListener('click', e => { if (e.target.id === 'modal-overlay') closeModal(); });
+
+  function showView(view) {
+    document.querySelectorAll('.nav-link-btn').forEach(b => b.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    const titles = { dashboard:'Dashboard', profile:'My Profile', 'post-tx':'Post Transaction', transactions:'My Transactions' };
+    document.getElementById('page-title').textContent = titles[view];
+    const c = document.getElementById('view-container');
+    if (view === 'dashboard') c.innerHTML = renderDashboard();
+    else if (view === 'profile') c.innerHTML = renderProfile();
+    else if (view === 'post-tx') c.innerHTML = renderPostTx();
+    else if (view === 'transactions') c.innerHTML = renderAllTx();
+  }
+
+  function getMyTx() {
+    return DB.find('transactions', { TenantID: tenant.TenantID })
+             .sort((a,b) => new Date(b.Date) - new Date(a.Date));
+  }
+  function getBalance() { return getMyTx().reduce((s,t) => s + Number(t.Amount), 0); }
+
+  function fmtMoney(n) {
+    const abs = Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+    return (n < 0 ? '-' : '') + '$' + abs;
+  }
+  function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}) : '—'; }
+
+  function txRowHtml(tx) {
+    const credit = Number(tx.Amount) >= 0;
+    return `<div class="tx-row">
+      <div class="tx-icon ${credit?'credit':'debit'}"><i class="fa-solid fa-${credit?'arrow-down-long':'arrow-up-long'}"></i></div>
+      <div class="tx-desc">
+        <div class="desc-text">${tx.Description}${tx.TransactionNote?`<span style="font-weight:400;color:#888;font-size:.8rem;"> — ${tx.TransactionNote}</span>`:''}</div>
+        <div class="desc-date">${fmtDate(tx.Date)} &nbsp;·&nbsp; <span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span> &nbsp;·&nbsp; ${tx.transactionRef}${tx.TransactionDocument?` &nbsp;·&nbsp; <a href="${tx.TransactionDocument}" target="_blank" style="color:#4361ee;font-size:.75rem;"><i class="fa-solid fa-paperclip"></i> Doc</a>`:''}</div>
+      </div>
+      <div class="tx-amount ${credit?'credit':'debit'}">${credit?'+':''}${fmtMoney(tx.Amount)}</div>
+    </div>`;
+  }
+
+  function renderDashboard() {
+    const txs   = getMyTx();
+    const bal   = getBalance();
+    const prop  = DB.findOne('properties', { PropertyCode: tenant.PropertyCode }) || {};
+    const unit  = DB.findOne('propunits',  { UnitCode: tenant.UnitCode }) || {};
+    const last5 = txs.slice(0, 5);
+    return `
+    <div class="stats-grid" style="margin-bottom:24px;">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#4361ee,#3a0ca3)"><i class="fa-solid fa-building"></i></div>
+        <div class="stat-info"><div class="stat-val">${prop.PropertyName||'—'}</div><div class="stat-lbl">Property</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#2d9b59,#1a6b3c)"><i class="fa-solid fa-door-open"></i></div>
+        <div class="stat-info"><div class="stat-val">Unit ${unit.UnitNumber||'—'}</div><div class="stat-lbl">${unit.Bedrooms||0} Bed · ${unit.Bathrooms||0} Bath · Floor ${unit.Floor||0}</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#d62828,#9b0000)"><i class="fa-solid fa-calendar-check"></i></div>
+        <div class="stat-info"><div class="stat-val">${fmtDate(tenant.MoveInDate)}</div><div class="stat-lbl">Move-in Date</div></div>
+      </div>
+    </div>
+    <div class="dash-two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+      <div class="balance-card">
+        <div style="font-size:.9rem;opacity:.7;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Account Balance</div>
+        <div class="balance-amount">${fmtMoney(bal)}</div>
+        <div class="balance-label" style="margin-top:6px;">${bal >= 0 ? 'Credit — no amount due' : 'Debit — amount outstanding'}</div>
+        <div style="margin-top:18px;display:flex;justify-content:space-between;font-size:.85rem;opacity:.8;">
+          <span>Rent: $${Number(tenant.RentAmount).toLocaleString()} / ${tenant.RentFrequency}</span>
+          <span>Deposit Paid: $${Number(tenant.DepositAmount).toLocaleString()}</span>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-card-header">
+          <h5>Last 5 Transactions</h5>
+          <button class="btn-primary-custom bg-tenant" onclick="document.querySelectorAll('.nav-link-btn')[3].click()">View All</button>
+        </div>
+        <div style="padding:6px 16px;">
+          ${last5.length ? last5.map(txRowHtml).join('') : '<div class="empty-state"><i class="fa-solid fa-receipt"></i><p>No transactions yet.</p></div>'}
+        </div>
+      </div>
+    </div>
+`;
+  }
+
+  function renderProfile() {
+    const prop = DB.findOne('properties', { PropertyCode: tenant.PropertyCode }) || {};
+    return `
+    <div class="tenant-grid">
+      <div>
+        <div class="profile-card" style="text-align:center;">
+          <div class="profile-avatar">${(tenant.FirstName[0]+tenant.LastName[0]).toUpperCase()}</div>
+          <div style="font-size:1.2rem;font-weight:700;">${tenant.FirstName} ${tenant.LastName}</div>
+          <div style="color:#888;font-size:.85rem;margin-top:4px;">${tenant.TenantNumber}</div>
+          <div style="margin-top:16px;">
+            <span class="badge-${tenant.Active==='Y'?'active':'inactive'}">${tenant.Active==='Y'?'Active Tenant':'Inactive'}</span>
+          </div>
+          <div style="margin-top:20px;text-align:left;">
+            <div class="info-row"><span class="lbl">Property</span><span class="val">${prop.PropertyName||'—'}</span></div>
+            <div class="info-row"><span class="lbl">Rent</span><span class="val">$${Number(tenant.RentAmount).toLocaleString()} / ${tenant.RentFrequency}</span></div>
+            <div class="info-row"><span class="lbl">Move-In</span><span class="val">${fmtDate(tenant.MoveInDate)}</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-card-header"><h5>Edit My Profile</h5></div>
+        <div class="modal-body-pad">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label-sm">First Name</label>
+              <input class="form-control-sm2" id="p-first" value="${tenant.FirstName}">
+            </div>
+            <div class="form-group">
+              <label class="form-label-sm">Last Name</label>
+              <input class="form-control-sm2" id="p-last" value="${tenant.LastName}">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label-sm">Telephone</label>
+              <input class="form-control-sm2" id="p-tel" value="${tenant.Telephone}">
+            </div>
+            <div class="form-group">
+              <label class="form-label-sm">Email</label>
+              <input class="form-control-sm2" id="p-email" type="email" value="${tenant.Email}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label-sm">Address</label>
+            <input class="form-control-sm2" id="p-addr" value="${tenant.Address}">
+          </div>
+          <div class="form-section">
+            <h6><i class="fa-solid fa-lock"></i> Change Password</h6>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label-sm">New Password</label>
+                <input class="form-control-sm2" id="p-newpass" type="password" placeholder="Leave blank to keep current">
+              </div>
+              <div class="form-group">
+                <label class="form-label-sm">Confirm Password</label>
+                <input class="form-control-sm2" id="p-confpass" type="password" placeholder="Confirm new password">
+              </div>
+            </div>
+          </div>
+          <button class="btn-primary-custom bg-tenant" onclick="saveProfile()" style="margin-top:8px;">
+            <i class="fa-solid fa-floppy-disk"></i> Save Changes
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function saveProfile() {
+    const np = document.getElementById('p-newpass').value;
+    const cp = document.getElementById('p-confpass').value;
+    if (np && np !== cp) { toast('Passwords do not match.', 'error'); return; }
+    const updates = {
+      FirstName: document.getElementById('p-first').value.trim(),
+      LastName:  document.getElementById('p-last').value.trim(),
+      Telephone: document.getElementById('p-tel').value.trim(),
+      Email:     document.getElementById('p-email').value.trim(),
+      Address:   document.getElementById('p-addr').value.trim(),
+    };
+    if (np) updates.Password = np;
+    DB.update('tenants', 'TenantID', tenant.TenantID, updates);
+    tenant = DB.findOne('tenants', { TenantID: tenant.TenantID });
+    document.getElementById('sb-name').textContent = tenant.FirstName + ' ' + tenant.LastName;
+    document.getElementById('sb-avatar').textContent = tenant.FirstName[0].toUpperCase();
+    toast('Profile updated successfully!', 'success');
+  }
+
+  function renderPostTx() {
+    const today = new Date().toISOString().split('T')[0];
+    const prop  = DB.findOne('properties', { PropertyCode: tenant.PropertyCode }) || {};
+    const curr  = prop.Currency || 'USD';
+    return `
+    <div style="max-width:560px;">
+      <div class="table-card">
+        <div class="table-card-header"><h5><i class="fa-solid fa-money-bill-transfer"></i> Post a Transaction</h5></div>
+        <div class="modal-body-pad">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label-sm">Date *</label>
+              <input class="form-control-sm2" id="tx-date" type="date" value="${today}">
+            </div>
+            <div class="form-group">
+              <label class="form-label-sm">Currency</label>
+              <input class="form-control-sm2" id="tx-currency" value="${curr}" readonly style="background:#f8f9fa;color:#888;">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label-sm">Description *</label>
+            <input class="form-control-sm2" id="tx-desc" placeholder="e.g. Rent Payment for June">
+          </div>
+          <div class="form-group">
+            <label class="form-label-sm">Amount (negative = debit) *</label>
+            <input class="form-control-sm2" id="tx-amount" type="number" step="0.01" placeholder="1500.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label-sm">Note (optional)</label>
+            <textarea class="form-control-sm2" id="tx-note" rows="2" placeholder="Any additional notes..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label-sm">Document *</label>
+            <input class="form-control-sm2" id="tx-doc" type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+          </div>
+          <div style="background:#f8f9ff;border-radius:10px;padding:14px;margin-bottom:16px;font-size:.82rem;color:#555;">
+            <i class="fa-solid fa-circle-info" style="color:#4361ee;"></i> Your transaction will be marked as <strong>Pending</strong> until verified by the agency.
+          </div>
+          <button class="btn-primary-custom bg-tenant" onclick="submitTx()">
+            <i class="fa-solid fa-paper-plane"></i> Submit Transaction
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function submitTx() {
+    const date   = document.getElementById('tx-date').value;
+    const desc   = document.getElementById('tx-desc').value.trim();
+    const amount = parseFloat(document.getElementById('tx-amount').value);
+    const curr   = document.getElementById('tx-currency').value;
+    const note   = document.getElementById('tx-note').value.trim();
+    const docInput = document.getElementById('tx-doc');
+    if (!date || !desc || isNaN(amount)) { toast('Please fill in all required fields.', 'error'); return; }
+    if (!docInput.files[0]) { toast('Document upload is required.', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+      const ref = DB.nextTxRef();
+      DB.insert('transactions', {
+        Date: date, TenantID: tenant.TenantID,
+        Authenticated: 'N', PropertyCode: tenant.PropertyCode,
+        Description: desc, Amount: amount, Currency: curr,
+        TransactionNote: note, TransactionDocument: e.target.result,
+        UpdateUser: tenant.UserName, transactionRef: ref
+      });
+      toast('Transaction posted! Reference: ' + ref, 'success');
+      document.getElementById('tx-desc').value = '';
+      document.getElementById('tx-amount').value = '';
+      document.getElementById('tx-note').value = '';
+      document.getElementById('tx-doc').value = '';
+    };
+    reader.readAsDataURL(docInput.files[0]);
+  }
+
+  function renderAllTx() {
+    const txs = getMyTx();
+    const bal = getBalance();
+    return `
+    <div class="table-card">
+      <div class="table-card-header">
+        <h5>All Transactions</h5>
+        <div style="font-size:.9rem;">Balance: <strong style="color:${bal>=0?'#2d9b59':'#d62828'}">${fmtMoney(bal)}</strong></div>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead><tr>
+            <th>Date</th><th>Description</th><th>Amount</th><th>Status</th>
+          </tr></thead>
+          <tbody>
+            ${txs.length ? txs.map(tx => {
+              const credit = Number(tx.Amount) >= 0;
+              return `<tr>
+              <td>${fmtDate(tx.Date)}</td>
+              <td>${tx.Description}</td>
+              <td><button onclick="viewTxDetail('${tx.transactionRef}')" style="background:none;border:none;cursor:pointer;font-weight:700;color:${credit?'#2d9b59':'#d62828'};padding:0;font-size:inherit;">${credit?'+':''}${fmtMoney(tx.Amount)}</button></td>
+              <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td>
+            </tr>`;}).join('') : '<tr><td colspan="4" style="text-align:center;padding:40px;color:#aaa;">No transactions found.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  function viewTxDetail(ref) {
+    const tx = DB.find('transactions', { TenantID: tenant.TenantID }).find(t => t.transactionRef === ref);
+    if (!tx) return;
+    const credit = Number(tx.Amount) >= 0;
+    openModal('Transaction Detail', `
+      <div class="info-row"><span class="lbl">Reference</span><span class="val" style="font-family:monospace">${tx.transactionRef}</span></div>
+      <div class="info-row"><span class="lbl">Date</span><span class="val">${fmtDate(tx.Date)}</span></div>
+      <div class="info-row"><span class="lbl">Description</span><span class="val">${tx.Description}</span></div>
+      <div class="info-row"><span class="lbl">Amount</span><span class="val" style="color:${credit?'#2d9b59':'#d62828'}">${credit?'+':''}${fmtMoney(tx.Amount)} ${tx.Currency}</span></div>
+      <div class="info-row"><span class="lbl">Status</span><span class="val"><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></span></div>
+      <div class="info-row"><span class="lbl">Note</span><span class="val">${tx.TransactionNote||'—'}</span></div>
+      ${tx.TransactionDocument ? `<div style="margin-top:16px;"><a href="${tx.TransactionDocument}" target="_blank" download class="btn-primary-custom bg-tenant" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;padding:10px 20px;border-radius:9px;color:#fff;"><i class="fa-solid fa-file-arrow-down"></i> Download Document</a></div>` : '<div class="info-row"><span class="lbl">Document</span><span class="val">—</span></div>'}
+    `, `<button class="btn-back" onclick="closeModal()">Close</button>`);
+  }
+
+  function toast(msg, type = 'info') {
+    const c = document.getElementById('toast-container');
+    const d = document.createElement('div');
+    d.className = `toast-msg toast-${type}`;
+    d.textContent = msg;
+    c.appendChild(d);
+    setTimeout(() => d.remove(), 4000);
+  }
+
+  // Initial render
+  showView('dashboard');
+  document.querySelectorAll('.nav-link-btn')[0].classList.add('active');
+</script>
+</body>
+</html>

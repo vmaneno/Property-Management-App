@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Property Management App</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="css/styles.css" rel="stylesheet">
+  <script>(function(){const t=localStorage.getItem('pma_theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+  <style>
+    .demo-creds {
+      margin-top: 40px; text-align: center; color: rgba(255,255,255,.45); font-size: .8rem;
+    }
+    .demo-creds span { color: rgba(255,255,255,.7); font-weight: 600; }
+    .credits-wrap { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+    .cred-item { background: rgba(255,255,255,.08); border-radius: 8px; padding: 8px 14px; }
+    .btn-setup-link {
+      background: none; border: none; color: #666; font-size: .78rem;
+      cursor: pointer; padding: 6px 0; width: 100%; text-align: center;
+      text-decoration: underline; margin-top: 4px;
+    }
+    .btn-setup-link:hover { color: #222; }
+    .setup-hint {
+      font-size: .76rem; color: #888; margin: 0 0 8px; line-height: 1.4;
+    }
+    [data-theme="dark"] .btn-setup-link { color: rgba(255,255,255,.6); }
+    [data-theme="dark"] .btn-setup-link:hover { color: rgba(255,255,255,.95); }
+    [data-theme="dark"] .setup-hint { color: rgba(255,255,255,.5); }
+    .login-success { color: #4caf7d; font-size: .8rem; min-height: 18px; margin: 4px 0; }
+    .reset-phase { display: none; }
+    .reset-phase.active { display: block; }
+  </style>
+</head>
+<body>
+  <!-- Theme toggle -->
+  <button class="theme-toggle theme-toggle-float" id="theme-btn" onclick="toggleTheme()" title="Toggle dark / light mode">
+    <i class="fa-solid fa-moon" id="theme-icon"></i>
+  </button>
+
+  <div class="landing-bg">
+    <div class="landing-title"><i class="fa-solid fa-building"></i> Property Management</div>
+    <div class="landing-subtitle">Select your role to continue</div>
+
+    <div class="cards-grid">
+
+      <!-- TENANT CARD -->
+      <div class="flip-card theme-tenant" id="card-tenant">
+        <div class="flip-card-inner">
+          <div class="flip-card-front">
+            <div class="role-icon"><i class="fa-solid fa-person-shelter"></i></div>
+            <h3>Tenant Portal</h3>
+            <p>View your account, make payments and manage your tenancy details</p>
+            <button class="btn-flip" onclick="flipCard('tenant')">Login &rarr;</button>
+          </div>
+          <div class="flip-card-back">
+            <div class="back-header">
+              <div class="role-dot"></div>
+              <h4 id="t-back-title">Tenant Login</h4>
+            </div>
+            <!-- Login section -->
+            <div id="t-login-section">
+              <label class="form-label">Property Code</label>
+              <input class="form-control" id="t-propcode" type="text" placeholder="e.g. PR001" oninput="this.value=this.value.toUpperCase()">
+              <label class="form-label">Username</label>
+              <input class="form-control" id="t-user" type="text" placeholder="Username">
+              <label class="form-label">Password</label>
+              <input class="form-control" id="t-pass" type="password" placeholder="Password">
+              <div class="login-error" id="t-err"></div>
+              <button class="btn-login" onclick="loginTenant()">Sign In</button>
+              <button class="btn-setup-link" onclick="toggleSetup('t')">First Time Setup &rarr;</button>
+              <button class="btn-setup-link" onclick="showReset('t')">Forgot Password? &rarr;</button>
+            </div>
+            <!-- Reset Password section -->
+            <div id="t-reset-section" style="display:none">
+              <div class="reset-phase active" id="t-r-p1">
+                <p class="setup-hint">Enter your details and we'll send a reset code to your registered email.</p>
+                <label class="form-label">Property Code</label>
+                <input class="form-control" id="t-r-propcode" type="text" placeholder="e.g. PR001" oninput="this.value=this.value.toUpperCase()">
+                <label class="form-label">Username</label>
+                <input class="form-control" id="t-r-user" type="text" placeholder="Username">
+                <div class="login-error" id="t-r-err"></div>
+                <div class="login-success" id="t-r-sent"></div>
+                <button class="btn-login" onclick="requestResetTenant()"><i class="fa-solid fa-paper-plane"></i> Send Code</button>
+                <button class="btn-setup-link" onclick="hideReset('t')">&larr; Back to Login</button>
+              </div>
+              <div class="reset-phase" id="t-r-p2">
+                <p class="setup-hint">Enter the 6-digit code sent to your email and choose a new password.</p>
+                <label class="form-label">Reset Code</label>
+                <input class="form-control" id="t-r-code" type="text" placeholder="6-digit code" maxlength="6" autocomplete="off">
+                <label class="form-label">New Password</label>
+                <input class="form-control" id="t-r-newpass" type="password" placeholder="New password">
+                <label class="form-label">Confirm Password</label>
+                <input class="form-control" id="t-r-newpass2" type="password" placeholder="Confirm password">
+                <div class="login-error" id="t-r-p2-err"></div>
+                <div class="login-success" id="t-r-p2-ok"></div>
+                <button class="btn-login" onclick="confirmResetTenant()"><i class="fa-solid fa-lock"></i> Reset Password</button>
+                <button class="btn-setup-link" onclick="resetToPhase('t',1)">&larr; Back</button>
+              </div>
+            </div>
+            <!-- First Time Setup section -->
+            <div id="t-setup-section" style="display:none">
+              <p class="setup-hint">Provide your details to create your login credentials.</p>
+              <label class="form-label">Property Code</label>
+              <input class="form-control" id="t-s-propcode" type="text" placeholder="e.g. PR001" oninput="this.value=this.value.toUpperCase()">
+              <label class="form-label">Tenant Code</label>
+              <input class="form-control" id="t-s-tencode" type="text" placeholder="e.g. TN-2024-001" oninput="this.value=this.value.toUpperCase()">
+              <label class="form-label">Telephone</label>
+              <input class="form-control" id="t-s-tel" type="text" placeholder="Registered telephone">
+              <label class="form-label">New Username</label>
+              <input class="form-control" id="t-s-user" type="text" placeholder="Choose a username">
+              <label class="form-label">New Password</label>
+              <input class="form-control" id="t-s-pass" type="password" placeholder="Choose a password">
+              <label class="form-label">Confirm Password</label>
+              <input class="form-control" id="t-s-pass2" type="password" placeholder="Confirm password">
+              <div class="login-error" id="t-s-err"></div>
+              <div class="login-success" id="t-s-ok"></div>
+              <button class="btn-login" onclick="setupTenant()">Set Credentials</button>
+              <button class="btn-setup-link" onclick="toggleSetup('t')">&larr; Back to Login</button>
+            </div>
+            <button class="btn-back" onclick="flipCard('tenant')">&#8592; Back</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLIENT CARD -->
+      <div class="flip-card theme-client" id="card-client">
+        <div class="flip-card-inner">
+          <div class="flip-card-front">
+            <div class="role-icon"><i class="fa-solid fa-user-tie"></i></div>
+            <h3>Client Portal</h3>
+            <p>Manage your properties, units and tenants within your portfolio</p>
+            <button class="btn-flip" onclick="flipCard('client')">Login &rarr;</button>
+          </div>
+          <div class="flip-card-back">
+            <div class="back-header">
+              <div class="role-dot"></div>
+              <h4 id="c-back-title">Client Login</h4>
+            </div>
+            <!-- Login section -->
+            <div id="c-login-section">
+              <label class="form-label">Username</label>
+              <input class="form-control" id="c-user" type="text" placeholder="Username">
+              <label class="form-label">Password</label>
+              <input class="form-control" id="c-pass" type="password" placeholder="Password">
+              <div class="login-error" id="c-err"></div>
+              <button class="btn-login" onclick="loginClient()">Sign In</button>
+              <button class="btn-setup-link" onclick="toggleSetup('c')">First Time Setup &rarr;</button>
+              <button class="btn-setup-link" onclick="showReset('c')">Forgot Password? &rarr;</button>
+            </div>
+            <!-- Reset Password section -->
+            <div id="c-reset-section" style="display:none">
+              <div class="reset-phase active" id="c-r-p1">
+                <p class="setup-hint">Enter your username and we'll send a reset code to your registered email.</p>
+                <label class="form-label">Username</label>
+                <input class="form-control" id="c-r-user" type="text" placeholder="Username">
+                <div class="login-error" id="c-r-err"></div>
+                <div class="login-success" id="c-r-sent"></div>
+                <button class="btn-login" onclick="requestResetClient()"><i class="fa-solid fa-paper-plane"></i> Send Code</button>
+                <button class="btn-setup-link" onclick="hideReset('c')">&larr; Back to Login</button>
+              </div>
+              <div class="reset-phase" id="c-r-p2">
+                <p class="setup-hint">Enter the 6-digit code sent to your email and choose a new password.</p>
+                <label class="form-label">Reset Code</label>
+                <input class="form-control" id="c-r-code" type="text" placeholder="6-digit code" maxlength="6" autocomplete="off">
+                <label class="form-label">New Password</label>
+                <input class="form-control" id="c-r-newpass" type="password" placeholder="New password">
+                <label class="form-label">Confirm Password</label>
+                <input class="form-control" id="c-r-newpass2" type="password" placeholder="Confirm password">
+                <div class="login-error" id="c-r-p2-err"></div>
+                <div class="login-success" id="c-r-p2-ok"></div>
+                <button class="btn-login" onclick="confirmResetClient()"><i class="fa-solid fa-lock"></i> Reset Password</button>
+                <button class="btn-setup-link" onclick="resetToPhase('c',1)">&larr; Back</button>
+              </div>
+            </div>
+            <!-- First Time Setup section -->
+            <div id="c-setup-section" style="display:none">
+              <p class="setup-hint">Provide your details to create your login credentials.</p>
+              <label class="form-label">Client Code</label>
+              <input class="form-control" id="c-s-clientcode" type="text" placeholder="e.g. CL001" oninput="this.value=this.value.toUpperCase()">
+              <label class="form-label">Telephone</label>
+              <input class="form-control" id="c-s-tel" type="text" placeholder="Registered telephone">
+              <label class="form-label">New Username</label>
+              <input class="form-control" id="c-s-user" type="text" placeholder="Choose a username">
+              <label class="form-label">New Password</label>
+              <input class="form-control" id="c-s-pass" type="password" placeholder="Choose a password">
+              <label class="form-label">Confirm Password</label>
+              <input class="form-control" id="c-s-pass2" type="password" placeholder="Confirm password">
+              <div class="login-error" id="c-s-err"></div>
+              <div class="login-success" id="c-s-ok"></div>
+              <button class="btn-login" onclick="setupClient()">Set Credentials</button>
+              <button class="btn-setup-link" onclick="toggleSetup('c')">&larr; Back to Login</button>
+            </div>
+            <button class="btn-back" onclick="flipCard('client')">&#8592; Back</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AGENCY CARD -->
+      <div class="flip-card theme-agency" id="card-agency">
+        <div class="flip-card-inner">
+          <div class="flip-card-front">
+            <div class="role-icon"><i class="fa-solid fa-city"></i></div>
+            <h3>Agency Portal</h3>
+            <p>Oversee clients, properties and tenants under your agency</p>
+            <button class="btn-flip" onclick="flipCard('agency')">Login &rarr;</button>
+          </div>
+          <div class="flip-card-back">
+            <div class="back-header">
+              <div class="role-dot"></div>
+              <h4 id="a-back-title">Agency Login</h4>
+            </div>
+            <!-- Login section -->
+            <div id="a-login-section">
+              <label class="form-label">Username</label>
+              <input class="form-control" id="a-user" type="text" placeholder="Username">
+              <label class="form-label">Password</label>
+              <input class="form-control" id="a-pass" type="password" placeholder="Password">
+              <div class="login-error" id="a-err"></div>
+              <button class="btn-login" onclick="loginAgency()">Sign In</button>
+              <button class="btn-setup-link" onclick="toggleSetup('a')">First Time Setup &rarr;</button>
+              <button class="btn-setup-link" onclick="showReset('a')">Forgot Password? &rarr;</button>
+            </div>
+            <!-- Reset Password section -->
+            <div id="a-reset-section" style="display:none">
+              <div class="reset-phase active" id="a-r-p1">
+                <p class="setup-hint">Enter your username and we'll send a reset code to your registered email.</p>
+                <label class="form-label">Username</label>
+                <input class="form-control" id="a-r-user" type="text" placeholder="Username">
+                <div class="login-error" id="a-r-err"></div>
+                <div class="login-success" id="a-r-sent"></div>
+                <button class="btn-login" onclick="requestResetAgency()"><i class="fa-solid fa-paper-plane"></i> Send Code</button>
+                <button class="btn-setup-link" onclick="hideReset('a')">&larr; Back to Login</button>
+              </div>
+              <div class="reset-phase" id="a-r-p2">
+                <p class="setup-hint">Enter the 6-digit code sent to your email and choose a new password.</p>
+                <label class="form-label">Reset Code</label>
+                <input class="form-control" id="a-r-code" type="text" placeholder="6-digit code" maxlength="6" autocomplete="off">
+                <label class="form-label">New Password</label>
+                <input class="form-control" id="a-r-newpass" type="password" placeholder="New password">
+                <label class="form-label">Confirm Password</label>
+                <input class="form-control" id="a-r-newpass2" type="password" placeholder="Confirm password">
+                <div class="login-error" id="a-r-p2-err"></div>
+                <div class="login-success" id="a-r-p2-ok"></div>
+                <button class="btn-login" onclick="confirmResetAgency()"><i class="fa-solid fa-lock"></i> Reset Password</button>
+                <button class="btn-setup-link" onclick="resetToPhase('a',1)">&larr; Back</button>
+              </div>
+            </div>
+            <!-- First Time Setup section -->
+            <div id="a-setup-section" style="display:none">
+              <p class="setup-hint">Provide your details to create your login credentials.</p>
+              <label class="form-label">Agency Code</label>
+              <input class="form-control" id="a-s-agcode" type="text" placeholder="e.g. AG002" oninput="this.value=this.value.toUpperCase()">
+              <label class="form-label">Telephone</label>
+              <input class="form-control" id="a-s-tel" type="text" placeholder="Registered telephone">
+              <label class="form-label">New Username</label>
+              <input class="form-control" id="a-s-user" type="text" placeholder="Choose a username">
+              <label class="form-label">New Password</label>
+              <input class="form-control" id="a-s-pass" type="password" placeholder="Choose a password">
+              <label class="form-label">Confirm Password</label>
+              <input class="form-control" id="a-s-pass2" type="password" placeholder="Confirm password">
+              <div class="login-error" id="a-s-err"></div>
+              <div class="login-success" id="a-s-ok"></div>
+              <button class="btn-login" onclick="setupAgency()">Set Credentials</button>
+              <button class="btn-setup-link" onclick="toggleSetup('a')">&larr; Back to Login</button>
+            </div>
+            <button class="btn-back" onclick="flipCard('agency')">&#8592; Back</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MASTER CARD -->
+      <div class="flip-card theme-master" id="card-master">
+        <div class="flip-card-inner">
+          <div class="flip-card-front">
+            <div class="role-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <h3>Master Admin</h3>
+            <p>Full system access — manage all agencies, clients, properties and data</p>
+            <button class="btn-flip" onclick="flipCard('master')">Login &rarr;</button>
+          </div>
+          <div class="flip-card-back">
+            <div class="back-header">
+              <div class="role-dot"></div>
+              <h4 id="m-back-title">Master Login</h4>
+            </div>
+            <!-- Login section -->
+            <div id="m-login-section">
+              <label class="form-label">Username</label>
+              <input class="form-control" id="m-user" type="text" placeholder="Username">
+              <label class="form-label">Password</label>
+              <input class="form-control" id="m-pass" type="password" placeholder="Password">
+              <div class="login-error" id="m-err"></div>
+              <button class="btn-login" onclick="loginMaster()">Sign In</button>
+              <button class="btn-setup-link" onclick="toggleSetup('m')">First Time Setup &rarr;</button>
+              <button class="btn-setup-link" onclick="showReset('m')">Forgot Password? &rarr;</button>
+            </div>
+            <!-- Reset Password section -->
+            <div id="m-reset-section" style="display:none">
+              <div class="reset-phase active" id="m-r-p1">
+                <p class="setup-hint">Enter your username and we'll send a reset code to your registered email.</p>
+                <label class="form-label">Username</label>
+                <input class="form-control" id="m-r-user" type="text" placeholder="Username">
+                <div class="login-error" id="m-r-err"></div>
+                <div class="login-success" id="m-r-sent"></div>
+                <button class="btn-login" onclick="requestResetMaster()"><i class="fa-solid fa-paper-plane"></i> Send Code</button>
+                <button class="btn-setup-link" onclick="hideReset('m')">&larr; Back to Login</button>
+              </div>
+              <div class="reset-phase" id="m-r-p2">
+                <p class="setup-hint">Enter the 6-digit code sent to your email and choose a new password.</p>
+                <label class="form-label">Reset Code</label>
+                <input class="form-control" id="m-r-code" type="text" placeholder="6-digit code" maxlength="6" autocomplete="off">
+                <label class="form-label">New Password</label>
+                <input class="form-control" id="m-r-newpass" type="password" placeholder="New password">
+                <label class="form-label">Confirm Password</label>
+                <input class="form-control" id="m-r-newpass2" type="password" placeholder="Confirm password">
+                <div class="login-error" id="m-r-p2-err"></div>
+                <div class="login-success" id="m-r-p2-ok"></div>
+                <button class="btn-login" onclick="confirmResetMaster()"><i class="fa-solid fa-lock"></i> Reset Password</button>
+                <button class="btn-setup-link" onclick="resetToPhase('m',1)">&larr; Back</button>
+              </div>
+            </div>
+            <!-- First Time Setup section -->
+            <div id="m-setup-section" style="display:none">
+              <p class="setup-hint">Provide your details to create your login credentials.</p>
+              <label class="form-label">Agency Code</label>
+              <input class="form-control" id="m-s-agcode" type="text" placeholder="Master agency code" oninput="this.value=this.value.toUpperCase()">
+              <label class="form-label">Telephone</label>
+              <input class="form-control" id="m-s-tel" type="text" placeholder="Registered telephone">
+              <label class="form-label">New Username</label>
+              <input class="form-control" id="m-s-user" type="text" placeholder="Choose a username">
+              <label class="form-label">New Password</label>
+              <input class="form-control" id="m-s-pass" type="password" placeholder="Choose a password">
+              <label class="form-label">Confirm Password</label>
+              <input class="form-control" id="m-s-pass2" type="password" placeholder="Confirm password">
+              <div class="login-error" id="m-s-err"></div>
+              <div class="login-success" id="m-s-ok"></div>
+              <button class="btn-login" onclick="setupMaster()">Set Credentials</button>
+              <button class="btn-setup-link" onclick="toggleSetup('m')">&larr; Back to Login</button>
+            </div>
+            <button class="btn-back" onclick="flipCard('master')">&#8592; Back</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /cards-grid -->
+
+    <div class="demo-creds">
+      <div>Demo Credentials</div>
+      <div class="credits-wrap">
+        <div class="cred-item"><span>Tenant:</span> PR001 / tenant1 / tenant123</div>
+        <div class="cred-item"><span>Client:</span> client1 / client123</div>
+        <div class="cred-item"><span>Agency:</span> agency1 / agency123</div>
+        <div class="cred-item"><span>Master:</span> master / master123</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── Theme ──────────────────────────────────────────────
+    function toggleTheme() {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const next = isDark ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('pma_theme', next);
+      updateThemeIcon();
+    }
+    function updateThemeIcon() {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      document.getElementById('theme-icon').className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    }
+    updateThemeIcon();
+
+    function _allSections(p) {
+      return [
+        document.getElementById(p + '-login-section'),
+        document.getElementById(p + '-setup-section'),
+        document.getElementById(p + '-reset-section')
+      ];
+    }
+
+    function _showOnly(p, which) {
+      const ids = ['login','setup','reset'];
+      ids.forEach(id => {
+        const el = document.getElementById(p + '-' + id + '-section');
+        if (el) el.style.display = id === which ? '' : 'none';
+      });
+      const titles = {
+        t: { login:'Tenant Login',  setup:'Tenant Setup',  reset:'Reset Password' },
+        c: { login:'Client Login',  setup:'Client Setup',  reset:'Reset Password' },
+        a: { login:'Agency Login',  setup:'Agency Setup',  reset:'Reset Password' },
+        m: { login:'Master Login',  setup:'Master Setup',  reset:'Reset Password' }
+      };
+      const titleEl = document.getElementById(p + '-back-title');
+      if (titleEl && titles[p]) titleEl.textContent = titles[p][which] || titles[p].login;
+    }
+
+    function flipCard(role) {
+      const card = document.getElementById('card-' + role);
+      card.classList.toggle('flipped');
+      const prefixMap = { tenant: 't', client: 'c', agency: 'a', master: 'm' };
+      const prefix = prefixMap[role];
+      if (prefix) {
+        _showOnly(prefix, 'login');
+        resetToPhase(prefix, 1);
+        const sErr = document.getElementById(prefix + '-s-err');
+        const sOk  = document.getElementById(prefix + '-s-ok');
+        if (sErr) sErr.textContent = '';
+        if (sOk)  sOk.textContent  = '';
+      }
+      const err = document.getElementById(prefix + '-err');
+      if (err) err.textContent = '';
+    }
+
+    function toggleSetup(prefix) {
+      const setupSec = document.getElementById(prefix + '-setup-section');
+      const goingToSetup = setupSec.style.display === 'none';
+      _showOnly(prefix, goingToSetup ? 'setup' : 'login');
+      const sErr = document.getElementById(prefix + '-s-err');
+      const sOk  = document.getElementById(prefix + '-s-ok');
+      if (sErr) sErr.textContent = '';
+      if (sOk)  sOk.textContent  = '';
+    }
+
+    function showReset(prefix) {
+      _showOnly(prefix, 'reset');
+      resetToPhase(prefix, 1);
+    }
+
+    function hideReset(prefix) {
+      _showOnly(prefix, 'login');
+    }
+
+    function resetToPhase(prefix, phase) {
+      const p1 = document.getElementById(prefix + '-r-p1');
+      const p2 = document.getElementById(prefix + '-r-p2');
+      if (!p1 || !p2) return;
+      p1.className = 'reset-phase' + (phase === 1 ? ' active' : '');
+      p2.className = 'reset-phase' + (phase === 2 ? ' active' : '');
+      [prefix+'-r-err', prefix+'-r-sent', prefix+'-r-p2-err', prefix+'-r-p2-ok'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '';
+      });
+    }
+
+    // ── SETUP — async fetch calls ─────────────────────────────
+    async function setupTenant() {
+      const propCode = document.getElementById('t-s-propcode').value.trim().toUpperCase();
+      const tenCode  = document.getElementById('t-s-tencode').value.trim().toUpperCase();
+      const tel  = document.getElementById('t-s-tel').value.trim();
+      const user = document.getElementById('t-s-user').value.trim();
+      const pass = document.getElementById('t-s-pass').value;
+      const pass2= document.getElementById('t-s-pass2').value;
+      const err  = document.getElementById('t-s-err');
+      const ok   = document.getElementById('t-s-ok');
+      err.textContent = ''; ok.textContent = '';
+      if (!propCode||!tenCode||!tel||!user||!pass||!pass2){err.textContent='All fields are required.';return;}
+      if (pass!==pass2){err.textContent='Passwords do not match.';return;}
+      if (pass.length<6){err.textContent='Password must be at least 6 characters.';return;}
+      try {
+        const r=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'tenant',propCode,tenCode,tel,username:user,password:pass})});
+        const d=await r.json();
+        if (!r.ok){err.textContent=d.error||'Registration failed.';return;}
+        ok.textContent='Credentials set successfully! You can now log in.';
+        ['t-s-propcode','t-s-tencode','t-s-tel','t-s-user','t-s-pass','t-s-pass2'].forEach(id=>document.getElementById(id).value='');
+      } catch(e){err.textContent='Connection error. Please try again.';}
+    }
+
+    async function setupClient() {
+      const clientCode=document.getElementById('c-s-clientcode').value.trim().toUpperCase();
+      const tel =document.getElementById('c-s-tel').value.trim();
+      const user=document.getElementById('c-s-user').value.trim();
+      const pass=document.getElementById('c-s-pass').value;
+      const pass2=document.getElementById('c-s-pass2').value;
+      const err=document.getElementById('c-s-err');
+      const ok=document.getElementById('c-s-ok');
+      err.textContent='';ok.textContent='';
+      if (!clientCode||!tel||!user||!pass||!pass2){err.textContent='All fields are required.';return;}
+      if (pass!==pass2){err.textContent='Passwords do not match.';return;}
+      if (pass.length<6){err.textContent='Password must be at least 6 characters.';return;}
+      try {
+        const r=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'client',clientCode,tel,username:user,password:pass})});
+        const d=await r.json();
+        if (!r.ok){err.textContent=d.error||'Registration failed.';return;}
+        ok.textContent='Credentials set successfully! You can now log in.';
+        ['c-s-clientcode','c-s-tel','c-s-user','c-s-pass','c-s-pass2'].forEach(id=>document.getElementById(id).value='');
+      } catch(e){err.textContent='Connection error. Please try again.';}
+    }
+
+    async function setupAgency() {
+      const agCode=document.getElementById('a-s-agcode').value.trim().toUpperCase();
+      const tel =document.getElementById('a-s-tel').value.trim();
+      const user=document.getElementById('a-s-user').value.trim();
+      const pass=document.getElementById('a-s-pass').value;
+      const pass2=document.getElementById('a-s-pass2').value;
+      const err=document.getElementById('a-s-err');
+      const ok=document.getElementById('a-s-ok');
+      err.textContent='';ok.textContent='';
+      if (!agCode||!tel||!user||!pass||!pass2){err.textContent='All fields are required.';return;}
+      if (pass!==pass2){err.textContent='Passwords do not match.';return;}
+      if (pass.length<6){err.textContent='Password must be at least 6 characters.';return;}
+      try {
+        const r=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'agency',agCode,tel,username:user,password:pass})});
+        const d=await r.json();
+        if (!r.ok){err.textContent=d.error||'Registration failed.';return;}
+        ok.textContent='Credentials set successfully! You can now log in.';
+        ['a-s-agcode','a-s-tel','a-s-user','a-s-pass','a-s-pass2'].forEach(id=>document.getElementById(id).value='');
+      } catch(e){err.textContent='Connection error. Please try again.';}
+    }
+
+    async function setupMaster() {
+      const agCode=document.getElementById('m-s-agcode').value.trim().toUpperCase();
+      const tel =document.getElementById('m-s-tel').value.trim();
+      const user=document.getElementById('m-s-user').value.trim();
+      const pass=document.getElementById('m-s-pass').value;
+      const pass2=document.getElementById('m-s-pass2').value;
+      const err=document.getElementById('m-s-err');
+      const ok=document.getElementById('m-s-ok');
+      err.textContent='';ok.textContent='';
+      if (!agCode||!tel||!user||!pass||!pass2){err.textContent='All fields are required.';return;}
+      if (pass!==pass2){err.textContent='Passwords do not match.';return;}
+      if (pass.length<6){err.textContent='Password must be at least 6 characters.';return;}
+      try {
+        const r=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'master',agCode,tel,username:user,password:pass})});
+        const d=await r.json();
+        if (!r.ok){err.textContent=d.error||'Registration failed.';return;}
+        ok.textContent='Credentials set successfully! You can now log in.';
+        ['m-s-agcode','m-s-tel','m-s-user','m-s-pass','m-s-pass2'].forEach(id=>document.getElementById(id).value='');
+      } catch(e){err.textContent='Connection error. Please try again.';}
+    }
+
+    // ── LOGIN — async fetch calls ─────────────────────────────
+    async function loginTenant() {
+      const propCode=document.getElementById('t-propcode').value.trim().toUpperCase();
+      const user=document.getElementById('t-user').value.trim();
+      const pass=document.getElementById('t-pass').value;
+      const err=document.getElementById('t-err');
+      err.textContent='';
+      if (!propCode||!user||!pass){err.textContent='All fields are required.';return;}
+      try {
+        const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({role:'tenant',username:user,password:pass,propCode})});
+        const d=await r.json();
+        if (!r.ok){err.textContent=d.error||'Invalid credentials or inactive account.';return;}
+        sessionStorage.setItem('pma_token',d.token);
+        sessionStorage.setItem('pma_session',JSON.stringify(d.session));
+        window.location.href='tenant.html';
+      } catch(e){err.textContent='Connection error. Please try again.';}
+    }
+
+    async function loginClient() {
+      const user=document.getElementById('c-user').value.trim();
+      const pass=document.getElementById('c-pass').value;
+      const err=document.getElementById('c-err');
+      err.textContent='';
+      if (!user||!pass){err.textContent='All fields are required.';return;}
+      try {
+        const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({role:'client',username:user,password:pass})});
+        const d=await r.json();
+        if (!r.ok){err.textContent=d.error||'Invalid credentials or inactive account.';return;}
+        sessionStorage.setItem('pma_token',d.token);
+        sessionStorage.setItem('pma_session',JSON.stringify(d.session));
+        window.location.href='client.html';
+      } catch(e){err.textContent='Connection error. Please try again.';}
+    }
+
+    async function loginAgency() {
+      const user=document.getElementById('a-user').value.trim();
+      const pass=document.getElementById('a-pass').value;
+      const err=document.getElementById('a-err');
+      err.textContent='';
+      if (!user||!pass){err.textContent='All fields are required.';return;}
+      try {
+        const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({role:'agency',username:user,password:pass})});
+        const d=await r.json();
+        if (!r.ok){err.textContent=d.error||'Invalid credentials.';return;}
+        sessionStorage.setItem('pma_token',d.token);
+        sessionStorage.setItem('pma_session',JSON.stringify(d.session));
+        window.location.href='agency.html';
+      } catch(e){err.textContent='Connection error. Please try again.';}
+    }
+
+    async function loginMaster() {
+      const user=document.getElementById('m-user').value.trim();
+      const pass=document.getElementById('m-pass').value;
+      const err=document.getElementById('m-err');
+      err.textContent='';
+      if (!user||!pass){err.textContent='All fields are required.';return;}
+      try {
+        const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({role:'master',username:user,password:pass})});
+        const d=await r.json();
+        if (!r.ok){err.textContent=d.error||'Invalid master credentials.';return;}
+        sessionStorage.setItem('pma_token',d.token);
+        sessionStorage.setItem('pma_session',JSON.stringify(d.session));
+        window.location.href='master.html';
+      } catch(e){err.textContent='Connection error. Please try again.';}
+    }
+
+    // ── Password Reset helpers ────────────────────────────────
+    function _storeToken(prefix, username, code) {
+      localStorage.setItem('pma_reset_' + prefix, JSON.stringify({
+        username, code, expires: Date.now() + 15 * 60 * 1000
+      }));
+    }
+
+    function _sendMail(email, code, portalName) {
+      const subject = encodeURIComponent('Property Management — Password Reset');
+      const body = encodeURIComponent(
+        'Hello,\n\nYour ' + portalName + ' password reset code is:\n\n  ' + code +
+        '\n\nThis code expires in 15 minutes.\nIf you did not request this, please ignore this email.\n\n— Property Management App'
+      );
+      window.location.href = 'mailto:' + email + '?subject=' + subject + '&body=' + body;
+    }
+
+    function _afterSend(prefix) {
+      const sentEl = document.getElementById(prefix + '-r-sent');
+      if (sentEl) sentEl.textContent = 'Reset code sent! Check your email, then enter the code below.';
+      setTimeout(() => resetToPhase(prefix, 2), 1800);
+    }
+
+    function _validateNewPass(prefix) {
+      const stored = JSON.parse(localStorage.getItem('pma_reset_' + prefix) || 'null');
+      const code   = document.getElementById(prefix + '-r-code').value.trim();
+      const pw     = document.getElementById(prefix + '-r-newpass').value;
+      const pw2    = document.getElementById(prefix + '-r-newpass2').value;
+      const errEl  = document.getElementById(prefix + '-r-p2-err');
+      errEl.textContent = '';
+      if (!stored || Date.now() > stored.expires) {
+        errEl.textContent = 'Reset code has expired. Please request a new one.'; return null;
+      }
+      if (code !== stored.code) {
+        errEl.textContent = 'Incorrect reset code.'; return null;
+      }
+      if (!pw || pw.length < 6) {
+        errEl.textContent = 'Password must be at least 6 characters.'; return null;
+      }
+      if (pw !== pw2) {
+        errEl.textContent = 'Passwords do not match.'; return null;
+      }
+      return { username: stored.username, newPass: pw, code };
+    }
+
+    function _afterReset(prefix) {
+      localStorage.removeItem('pma_reset_' + prefix);
+      const okEl = document.getElementById(prefix + '-r-p2-ok');
+      if (okEl) okEl.textContent = 'Password reset successfully! You can now log in.';
+      setTimeout(() => { hideReset(prefix); }, 2200);
+    }
+
+    // ── Reset flows — async fetch calls ──────────────────────
+    async function requestResetTenant() {
+      const propCode=document.getElementById('t-r-propcode').value.trim().toUpperCase();
+      const user=document.getElementById('t-r-user').value.trim();
+      const errEl=document.getElementById('t-r-err');
+      errEl.textContent='';
+      if (!propCode||!user){errEl.textContent='Property Code and Username are required.';return;}
+      try {
+        const r=await fetch('/api/auth/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phase:1,type:'tenant',username:user,propCode})});
+        const d=await r.json();
+        if (!r.ok){errEl.textContent=d.error||'Account not found.';return;}
+        _storeToken('t',user,d.code);
+        _sendMail(d.email,d.code,'Tenant Portal');
+        _afterSend('t');
+      } catch(e){errEl.textContent='Connection error. Please try again.';}
+    }
+
+    async function confirmResetTenant() {
+      const result=_validateNewPass('t');
+      if (!result) return;
+      try {
+        const r=await fetch('/api/auth/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phase:2,type:'tenant',username:result.username,code:result.code,newPassword:result.newPass})});
+        const d=await r.json();
+        if (!r.ok){document.getElementById('t-r-p2-err').textContent=d.error||'Reset failed.';return;}
+        _afterReset('t');
+      } catch(e){document.getElementById('t-r-p2-err').textContent='Connection error. Please try again.';}
+    }
+
+    async function requestResetClient() {
+      const user=document.getElementById('c-r-user').value.trim();
+      const errEl=document.getElementById('c-r-err');
+      errEl.textContent='';
+      if (!user){errEl.textContent='Username is required.';return;}
+      try {
+        const r=await fetch('/api/auth/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phase:1,type:'client',username:user})});
+        const d=await r.json();
+        if (!r.ok){errEl.textContent=d.error||'Account not found.';return;}
+        _storeToken('c',user,d.code);
+        _sendMail(d.email,d.code,'Client Portal');
+        _afterSend('c');
+      } catch(e){errEl.textContent='Connection error. Please try again.';}
+    }
+
+    async function confirmResetClient() {
+      const result=_validateNewPass('c');
+      if (!result) return;
+      try {
+        const r=await fetch('/api/auth/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phase:2,type:'client',username:result.username,code:result.code,newPassword:result.newPass})});
+        const d=await r.json();
+        if (!r.ok){document.getElementById('c-r-p2-err').textContent=d.error||'Reset failed.';return;}
+        _afterReset('c');
+      } catch(e){document.getElementById('c-r-p2-err').textContent='Connection error. Please try again.';}
+    }
+
+    async function requestResetAgency() {
+      const user=document.getElementById('a-r-user').value.trim();
+      const errEl=document.getElementById('a-r-err');
+      errEl.textContent='';
+      if (!user){errEl.textContent='Username is required.';return;}
+      try {
+        const r=await fetch('/api/auth/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phase:1,type:'agency',username:user})});
+        const d=await r.json();
+        if (!r.ok){errEl.textContent=d.error||'Account not found.';return;}
+        _storeToken('a',user,d.code);
+        _sendMail(d.email,d.code,'Agency Portal');
+        _afterSend('a');
+      } catch(e){errEl.textContent='Connection error. Please try again.';}
+    }
+
+    async function confirmResetAgency() {
+      const result=_validateNewPass('a');
+      if (!result) return;
+      try {
+        const r=await fetch('/api/auth/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phase:2,type:'agency',username:result.username,code:result.code,newPassword:result.newPass})});
+        const d=await r.json();
+        if (!r.ok){document.getElementById('a-r-p2-err').textContent=d.error||'Reset failed.';return;}
+        _afterReset('a');
+      } catch(e){document.getElementById('a-r-p2-err').textContent='Connection error. Please try again.';}
+    }
+
+    async function requestResetMaster() {
+      const user=document.getElementById('m-r-user').value.trim();
+      const errEl=document.getElementById('m-r-err');
+      errEl.textContent='';
+      if (!user){errEl.textContent='Username is required.';return;}
+      try {
+        const r=await fetch('/api/auth/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phase:1,type:'master',username:user})});
+        const d=await r.json();
+        if (!r.ok){errEl.textContent=d.error||'Account not found.';return;}
+        _storeToken('m',user,d.code);
+        _sendMail(d.email,d.code,'Master Admin');
+        _afterSend('m');
+      } catch(e){errEl.textContent='Connection error. Please try again.';}
+    }
+
+    async function confirmResetMaster() {
+      const result=_validateNewPass('m');
+      if (!result) return;
+      try {
+        const r=await fetch('/api/auth/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phase:2,type:'master',username:result.username,code:result.code,newPassword:result.newPass})});
+        const d=await r.json();
+        if (!r.ok){document.getElementById('m-r-p2-err').textContent=d.error||'Reset failed.';return;}
+        _afterReset('m');
+      } catch(e){document.getElementById('m-r-p2-err').textContent='Connection error. Please try again.';}
+    }
+
+    // Allow Enter key on login and setup forms
+    document.querySelectorAll('.form-control').forEach(input => {
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          const card = input.closest('.flip-card');
+          if (card.id === 'card-tenant') {
+            if (document.getElementById('t-setup-section').style.display !== 'none') setupTenant();
+            else loginTenant();
+          } else if (card.id === 'card-client') {
+            if (document.getElementById('c-setup-section').style.display !== 'none') setupClient();
+            else loginClient();
+          } else if (card.id === 'card-agency') {
+            if (document.getElementById('a-setup-section').style.display !== 'none') setupAgency();
+            else loginAgency();
+          } else if (card.id === 'card-master') {
+            if (document.getElementById('m-setup-section').style.display !== 'none') setupMaster();
+            else loginMaster();
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

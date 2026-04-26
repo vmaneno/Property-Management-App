@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Master Admin — Property Management</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="css/styles.css" rel="stylesheet">
+  <script>(function(){const t=localStorage.getItem('pma_theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+  <style>
+    .overview-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:24px; }
+    .search-bar input,.search-bar select { min-width:160px; }
+    .pill { display:inline-block;padding:2px 9px;border-radius:12px;font-size:.73rem;font-weight:600; }
+    .pill-master { background:#ffe5e5;color:#9b0000; }
+    .pill-agency { background:#f3e8ff;color:#480088; }
+    .filter-bar { display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f0f0f0; }
+    .filter-bar input { max-width:280px;padding:5px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85rem; }
+    .filter-bar input:focus { outline:none;border-color:#9b0000; }
+  </style>
+</head>
+<body>
+<div class="dash-wrap">
+  <aside class="sidebar sidebar-master">
+    <div class="sidebar-brand">
+      <div class="app-name">Property Management</div>
+      <div class="role-name"><i class="fa-solid fa-shield-halved"></i> Master Admin</div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sb-avatar">M</div>
+      <div>
+        <div class="user-name"  id="sb-name">Master</div>
+        <div class="user-role" id="sb-code">—</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <ul style="padding:0;margin:0;">
+        <li class="nav-item"><button class="nav-link-btn active" data-view="dashboard"    onclick="showView('dashboard',this)"><i class="fa-solid fa-gauge-high"></i> Dashboard</button></li>
+        <li class="nav-item"><button class="nav-link-btn" data-view="agencies"      onclick="showView('agencies',this)"><i class="fa-solid fa-landmark"></i> Agencies</button></li>
+        <li class="nav-item"><button class="nav-link-btn" data-view="clients"       onclick="showView('clients',this)"><i class="fa-solid fa-user-tie"></i> Clients</button></li>
+        <li class="nav-item"><button class="nav-link-btn" data-view="properties"    onclick="showView('properties',this)"><i class="fa-solid fa-building"></i> Properties</button></li>
+        <li class="nav-item"><button class="nav-link-btn" data-view="units"         onclick="showView('units',this)"><i class="fa-solid fa-door-open"></i> Units</button></li>
+        <li class="nav-item"><button class="nav-link-btn" data-view="tenants"       onclick="showView('tenants',this)"><i class="fa-solid fa-users"></i> Tenants</button></li>
+        <li class="nav-item"><button class="nav-link-btn" data-view="transactions"  onclick="showView('transactions',this)"><i class="fa-solid fa-money-bill-transfer"></i> Transactions</button></li>
+      </ul>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">&#9776;</button>
+      <h2 id="page-title">Master Dashboard</h2>
+      <div class="topbar-actions" id="topbar-actions"></div>
+      <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" title="Toggle dark / light mode"><i class="fa-solid fa-moon" id="theme-icon"></i></button>
+    </div>
+    <div class="page-content" id="view-container"></div>
+  </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+<div class="toast-container" id="toast-container"></div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box modal-box-lg" id="modal-box">
+    <div class="modal-hdr bg-master" id="modal-hdr">
+      <h5 id="modal-title">Form</h5>
+      <button class="btn-close-modal" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body-pad" id="modal-body"></div>
+    <div class="modal-footer-pad" id="modal-footer"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="js/api.js"></script>
+<script>
+  DB.init();
+
+  function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const next = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('pma_theme', next);
+    document.getElementById('theme-icon').className = next === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+  }
+  (function(){ const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const i = document.getElementById('theme-icon'); if(i) i.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'; })();
+
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('open');
+  }
+  document.querySelectorAll('.nav-link-btn').forEach(btn => {
+    btn.addEventListener('click', () => { if (window.innerWidth <= 768) toggleSidebar(); });
+  });
+
+  const sess = JSON.parse(sessionStorage.getItem('pma_session') || 'null');
+  if (!sess || sess.role !== 'master') { window.location.href = 'index.html'; }
+
+  let masterAgency = DB.findOne('agencies', { AgencyCode: sess.id, Master: 'Y' });
+  if (!masterAgency) { window.location.href = 'index.html'; }
+
+  document.getElementById('sb-avatar').textContent = masterAgency.AgencyName[0].toUpperCase();
+  document.getElementById('sb-name').textContent   = masterAgency.AgencyName;
+  document.getElementById('sb-code').textContent   = 'Master — ' + masterAgency.AgencyCode;
+
+  function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+
+  function fmtDate(d)  { return d ? new Date(d).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}) : '—'; }
+  function fmtMoney(n) { const abs=Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2}); return (n<0?'-':'')+'$'+abs; }
+
+  // All data — master sees everything
+  const A = () => DB.getAll('agencies');
+  const C = () => DB.getAll('clients');
+  const P = () => DB.getAll('properties');
+  const U = () => DB.getAll('propunits');
+  const T = () => DB.getAll('tenants');
+  const TX= () => DB.getAll('transactions').sort((a,b)=>new Date(b.Date)-new Date(a.Date));
+
+  // ── FILTER ─────────────────────────────────────────────
+  function filterTable(inputId, tableId) {
+    const q = document.getElementById(inputId).value.toLowerCase();
+    document.querySelectorAll('#' + tableId + ' tbody tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+
+  function showView(view, btn) {
+    document.querySelectorAll('.nav-link-btn').forEach(b=>b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    const titles={dashboard:'Master Dashboard',agencies:'Agencies',clients:'All Clients',properties:'All Properties',units:'All Units',tenants:'All Tenants',transactions:'All Transactions'};
+    document.getElementById('page-title').textContent=titles[view];
+    const ta=document.getElementById('topbar-actions');
+    ta.innerHTML='';
+    const c=document.getElementById('view-container');
+    if      (view==='dashboard')    { c.innerHTML=renderDashboard(); }
+    else if (view==='agencies')     { c.innerHTML=renderAgencies();     ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddAgency()"><i class="fa-solid fa-plus"></i> Add Agency</button>`; }
+    else if (view==='clients')      { c.innerHTML=renderClients();      ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddClient()"><i class="fa-solid fa-plus"></i> Add Client</button>`; }
+    else if (view==='properties')   { c.innerHTML=renderProperties();   ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddProperty()"><i class="fa-solid fa-plus"></i> Add Property</button>`; }
+    else if (view==='units')        { c.innerHTML=renderUnits();        ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddUnit()"><i class="fa-solid fa-plus"></i> Add Unit</button> <button class="btn-primary-custom bg-master" onclick="openUnitsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Units Upload</button>`; }
+    else if (view==='tenants')      { c.innerHTML=renderTenants();      ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddTenant()"><i class="fa-solid fa-plus"></i> Add Tenant</button> <button class="btn-primary-custom bg-master" onclick="openTenantsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Tenants Upload</button>`; }
+    else if (view==='transactions') { c.innerHTML=renderTransactions(); ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openPostTx()"><i class="fa-solid fa-plus"></i> Post Transaction</button><button class="btn-primary-custom" style="background:#1a6b3c;margin-left:8px" onclick="openBulkPostTx()"><i class="fa-solid fa-layer-group"></i> Bulk Posting</button><button class="btn-primary-custom" style="background:#555;margin-left:8px" onclick="openResetModal()"><i class="fa-solid fa-rotate"></i> Reset Data</button>`; }
+  }
+
+  function renderDashboard() {
+    const ag=A(),cl=C(),pr=P(),un=U(),te=T(),tx=TX();
+    const occupied=un.filter(u=>u.UnitStatus==='Occupied').length;
+    const activeTen=te.filter(t=>t.Active==='Y').length;
+    const totalBal=tx.reduce((s,t)=>s+Number(t.Amount),0);
+    const pendingTx=tx.filter(t=>t.Authenticated==='N').length;
+    const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-30);
+    const monthlyTx=tx.filter(t=>new Date(t.Date)>=cutoff&&Number(t.Amount)>0);
+    const monthlyRev=monthlyTx.reduce((s,t)=>s+Number(t.Amount),0);
+
+    return `
+    <div class="overview-grid">
+      <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#d62828,#9b0000)"><i class="fa-solid fa-landmark"></i></div><div class="stat-info"><div class="stat-val">${ag.length}</div><div class="stat-lbl">Agencies</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#7209b7,#480088)"><i class="fa-solid fa-user-tie"></i></div><div class="stat-info"><div class="stat-val">${cl.length}</div><div class="stat-lbl">Clients</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#2d9b59,#1a6b3c)"><i class="fa-solid fa-building"></i></div><div class="stat-info"><div class="stat-val">${pr.length}</div><div class="stat-lbl">Properties</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#4361ee,#3a0ca3)"><i class="fa-solid fa-door-open"></i></div><div class="stat-info"><div class="stat-val">${occupied}/${un.length}</div><div class="stat-lbl">Occupied/Total Units</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#f7971e,#c95a00)"><i class="fa-solid fa-users"></i></div><div class="stat-info"><div class="stat-val">${activeTen}</div><div class="stat-lbl">Active Tenants</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#11998e,#076e65)"><i class="fa-solid fa-dollar-sign"></i></div><div class="stat-info"><div class="stat-val">${fmtMoney(monthlyRev)}</div><div class="stat-lbl">Revenue (30 days)</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#d62828,#9b0000)"><i class="fa-solid fa-clock"></i></div><div class="stat-info"><div class="stat-val">${pendingTx}</div><div class="stat-lbl">Pending Transactions</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#1a1a2e,#16213e)"><i class="fa-solid fa-scale-balanced"></i></div><div class="stat-info"><div class="stat-val">${fmtMoney(totalBal)}</div><div class="stat-lbl">Total Balance</div></div></div>
+    </div>
+    <div class="dash-three-col" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+      <div class="table-card">
+        <div class="table-card-header"><h5>Agencies</h5></div>
+        <div class="table-responsive"><table class="data-table">
+          <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Status</th></tr></thead>
+          <tbody>${ag.map(a=>`<tr><td style="font-family:monospace">${a.AgencyCode}</td><td>${a.AgencyName}</td><td><span class="pill ${a.Master==='Y'?'pill-master':'pill-agency'}">${a.Master==='Y'?'Master':'Agency'}</span></td><td><span class="badge-${a.Active==='Y'?'active':'inactive'}">${a.Active==='Y'?'Active':'Inactive'}</span></td></tr>`).join('')}</tbody>
+        </table></div>
+      </div>
+      <div class="table-card">
+        <div class="table-card-header"><h5>Properties by Type</h5></div>
+        <div style="padding:16px;">
+          ${['Apartment','Villa','Loft','Condo','House','Suite','Commercial'].map(type=>{
+            const cnt=pr.filter(p=>p.PropertyType===type).length;
+            if(!cnt) return '';
+            return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f5f5;font-size:.875rem;"><span>${type}</span><strong>${cnt}</strong></div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-card-header"><h5>Recent Activity</h5></div>
+        <div style="padding:6px 16px;">
+          ${tx.slice(0,6).map(t=>{
+            const ten=DB.findOne('tenants',{TenantID:t.TenantID})||{};
+            const credit=Number(t.Amount)>=0;
+            return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f5f5f5;">
+              <div style="width:32px;height:32px;border-radius:8px;background:${credit?'#d4f5e2':'#fde8e8'};display:flex;align-items:center;justify-content:center;color:${credit?'#1a6b3c':'#9b0000'};font-size:.8rem;flex-shrink:0">
+                <i class="fa-solid fa-${credit?'arrow-down':'arrow-up'}"></i></div>
+              <div style="flex:1">
+                <div style="font-size:.8rem;font-weight:600">${ten.FirstName||''} ${ten.LastName||''}</div>
+                <div style="font-size:.73rem;color:#aaa">${t.Description}</div>
+              </div>
+              <div style="font-weight:700;font-size:.85rem;color:${credit?'#2d9b59':'#d62828'}">${credit?'+':''}${fmtMoney(t.Amount)}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function agencyHasTx(agencyCode) {
+    const propCodes = DB.find('properties', {AgencyCode: agencyCode}).map(p => p.PropertyCode);
+    return DB.getAll('transactions').some(tx => propCodes.includes(tx.PropertyCode));
+  }
+
+  function deleteAgency(code, name) {
+    if (!confirm('Delete agency "' + name + '"? This cannot be undone.')) return;
+    DB.remove('agencies', 'AgencyCode', code);
+    showView('agencies', document.querySelector('[data-view="agencies"]'));
+    toast(name + ' deleted.', 'info');
+  }
+
+  function renderAgencies() {
+    return `<div class="table-card">
+    <div class="table-card-header"><h5>All Agencies (${A().length})</h5></div>
+    <div class="filter-bar"><i class="fa-solid fa-magnifying-glass" style="color:#aaa"></i><input id="filter-agencies" placeholder="Search agencies..." oninput="filterTable('filter-agencies','tbl-agencies')"></div>
+    <div class="table-responsive"><table class="data-table" id="tbl-agencies">
+      <thead><tr><th>Code</th><th>Name</th><th>Address</th><th>Phone</th><th>Email</th><th>Type</th><th>Active</th><th>Actions</th></tr></thead>
+      <tbody>${A().map(a=>{
+        const canDel = a.Active !== 'Y' && !agencyHasTx(a.AgencyCode);
+        return `<tr>
+        <td style="font-family:monospace">${a.AgencyCode}</td>
+        <td><strong>${a.AgencyName}</strong></td>
+        <td style="font-size:.8rem">${a.Address}</td>
+        <td>${a.Telephone}</td><td>${a.Email}</td>
+        <td><span class="pill ${a.Master==='Y'?'pill-master':'pill-agency'}">${a.Master==='Y'?'Master':'Agency'}</span></td>
+        <td><span class="badge-${a.Active==='Y'?'active':'inactive'}">${a.Active==='Y'?'Active':'Inactive'}</span></td>
+        <td>
+          <button class="btn-edit" onclick="openEditAgency('${a.AgencyCode}')"><i class="fa-solid fa-pen"></i></button>
+          ${canDel?`<button class="btn-del" onclick="deleteAgency('${a.AgencyCode}','${a.AgencyName.replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>`:''}
+        </td>
+      </tr>`;}).join('')}</tbody>
+    </table></div></div>`;
+  }
+
+  function renderClients() {
+    return `<div class="table-card">
+    <div class="table-card-header"><h5>All Clients (${C().length})</h5></div>
+    <div class="filter-bar"><i class="fa-solid fa-magnifying-glass" style="color:#aaa"></i><input id="filter-clients" placeholder="Search clients..." oninput="filterTable('filter-clients','tbl-clients')"></div>
+    <div class="table-responsive"><table class="data-table" id="tbl-clients">
+      <thead><tr><th>Code</th><th>Name</th><th>Agency</th><th>Phone</th><th>Email</th><th>Since</th><th>Active</th><th>Actions</th></tr></thead>
+      <tbody>${C().map(c=>{
+        const ag=DB.findOne('agencies',{AgencyCode:c.AgencyCode})||{};
+        return`<tr>
+          <td style="font-family:monospace">${c.ClientCode}</td>
+          <td><strong>${c.ClientName}</strong></td>
+          <td>${ag.AgencyName||c.AgencyCode}</td>
+          <td>${c.Telephone}</td><td>${c.Email}</td>
+          <td>${fmtDate(c.Date)}</td>
+          <td><span class="badge-${c.Active==='Y'?'active':'inactive'}">${c.Active==='Y'?'Active':'Inactive'}</span></td>
+          <td>
+            <button class="btn-edit" onclick="openEditClient('${c.ClientCode}')"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn-del"  onclick="confirmDelete('clients','ClientCode','${c.ClientCode}','${c.ClientName.replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div></div>`;
+  }
+
+  function renderProperties() {
+    return `<div class="table-card">
+    <div class="table-card-header"><h5>All Properties (${P().length})</h5></div>
+    <div class="filter-bar"><i class="fa-solid fa-magnifying-glass" style="color:#aaa"></i><input id="filter-properties" placeholder="Search properties..." oninput="filterTable('filter-properties','tbl-properties')"></div>
+    <div class="table-responsive"><table class="data-table" id="tbl-properties">
+      <thead><tr><th>Code</th><th>Name</th><th>Agency</th><th>Client</th><th>City</th><th>Type</th><th>Utilities</th><th>Active</th><th>Actions</th></tr></thead>
+      <tbody>${P().map(p=>{
+        const ag=DB.findOne('agencies',{AgencyCode:p.AgencyCode})||{};
+        const cl=DB.findOne('clients',{ClientCode:p.ClientCode})||{};
+        return`<tr>
+          <td style="font-family:monospace">${p.PropertyCode}</td>
+          <td><strong>${p.PropertyName}</strong><br><span class="text-muted-sm">${p.City}</span></td>
+          <td>${ag.AgencyName||p.AgencyCode}</td>
+          <td>${cl.ClientName||p.ClientCode}</td>
+          <td>${p.City}, ${p.Country}</td>
+          <td>${p.PropertyType}</td>
+          <td><span class="badge-${p.Utilities==='Y'?'yes':'no'}">${p.Utilities==='Y'?'Yes':'No'}</span></td>
+          <td><span class="badge-${p.Active==='Y'?'active':'inactive'}">${p.Active==='Y'?'Active':'Inactive'}</span></td>
+          <td>
+            <button class="btn-edit"  onclick="openEditProperty('${p.PropertyCode}')"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn-del"   onclick="deleteProperty('${p.PropertyCode}','${p.PropertyName.replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div></div>`;
+  }
+
+  function renderUnits() {
+    return `<div class="table-card">
+    <div class="table-card-header"><h5>All Units (${U().length})</h5></div>
+    <div class="filter-bar"><i class="fa-solid fa-magnifying-glass" style="color:#aaa"></i><input id="filter-units" placeholder="Search units..." oninput="filterTable('filter-units','tbl-units')"></div>
+    <div class="table-responsive"><table class="data-table" id="tbl-units">
+      <thead><tr><th>Code</th><th>Property</th><th>Unit#</th><th>Bed/Bath/Floor</th><th>Rent</th><th>Deposit</th><th>Status</th><th>Active</th><th>Actions</th></tr></thead>
+      <tbody>${U().map(u=>{
+        const p=DB.findOne('properties',{PropertyCode:u.PropertyCode})||{};
+        return`<tr>
+          <td style="font-family:monospace">${u.UnitCode}</td>
+          <td>${p.PropertyName||u.PropertyCode}</td>
+          <td><strong>${u.UnitNumber}</strong></td>
+          <td>${u.Bedrooms}BR / ${u.Bathrooms}BA / Fl.${u.Floor}</td>
+          <td>$${Number(u.RentAmount).toLocaleString()}</td>
+          <td>$${Number(u.DepositAmount).toLocaleString()}</td>
+          <td><span class="${u.UnitStatus==='Occupied'?'badge-occupied':'badge-vacant'}">${u.UnitStatus}</span></td>
+          <td><span class="badge-${u.Active==='Y'?'active':'inactive'}">${u.Active==='Y'?'Yes':'No'}</span></td>
+          <td>
+            <button class="btn-edit" onclick="openEditUnit('${u.UnitCode}')"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn-del"  onclick="deleteUnit('${u.UnitCode}','${u.UnitNumber}')"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div></div>`;
+  }
+
+  function deleteTenant(id, name) {
+    const t = DB.findOne('tenants', {TenantID: id});
+    if (t && t.Active === 'Y') {
+      toast('Cannot delete "'+name+'" — deactivate the tenant first.','error'); return;
+    }
+    const hasTx = DB.getAll('transactions').some(tx => tx.TenantID === id);
+    if (hasTx) {
+      toast('Cannot delete "'+name+'" — tenant has linked transactions.','error'); return;
+    }
+    if (!confirm('Delete tenant "'+name+'"? This cannot be undone.')) return;
+    if (t && t.UnitCode) DB.update('propunits','UnitCode',t.UnitCode,{UnitStatus:'Vacant'});
+    DB.remove('tenants','TenantID',id);
+    showView('tenants', document.querySelector('[data-view="tenants"]'));
+    toast(name+' deleted.','info');
+  }
+
+  function renderTenants() {
+    const sorted = T().slice().sort((a,b)=>{
+      const pa=DB.findOne('properties',{PropertyCode:a.PropertyCode})||{};
+      const pb=DB.findOne('properties',{PropertyCode:b.PropertyCode})||{};
+      const ua=DB.findOne('propunits',{UnitCode:a.UnitCode})||{};
+      const ub=DB.findOne('propunits',{UnitCode:b.UnitCode})||{};
+      const pName = (pa.PropertyName||'').localeCompare(pb.PropertyName||'');
+      if (pName !== 0) return pName;
+      return (ua.UnitNumber||'').localeCompare(ub.UnitNumber||'');
+    });
+    return `<div class="table-card"><div class="table-card-header"><h5>All Tenants (${sorted.length})</h5></div>
+    <div class="table-responsive"><table class="data-table">
+      <thead><tr><th>Tenant#</th><th>Name</th><th>ID</th><th>Property / Unit</th><th>Rent</th><th>Move-in</th><th>Move-out</th><th>Active</th><th>Actions</th></tr></thead>
+      <tbody>${sorted.map(t=>{
+        const p=DB.findOne('properties',{PropertyCode:t.PropertyCode})||{};
+        const u=DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
+        const canDel = t.Active !== 'Y' && !DB.getAll('transactions').some(tx=>tx.TenantID===t.TenantID);
+        return`<tr>
+          <td style="font-size:.78rem;font-family:monospace">${t.TenantNumber}</td>
+          <td><strong>${t.FirstName} ${t.LastName}</strong><br><span class="text-muted-sm">${t.Email}</span></td>
+          <td style="font-size:.78rem">${t.IDNumber}</td>
+          <td>${p.PropertyName||'?'} / Unit ${u.UnitNumber||'?'}</td>
+          <td>$${Number(t.RentAmount).toLocaleString()} / ${t.RentFrequency}</td>
+          <td>${fmtDate(t.MoveInDate)}</td>
+          <td>${t.MoveOutDate?fmtDate(t.MoveOutDate):'—'}</td>
+          <td><span class="badge-${t.Active==='Y'?'active':'inactive'}">${t.Active==='Y'?'Active':'Inactive'}</span></td>
+          <td>
+            <button class="btn-edit" onclick="openEditTenant('${t.TenantID}')"><i class="fa-solid fa-pen"></i></button>
+            ${canDel?`<button class="btn-del" onclick="deleteTenant('${t.TenantID}','${t.FirstName} ${t.LastName}')"><i class="fa-solid fa-trash"></i></button>`:''}
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div></div>`;
+  }
+
+  function viewTxDetail(ref) {
+    const tx = DB.getAll('transactions').find(t => t.transactionRef === ref);
+    if (!tx) return;
+    const hasDoc = tx.TransactionDocument && tx.TransactionDocument.length > 0;
+    const preview = hasDoc
+      ? (tx.TransactionDocument.startsWith('data:image')
+          ? `<img src="${tx.TransactionDocument}" style="max-width:100%;border-radius:6px;margin-top:10px">`
+          : `<iframe src="${tx.TransactionDocument}" style="width:100%;height:380px;border:none;border-radius:6px;margin-top:10px"></iframe>`)
+      : '<p style="color:#aaa;margin-top:8px">No document attached.</p>';
+    openModal('Transaction — '+ref,
+      `<p style="margin:0 0 6px"><strong>Note:</strong> ${tx.TransactionNote||'—'}</p>
+       <p style="margin:0 0 4px"><strong>Currency:</strong> ${tx.Currency||'—'}</p>
+       ${hasDoc?`<p style="margin:0 0 4px"><a href="${tx.TransactionDocument}" download="doc-${ref}" target="_blank"><i class="fa-solid fa-file-arrow-down"></i> Download Document</a></p>`:''}
+       ${preview}`,
+      `<button class="btn-back" onclick="closeModal()">Close</button>`,true
+    );
+  }
+
+  function renderTransactions() {
+    const txs = DB.getAll('transactions').slice().sort((a,b)=>{
+      const ta=DB.findOne('tenants',{TenantID:a.TenantID})||{};
+      const tb=DB.findOne('tenants',{TenantID:b.TenantID})||{};
+      const nameA=(ta.FirstName||'')+' '+(ta.LastName||'');
+      const nameB=(tb.FirstName||'')+' '+(tb.LastName||'');
+      const nc=nameA.localeCompare(nameB);
+      if(nc!==0) return nc;
+      return new Date(b.Date)-new Date(a.Date);
+    });
+    const bal=txs.reduce((s,t)=>s+Number(t.Amount),0);
+    return `<div class="table-card"><div class="table-card-header"><h5>All Transactions (${txs.length})</h5><span>Total Balance: <strong style="color:${bal>=0?'#2d9b59':'#d62828'}">${fmtMoney(bal)}</strong></span></div>
+    <div class="table-responsive"><table class="data-table">
+      <thead><tr><th>Date</th><th>Tenant</th><th>Property</th><th>Description</th><th>Amount</th><th>Ref</th><th>Auth</th><th>Actions</th></tr></thead>
+      <tbody>${txs.map(tx=>{
+        const ten=DB.findOne('tenants',{TenantID:tx.TenantID})||{};
+        const p=DB.findOne('properties',{PropertyCode:tx.PropertyCode})||{};
+        const credit=Number(tx.Amount)>=0;
+        const hasDetail = (tx.TransactionNote||tx.TransactionDocument);
+        return`<tr>
+          <td>${fmtDate(tx.Date)}</td>
+          <td>${ten.FirstName||''} ${ten.LastName||''}</td>
+          <td style="font-size:.8rem">${p.PropertyName||tx.PropertyCode}</td>
+          <td>${tx.Description}</td>
+          <td style="font-weight:600;color:${credit?'#2d9b59':'#d62828'}">${credit?'+':''}${fmtMoney(tx.Amount)}</td>
+          <td style="font-size:.72rem;font-family:monospace">${hasDetail?`<a href="#" onclick="viewTxDetail('${tx.transactionRef}');return false;" style="color:#9b0000;text-decoration:underline">${tx.transactionRef}</a>`:tx.transactionRef}</td>
+          <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'✓':'Pend'}</span></td>
+          <td>
+            <button class="btn-${tx.Authenticated==='Y'?'view':'edit'}" onclick="toggleAuth('${tx.transactionRef}')">${tx.Authenticated==='Y'?'Unverify':'Verify'}</button>
+            <button class="btn-del" onclick="confirmDeleteTx('${tx.transactionRef}')"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>`;
+      }).join('')||'<tr><td colspan="8" style="text-align:center;padding:40px;color:#aaa">No transactions.</td></tr>'}</tbody>
+    </table></div></div>`;
+  }
+
+  function toggleAuth(ref) {
+    const all=DB.getAll('transactions');
+    const idx=all.findIndex(t=>t.transactionRef===ref);
+    if(idx===-1)return;
+    all[idx].Authenticated=all[idx].Authenticated==='Y'?'N':'Y';
+    DB.save('transactions',all);
+    showView('transactions', document.querySelector('[data-view="transactions"]'));
+    toast('Transaction auth toggled.','success');
+  }
+
+  // Delete transaction — only if NOT authenticated
+  function confirmDeleteTx(ref) {
+    const tx = DB.getAll('transactions').find(t => t.transactionRef === ref);
+    if (tx && tx.Authenticated === 'Y') {
+      toast('Cannot delete an authenticated transaction. Unverify it first.', 'error');
+      return;
+    }
+    if (!confirm('Delete transaction ' + ref + '? This cannot be undone.')) return;
+    const all = DB.getAll('transactions').filter(t => t.transactionRef !== ref);
+    DB.save('transactions', all);
+    showView('transactions', document.querySelector('[data-view="transactions"]'));
+    toast('Transaction deleted.', 'info');
+  }
+
+  // Delete property — only if inactive and no transactions
+  function deleteProperty(code, name) {
+    const prop = DB.findOne('properties', {PropertyCode: code});
+    if (prop && prop.Active === 'Y') {
+      toast('Cannot delete "' + name + '" — deactivate it first.', 'error'); return;
+    }
+    const hasTx = DB.getAll('transactions').some(tx => tx.PropertyCode === code);
+    if (hasTx) {
+      toast('Cannot delete "' + name + '" — it has linked transactions.', 'error'); return;
+    }
+    if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+    DB.remove('properties', 'PropertyCode', code);
+    showView('properties', document.querySelector('[data-view="properties"]'));
+    toast(name + ' deleted.', 'info');
+  }
+
+  // Delete unit — blocked if occupied
+  function deleteUnit(code, unitNum) {
+    const unit = DB.findOne('propunits', {UnitCode: code});
+    if (unit && unit.UnitStatus === 'Occupied') {
+      toast('Cannot delete Unit ' + unitNum + ' — it is currently occupied.', 'error');
+      return;
+    }
+    if (!confirm('Delete "Unit ' + unitNum + '"? This cannot be undone.')) return;
+    DB.remove('propunits', 'UnitCode', code);
+    showView('units', document.querySelector('[data-view="units"]'));
+    toast('Unit ' + unitNum + ' deleted.', 'info');
+  }
+
+  function confirmDelete(table, key, value, label) {
+    if(!confirm(`Delete "${label}"? This cannot be undone.`))return;
+    DB.remove(table,key,value);
+    const activeBtn = document.querySelector('.nav-link-btn.active');
+    if(activeBtn) showView(activeBtn.dataset.view, activeBtn);
+    toast(label+' deleted.','info');
+  }
+
+  // ── MODALS ─────────────────────────────────────────────
+  function openModal(title,body,footer,lg=false) {
+    document.getElementById('modal-title').textContent=title;
+    document.getElementById('modal-body').innerHTML=body;
+    document.getElementById('modal-footer').innerHTML=footer;
+    document.getElementById('modal-box').className='modal-box'+(lg?' modal-box-lg':'');
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+    window._unitUploadRows = null; window._unitUploadRowData = null;
+    window._tenantUploadRows = null; window._tenantUploadRowData = null;
+  }
+
+  function agencyOptions(sel='') { return A().map(a=>`<option value="${a.AgencyCode}" ${a.AgencyCode===sel?'selected':''}>${a.AgencyName} (${a.AgencyCode})</option>`).join(''); }
+  function clientOptions(sel='') { return C().map(c=>`<option value="${c.ClientCode}" ${c.ClientCode===sel?'selected':''}>${c.ClientName} (${c.ClientCode})</option>`).join(''); }
+  function propOptions(sel='')   { return P().map(p=>`<option value="${p.PropertyCode}" ${p.PropertyCode===sel?'selected':''}>${p.PropertyName} (${p.PropertyCode})</option>`).join(''); }
+
+  // Cascaded client dropdown filtered by agency
+  function clientOptionsByAgency(agencyCode, sel='') {
+    const clients = C().filter(c => c.AgencyCode === agencyCode);
+    if (!clients.length) return '<option value="">— No clients for this agency —</option>';
+    return clients.map(c => `<option value="${c.ClientCode}" ${c.ClientCode===sel?'selected':''}>${c.ClientName} (${c.ClientCode})</option>`).join('');
+  }
+
+  function cascadeClients(agencySelectId, clientSelectId, sel='') {
+    const agCode = document.getElementById(agencySelectId).value;
+    document.getElementById(clientSelectId).innerHTML = clientOptionsByAgency(agCode, sel);
+  }
+
+  // ── AGENCY ─────────────────────────────────────────────
+  function openAddAgency() {
+    openModal('Add Agency',`
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Agency Name <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="aa-name"></div>
+      <div class="form-group"><label class="form-label-sm">Telephone <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="aa-tel"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Email <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="aa-email" type="email"></div>
+      <div class="form-group"><label class="form-label-sm">Master?</label><select class="form-control-sm2" id="aa-master"><option value="N">No</option><option value="Y">Yes</option></select></div></div>
+      <div class="form-group"><label class="form-label-sm">Address <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="aa-addr"></div>`,
+      `<button class="btn-primary-custom bg-master" onclick="saveAddAgency()">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`
+    );
+  }
+
+  function saveAddAgency() {
+    const name = document.getElementById('aa-name').value.trim();
+    const tel  = document.getElementById('aa-tel').value.trim();
+    const email= document.getElementById('aa-email').value.trim();
+    const addr = document.getElementById('aa-addr').value.trim();
+    if (!name||!tel||!email||!addr) { toast('All fields are required.','error'); return; }
+    const code = DB.nextCode('agencies','AgencyCode','AG');
+    DB.insert('agencies',{
+      AgencyCode:code, AgencyName:name,
+      Address:addr, Telephone:tel, Email:email,
+      Active:'Y', Master:document.getElementById('aa-master').value,
+      UserName:'', Password:'',
+      UpdateUser:masterAgency.UserName
+    });
+    closeModal(); showView('agencies', document.querySelector('[data-view="agencies"]'));
+    toast('Agency '+code+' added!','success');
+  }
+
+  function openEditAgency(code) {
+    const a=DB.findOne('agencies',{AgencyCode:code});
+    if(!a)return;
+    openModal('Edit Agency — '+code,`
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Agency Name</label><input class="form-control-sm2" id="ea-name" value="${a.AgencyName}"></div>
+      <div class="form-group"><label class="form-label-sm">Telephone</label><input class="form-control-sm2" id="ea-tel" value="${a.Telephone}"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Email</label><input class="form-control-sm2" id="ea-email" value="${a.Email}"></div>
+      <div class="form-group"><label class="form-label-sm">Master?</label><select class="form-control-sm2" id="ea-master"><option value="N" ${a.Master==='N'?'selected':''}>No</option><option value="Y" ${a.Master==='Y'?'selected':''}>Yes</option></select></div></div>
+      <div class="form-group"><label class="form-label-sm">Address</label><input class="form-control-sm2" id="ea-addr" value="${a.Address}"></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Active</label><select class="form-control-sm2" id="ea-active"><option value="Y" ${a.Active==='Y'?'selected':''}>Yes</option><option value="N" ${a.Active==='N'?'selected':''}>No</option></select></div>
+      <div class="form-group"><label class="form-label-sm">New Password (blank=keep)</label><input class="form-control-sm2" id="ea-pass" type="password"></div></div>`,
+      `<button class="btn-primary-custom bg-master" onclick="saveEditAgency('${code}')">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`
+    );
+  }
+
+  function saveEditAgency(code) {
+    const updates={
+      AgencyName:document.getElementById('ea-name').value,
+      Telephone:document.getElementById('ea-tel').value,
+      Email:document.getElementById('ea-email').value,
+      Master:document.getElementById('ea-master').value,
+      Address:document.getElementById('ea-addr').value,
+      Active:document.getElementById('ea-active').value,
+      UpdateUser:masterAgency.UserName
+    };
+    const np=document.getElementById('ea-pass').value;
+    if(np) updates.Password=np;
+    DB.update('agencies','AgencyCode',code,updates);
+    closeModal(); showView('agencies', document.querySelector('[data-view="agencies"]'));
+    toast('Agency updated!','success');
+  }
+
+  // ── CLIENT ─────────────────────────────────────────────
+  // ClientCode typed manually (auto-uppercase), no Username/Password, all required
+  function openAddClient() {
+    openModal('Add Client',`
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Client Code <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="ac-code" placeholder="e.g. CL006" oninput="this.value=this.value.toUpperCase()" style="font-family:monospace;font-weight:600"></div>
+        <div class="form-group"><label class="form-label-sm">Client Name <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="ac-name"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Agency <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="ac-agency">${agencyOptions()}</select></div>
+        <div class="form-group"><label class="form-label-sm">Telephone <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="ac-tel"></div>
+      </div>
+      <div class="form-group"><label class="form-label-sm">Email <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="ac-email" type="email"></div>
+      <div class="form-group"><label class="form-label-sm">Address <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="ac-addr"></div>`,
+      `<button class="btn-primary-custom bg-master" onclick="saveAddClient()">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`
+    );
+  }
+
+  function saveAddClient() {
+    const code   = document.getElementById('ac-code').value.trim().toUpperCase();
+    const name   = document.getElementById('ac-name').value.trim();
+    const agency = document.getElementById('ac-agency').value;
+    const tel    = document.getElementById('ac-tel').value.trim();
+    const email  = document.getElementById('ac-email').value.trim();
+    const addr   = document.getElementById('ac-addr').value.trim();
+    if (!code || !name || !agency || !tel || !email || !addr) {
+      toast('All fields are required.', 'error'); return;
+    }
+    if (DB.findOne('clients', {ClientCode: code})) {
+      toast('Client Code "' + code + '" already exists.', 'error'); return;
+    }
+    DB.insert('clients',{
+      ClientCode: code, AgencyCode: agency,
+      ClientName: name, Address: addr,
+      Telephone: tel, Email: email,
+      Date: new Date().toISOString().split('T')[0],
+      Active: 'Y', UserName: '', Password: ''
+    });
+    closeModal(); showView('clients', document.querySelector('[data-view="clients"]'));
+    toast('Client ' + code + ' added!', 'success');
+  }
+
+  function openEditClient(code) {
+    const c=DB.findOne('clients',{ClientCode:code});if(!c)return;
+    openModal('Edit Client — '+code,`
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Client Name</label><input class="form-control-sm2" id="ec-name" value="${c.ClientName}"></div>
+      <div class="form-group"><label class="form-label-sm">Agency</label><select class="form-control-sm2" id="ec-agency">${agencyOptions(c.AgencyCode)}</select></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Telephone</label><input class="form-control-sm2" id="ec-tel" value="${c.Telephone}"></div>
+      <div class="form-group"><label class="form-label-sm">Email</label><input class="form-control-sm2" id="ec-email" value="${c.Email}"></div></div>
+      <div class="form-group"><label class="form-label-sm">Address</label><input class="form-control-sm2" id="ec-addr" value="${c.Address}"></div>
+      <div class="form-group"><label class="form-label-sm">Active</label><select class="form-control-sm2" id="ec-active"><option value="Y" ${c.Active==='Y'?'selected':''}>Yes</option><option value="N" ${c.Active==='N'?'selected':''}>No</option></select></div>`,
+      `<button class="btn-primary-custom bg-master" onclick="saveEditClient('${code}')">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`
+    );
+  }
+
+  function saveEditClient(code) {
+    DB.update('clients','ClientCode',code,{
+      ClientName:document.getElementById('ec-name').value,
+      AgencyCode:document.getElementById('ec-agency').value,
+      Telephone:document.getElementById('ec-tel').value,
+      Email:document.getElementById('ec-email').value,
+      Address:document.getElementById('ec-addr').value,
+      Active:document.getElementById('ec-active').value
+    });
+    closeModal(); showView('clients', document.querySelector('[data-view="clients"]'));
+    toast('Client updated!','success');
+  }
+
+  // ── PROPERTY ───────────────────────────────────────────
+  // Agency first, then Client cascaded to selected agency
+  function openAddProperty() {
+    openModal('Add Property',`
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Property Code <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="ap-code" placeholder="e.g. PR001" oninput="this.value=this.value.toUpperCase()" style="font-family:monospace;font-weight:600"></div>
+        <div class="form-group"><label class="form-label-sm">Property Name <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="ap-name"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Agency <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="ap-agency" onchange="cascadeClients('ap-agency','ap-client')">${agencyOptions()}</select></div>
+        <div class="form-group"><label class="form-label-sm">Client <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="ap-client"></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Type <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="ap-type"><option>Apartment</option><option>Villa</option><option>Loft</option><option>Condo</option><option>House</option><option>Suite</option><option>Commercial</option></select></div>
+        <div class="form-group"><label class="form-label-sm">Currency <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="ap-curr"><option>USD</option><option>EUR</option><option>GBP</option><option>CAD</option></select></div>
+      </div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Country <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="ap-country" value="USA"></div>
+      <div class="form-group"><label class="form-label-sm">City <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="ap-city"></div></div>
+      <div class="form-group"><label class="form-label-sm">Location / Address <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="ap-loc"></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Manager <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="ap-mgr"></div>
+      <div class="form-group"><label class="form-label-sm">Manager Phone <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="ap-mgrph"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Utilities? <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="ap-util"><option value="Y">Yes</option><option value="N">No</option></select></div>
+      <div class="form-group"><label class="form-label-sm">Notes</label><input class="form-control-sm2" id="ap-note"></div></div>`,
+      `<button class="btn-primary-custom bg-master" onclick="saveAddProperty()">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`,true
+    );
+    setTimeout(() => cascadeClients('ap-agency', 'ap-client'), 50);
+  }
+
+  function saveAddProperty() {
+    const code = document.getElementById('ap-code').value.trim().toUpperCase();
+    const name = document.getElementById('ap-name').value.trim();
+    const city = document.getElementById('ap-city').value.trim();
+    const country = document.getElementById('ap-country').value.trim();
+    const loc  = document.getElementById('ap-loc').value.trim();
+    const mgr  = document.getElementById('ap-mgr').value.trim();
+    const mgrph= document.getElementById('ap-mgrph').value.trim();
+    const client = document.getElementById('ap-client').value;
+    if (!code||!name||!city||!country||!loc||!mgr||!mgrph||!client) {
+      toast('All required fields must be filled.','error'); return;
+    }
+    if (DB.findOne('properties', {PropertyCode: code})) {
+      toast('Property Code "'+code+'" already exists.','error'); return;
+    }
+    DB.insert('properties',{
+      PropertyCode:code, PropertyName:name,
+      AgencyCode:document.getElementById('ap-agency').value,
+      ClientCode:client,
+      Country:country, City:city,
+      PropertyLocation:loc,
+      PropertyType:document.getElementById('ap-type').value,
+      Manager:mgr, ManagerPhone:mgrph,
+      Date:new Date().toISOString().split('T')[0],
+      Note:document.getElementById('ap-note').value,
+      PropertyPicture:'', UpdateUser:masterAgency.UserName,
+      Utilities:document.getElementById('ap-util').value,
+      Water:'0', Electric:'0', Gas:'0', Cable:'0',
+      Currency:document.getElementById('ap-curr').value, Active:'Y'
+    });
+    closeModal(); showView('properties', document.querySelector('[data-view="properties"]'));
+    toast('Property '+code+' added!','success');
+  }
+
+  function openEditProperty(code) {
+    const p=DB.findOne('properties',{PropertyCode:code});if(!p)return;
+    openModal('Edit Property — '+code,`
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Property Name</label><input class="form-control-sm2" id="ep-name" value="${p.PropertyName}"></div>
+        <div class="form-group"><label class="form-label-sm">Agency</label><select class="form-control-sm2" id="ep-agency" onchange="cascadeClients('ep-agency','ep-client')">${agencyOptions(p.AgencyCode)}</select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Client</label><select class="form-control-sm2" id="ep-client">${clientOptionsByAgency(p.AgencyCode, p.ClientCode)}</select></div>
+        <div class="form-group"><label class="form-label-sm">Type</label><select class="form-control-sm2" id="ep-type"><option ${p.PropertyType==='Apartment'?'selected':''}>Apartment</option><option ${p.PropertyType==='Villa'?'selected':''}>Villa</option><option ${p.PropertyType==='Loft'?'selected':''}>Loft</option><option ${p.PropertyType==='Condo'?'selected':''}>Condo</option><option ${p.PropertyType==='House'?'selected':''}>House</option><option ${p.PropertyType==='Suite'?'selected':''}>Suite</option><option ${p.PropertyType==='Commercial'?'selected':''}>Commercial</option></select></div>
+      </div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">City</label><input class="form-control-sm2" id="ep-city" value="${p.City}"></div>
+      <div class="form-group"><label class="form-label-sm">Country</label><input class="form-control-sm2" id="ep-country" value="${p.Country}"></div></div>
+      <div class="form-group"><label class="form-label-sm">Location</label><input class="form-control-sm2" id="ep-loc" value="${p.PropertyLocation}"></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Manager</label><input class="form-control-sm2" id="ep-mgr" value="${p.Manager}"></div>
+      <div class="form-group"><label class="form-label-sm">Phone</label><input class="form-control-sm2" id="ep-mgrph" value="${p.ManagerPhone}"></div></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Utilities?</label><select class="form-control-sm2" id="ep-util"><option value="Y" ${p.Utilities==='Y'?'selected':''}>Yes</option><option value="N" ${p.Utilities==='N'?'selected':''}>No</option></select></div>
+        <div class="form-group"><label class="form-label-sm">Active</label><select class="form-control-sm2" id="ep-active"><option value="Y" ${p.Active==='Y'?'selected':''}>Yes</option><option value="N" ${p.Active==='N'?'selected':''}>No</option></select></div>
+      </div>`,
+      `<button class="btn-primary-custom bg-master" onclick="saveEditProperty('${code}')">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`,true
+    );
+  }
+
+  function saveEditProperty(code) {
+    DB.update('properties','PropertyCode',code,{
+      PropertyName:document.getElementById('ep-name').value,
+      AgencyCode:document.getElementById('ep-agency').value,
+      ClientCode:document.getElementById('ep-client').value,
+      PropertyType:document.getElementById('ep-type').value,
+      City:document.getElementById('ep-city').value,
+      Country:document.getElementById('ep-country').value,
+      PropertyLocation:document.getElementById('ep-loc').value,
+      Manager:document.getElementById('ep-mgr').value,
+      ManagerPhone:document.getElementById('ep-mgrph').value,
+      Utilities:document.getElementById('ep-util').value,
+      Active:document.getElementById('ep-active').value,
+      UpdateUser:masterAgency.UserName
+    });
+    closeModal(); showView('properties', document.querySelector('[data-view="properties"]'));
+    toast('Property updated!','success');
+  }
+
+  // ── UNIT ───────────────────────────────────────────────
+  function openAddUnit() {
+    openModal('Add Unit',`
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Property <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="au-prop">${propOptions()}</select></div>
+      <div class="form-group"><label class="form-label-sm">Unit Number <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="au-num" oninput="this.value=this.value.toUpperCase()"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Rent ($) <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="au-rent" type="number" min="0"></div>
+      <div class="form-group"><label class="form-label-sm">Deposit ($) <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="au-dep" type="number" min="0"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Bedrooms <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="au-bed" type="number" value="1" min="0"></div>
+      <div class="form-group"><label class="form-label-sm">Bathrooms <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="au-bath" type="number" value="1" min="0"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Floor <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="au-floor" type="number" value="1" min="0"></div>
+      <div class="form-group"><label class="form-label-sm">Status <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="au-status"><option value="Vacant">Vacant</option><option value="Occupied">Occupied</option></select></div></div>
+      <div class="form-group"><label class="form-label-sm">Notes</label><input class="form-control-sm2" id="au-note"></div>`,
+      `<button class="btn-primary-custom bg-master" onclick="saveAddUnit()">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`
+    );
+  }
+
+  function saveAddUnit() {
+    const unitNum = document.getElementById('au-num').value.trim().toUpperCase();
+    const rent    = document.getElementById('au-rent').value.trim();
+    const dep     = document.getElementById('au-dep').value.trim();
+    const bed     = document.getElementById('au-bed').value.trim();
+    const bath    = document.getElementById('au-bath').value.trim();
+    const floor   = document.getElementById('au-floor').value.trim();
+    if (!unitNum||rent===''||dep===''||bed===''||bath===''||floor==='') {
+      toast('All required fields must be filled.','error'); return;
+    }
+    const code=DB.nextCode('propunits','UnitCode','UN');
+    DB.insert('propunits',{
+      UnitCode:code, PropertyCode:document.getElementById('au-prop').value,
+      UnitNumber:unitNum,
+      RentAmount:parseFloat(rent)||0,
+      DepositAmount:parseFloat(dep)||0,
+      UnitStatus:document.getElementById('au-status').value,
+      Date:new Date().toISOString().split('T')[0],
+      Note:document.getElementById('au-note').value,
+      Bedrooms:parseInt(bed)||1,
+      Bathrooms:parseInt(bath)||1,
+      Floor:parseInt(floor)||1,
+      Active:'Y'
+    });
+    closeModal(); showView('units', document.querySelector('[data-view="units"]'));
+    toast('Unit '+code+' added!','success');
+  }
+
+  // ── UNITS UPLOAD ────────────────────────────────────────
+  function openUnitsUpload() {
+    openModal('Units Upload', `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:10px 12px;background:#fff5f5;border-radius:8px;border:1px solid #f5c6c6">
+        <i class="fa-solid fa-circle-info" style="color:#9b0000;font-size:1.1rem"></i>
+        <span style="font-size:.85rem;color:#555;flex:1">Download the template, fill in unit details, then upload. PropertyCode must exist in the system.</span>
+        <button type="button" class="btn-primary-custom bg-master" style="padding:5px 14px;font-size:.8rem;white-space:nowrap" onclick="downloadUnitTemplate()">
+          <i class="fa-solid fa-file-arrow-down"></i> Unit Upload Template
+        </button>
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">Select File (Excel .xlsx / .xls or CSV) *</label>
+        <input class="form-control-sm2" id="uu-file" type="file" accept=".xlsx,.xls,.csv" onchange="previewUnitsUpload()">
+      </div>
+      <div id="uu-preview" style="margin-top:4px"></div>`,
+      `<button class="btn-primary-custom bg-master" id="uu-save-btn" onclick="saveUnitsUpload()" style="display:none"><i class="fa-solid fa-upload"></i> Import Units</button><button class="btn-back" onclick="closeModal()">Cancel</button>`,
+      true
+    );
+  }
+
+  function downloadUnitTemplate() {
+    if (typeof XLSX === 'undefined') { toast('Excel library not loaded yet.','error'); return; }
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['PropertyCode','UnitNumber','RentAmount','DepositAmount','Bedrooms','Bathrooms','Floor','UnitStatus'],
+      ['PR001','101','1200.00','2400.00','2','1','1','Vacant'],
+      ['PR001','102','1100.00','2200.00','1','1','2','Vacant']
+    ]);
+    ws['!cols'] = [{wch:14},{wch:12},{wch:12},{wch:14},{wch:10},{wch:10},{wch:8},{wch:12}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Units');
+    XLSX.writeFile(wb, 'Unit_Upload_Template.xlsx');
+  }
+
+  function previewUnitsUpload() {
+    const file = document.getElementById('uu-file').files[0];
+    if (!file) return;
+    document.getElementById('uu-preview').innerHTML = '<div style="padding:10px;font-size:.84rem;color:#888"><i class="fa-solid fa-spinner fa-spin"></i> Reading file…</div>';
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:'', raw:false});
+        window._unitUploadRows = rows;
+        renderUnitsPreview(rows);
+      } catch(err) {
+        document.getElementById('uu-preview').innerHTML = `<div style="color:#d62828;padding:10px;font-size:.85rem"><i class="fa-solid fa-triangle-exclamation"></i> Error: ${err.message}</div>`;
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function renderUnitsPreview(rows) {
+    const allPropCodes = P().map(p => p.PropertyCode);
+    const seen = {};
+    let validCount = 0;
+    const rowData = rows.map((row) => {
+      const errors = [];
+      const propCode = String(row.PropertyCode||'').trim();
+      const unitNum  = String(row.UnitNumber||'').trim();
+      if (!propCode) errors.push('PropertyCode required');
+      else if (!allPropCodes.includes(propCode)) errors.push('PropertyCode not found');
+      if (!unitNum) errors.push('UnitNumber required');
+      else if (propCode && allPropCodes.includes(propCode)) {
+        if (DB.find('propunits',{PropertyCode:propCode}).some(u=>String(u.UnitNumber)===unitNum)) errors.push('Unit already exists');
+        const bk = propCode+'|'+unitNum;
+        if (seen[bk]) errors.push('Duplicate in file'); else seen[bk]=true;
+      }
+      if (row.RentAmount===''    || isNaN(Number(row.RentAmount)))    errors.push('Invalid RentAmount');
+      if (row.DepositAmount==='' || isNaN(Number(row.DepositAmount))) errors.push('Invalid DepositAmount');
+      if (row.Bedrooms===''      || isNaN(Number(row.Bedrooms)))      errors.push('Invalid Bedrooms');
+      if (row.Bathrooms===''     || isNaN(Number(row.Bathrooms)))     errors.push('Invalid Bathrooms');
+      if (row.Floor===''         || isNaN(Number(row.Floor)))         errors.push('Invalid Floor');
+      const valid = errors.length === 0;
+      if (valid) validCount++;
+      return {row, propCode, unitNum, valid, errors};
+    });
+    let html = `<div style="font-size:.82rem;margin-bottom:6px"><strong>${rows.length}</strong> row(s) &nbsp;|&nbsp; <strong style="color:#2d9b59">${validCount} valid</strong> &nbsp;|&nbsp; <strong style="color:#d62828">${rows.length-validCount} errors</strong></div>`;
+    html += `<div style="overflow-x:auto"><table class="data-table" style="font-size:.76rem"><thead><tr><th>#</th><th>PropertyCode</th><th>UnitNumber</th><th>Rent</th><th>Deposit</th><th>Bed</th><th>Bath</th><th>Floor</th><th>Status</th><th>Validation</th></tr></thead><tbody>`;
+    rowData.forEach(({row,propCode,unitNum,valid,errors},i) => {
+      html += `<tr style="background:${valid?'':'#fff5f5'}"><td>${i+1}</td><td style="font-family:monospace">${propCode}</td><td>${unitNum}</td><td>${row.RentAmount}</td><td>${row.DepositAmount}</td><td>${row.Bedrooms}</td><td>${row.Bathrooms}</td><td>${row.Floor}</td><td>${String(row.UnitStatus||'Vacant')}</td><td style="color:${valid?'#2d9b59':'#d62828'};font-size:.78rem">${valid?'<i class="fa-solid fa-check"></i> OK':errors.join('; ')}</td></tr>`;
+    });
+    html += `</tbody></table></div>`;
+    if (rows.length-validCount>0) html += `<div style="font-size:.78rem;color:#888;margin-top:6px"><i class="fa-solid fa-circle-info"></i> Only valid rows will be imported.</div>`;
+    document.getElementById('uu-preview').innerHTML = html;
+    const btn = document.getElementById('uu-save-btn');
+    if (btn) { btn.style.display = validCount>0?'':'none'; btn.innerHTML=`<i class="fa-solid fa-upload"></i> Import ${validCount} Unit(s)`; }
+    window._unitUploadRowData = rowData;
+  }
+
+  function saveUnitsUpload() {
+    const rowData = window._unitUploadRowData||[];
+    const seen = {};
+    let count = 0;
+    rowData.forEach(({row,propCode,unitNum,valid}) => {
+      if (!valid) return;
+      const bk = propCode+'|'+unitNum;
+      if (seen[bk]) return; seen[bk]=true;
+      const code = DB.nextCode('propunits','UnitCode','UN');
+      DB.insert('propunits',{
+        UnitCode:code, PropertyCode:propCode, UnitNumber:unitNum,
+        RentAmount:parseFloat(row.RentAmount)||0, DepositAmount:parseFloat(row.DepositAmount)||0,
+        UnitStatus:String(row.UnitStatus||'Vacant'),
+        Bedrooms:parseInt(row.Bedrooms)||1, Bathrooms:parseInt(row.Bathrooms)||1, Floor:parseInt(row.Floor)||1,
+        Date:new Date().toISOString().split('T')[0], Note:'', Active:'Y'
+      });
+      count++;
+    });
+    closeModal();
+    showView('units', document.querySelector('[data-view="units"]'));
+    toast(`${count} unit(s) imported successfully!`,'success');
+  }
+
+  function openEditUnit(code) {
+    const u=DB.findOne('propunits',{UnitCode:code});if(!u)return;
+    openModal('Edit Unit — '+code,`
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Unit Number</label><input class="form-control-sm2" id="eu-num" value="${u.UnitNumber}"></div>
+      <div class="form-group"><label class="form-label-sm">Status</label><select class="form-control-sm2" id="eu-status"><option value="Vacant" ${u.UnitStatus==='Vacant'?'selected':''}>Vacant</option><option value="Occupied" ${u.UnitStatus==='Occupied'?'selected':''}>Occupied</option></select></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Rent ($)</label><input class="form-control-sm2" id="eu-rent" type="number" value="${u.RentAmount}"></div>
+      <div class="form-group"><label class="form-label-sm">Deposit ($)</label><input class="form-control-sm2" id="eu-dep" type="number" value="${u.DepositAmount}"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Bedrooms</label><input class="form-control-sm2" id="eu-bed" type="number" value="${u.Bedrooms}"></div>
+      <div class="form-group"><label class="form-label-sm">Bathrooms</label><input class="form-control-sm2" id="eu-bath" type="number" value="${u.Bathrooms}"></div></div>
+      <div class="form-group"><label class="form-label-sm">Active</label><select class="form-control-sm2" id="eu-active"><option value="Y" ${u.Active==='Y'?'selected':''}>Yes</option><option value="N" ${u.Active==='N'?'selected':''}>No</option></select></div>`,
+      `<button class="btn-primary-custom bg-master" onclick="saveEditUnit('${code}')">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`
+    );
+  }
+
+  function saveEditUnit(code) {
+    DB.update('propunits','UnitCode',code,{
+      UnitNumber:document.getElementById('eu-num').value,
+      UnitStatus:document.getElementById('eu-status').value,
+      RentAmount:parseFloat(document.getElementById('eu-rent').value)||0,
+      DepositAmount:parseFloat(document.getElementById('eu-dep').value)||0,
+      Bedrooms:parseInt(document.getElementById('eu-bed').value)||1,
+      Bathrooms:parseInt(document.getElementById('eu-bath').value)||1,
+      Active:document.getElementById('eu-active').value
+    });
+    closeModal(); showView('units', document.querySelector('[data-view="units"]'));
+    toast('Unit updated!','success');
+  }
+
+  // ── TENANT ─────────────────────────────────────────────
+  // Only vacant units shown; Rent & Deposit auto-pulled from unit; no Username/Password
+  function openAddTenant() {
+    const today=new Date().toISOString().split('T')[0];
+    openModal('Add Tenant',`
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">First Name <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="at-first"></div>
+      <div class="form-group"><label class="form-label-sm">Last Name <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="at-last"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">ID Number <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="at-idnum"></div>
+      <div class="form-group"><label class="form-label-sm">Telephone <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="at-tel"></div></div>
+      <div class="form-group"><label class="form-label-sm">Email <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="at-email" type="email"></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Property <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="at-prop" onchange="loadUnitsMaster()">${propOptions()}</select></div>
+      <div class="form-group"><label class="form-label-sm">Unit (Vacant only) <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="at-unit" onchange="fillRentDeposit()"></select></div></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Rent ($)</label><input class="form-control-sm2" id="at-rent" type="number" readonly style="background:#f5f5f5"></div>
+        <div class="form-group"><label class="form-label-sm">Deposit ($)</label><input class="form-control-sm2" id="at-dep" type="number" readonly style="background:#f5f5f5"></div>
+      </div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Frequency <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="at-freq"><option>Monthly</option><option>Quarterly</option><option>SemiAnnually</option><option>Annually</option></select></div>
+      <div class="form-group"><label class="form-label-sm">Move-in Date <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="at-movein" type="date" value="${today}"></div></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Photograph</label><input class="form-control-sm2" id="at-photo" type="file" accept=".jpg,.jpeg,.png"></div>
+        <div class="form-group"><label class="form-label-sm">ID Copy</label><input class="form-control-sm2" id="at-idcopy" type="file" accept=".pdf,.jpg,.jpeg,.png"></div>
+      </div>
+      <div class="form-group"><label class="form-label-sm">Rent Agreement</label><input class="form-control-sm2" id="at-agrmt" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"></div>`,
+      `<button class="btn-primary-custom bg-master" onclick="saveAddTenant()">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`,true
+    );
+    setTimeout(()=>loadUnitsMaster(),50);
+  }
+
+  function loadUnitsMaster() {
+    const pc = document.getElementById('at-prop').value;
+    const units = DB.find('propunits', {PropertyCode: pc}).filter(u => u.UnitStatus === 'Vacant');
+    document.getElementById('at-unit').innerHTML = units.map(u =>
+      `<option value="${u.UnitCode}" data-rent="${u.RentAmount}" data-dep="${u.DepositAmount}">Unit ${u.UnitNumber}</option>`
+    ).join('') || '<option value="">— No vacant units —</option>';
+    fillRentDeposit();
+  }
+
+  function fillRentDeposit() {
+    const sel = document.getElementById('at-unit');
+    if (!sel) return;
+    const opt = sel.options[sel.selectedIndex];
+    if (opt && opt.dataset.rent !== undefined) {
+      document.getElementById('at-rent').value = opt.dataset.rent;
+      document.getElementById('at-dep').value  = opt.dataset.dep;
+    } else {
+      document.getElementById('at-rent').value = '';
+      document.getElementById('at-dep').value  = '';
+    }
+  }
+
+  function readFile(file) {
+    return new Promise(resolve => {
+      if (!file) { resolve(''); return; }
+      const r = new FileReader(); r.onload = e => resolve(e.target.result); r.readAsDataURL(file);
+    });
+  }
+
+  async function saveAddTenant() {
+    const first   = document.getElementById('at-first').value.trim();
+    const last    = document.getElementById('at-last').value.trim();
+    const idnum   = document.getElementById('at-idnum').value.trim();
+    const tel     = document.getElementById('at-tel').value.trim();
+    const email   = document.getElementById('at-email').value.trim();
+    const propCode= document.getElementById('at-prop').value;
+    const unitCode= document.getElementById('at-unit').value;
+    const movein  = document.getElementById('at-movein').value;
+    if (!first||!last||!idnum||!tel||!email||!unitCode||!movein) {
+      toast('All required fields must be filled.','error'); return;
+    }
+    if (!unitCode || unitCode === '') {
+      toast('No vacant unit selected.','error'); return;
+    }
+    const [photo, idcopy, agrmt] = await Promise.all([
+      readFile(document.getElementById('at-photo').files[0]),
+      readFile(document.getElementById('at-idcopy').files[0]),
+      readFile(document.getElementById('at-agrmt').files[0])
+    ]);
+    const id  = DB.nextCode('tenants','TenantID','T');
+    const num = 'TN-'+new Date().getFullYear()+'-'+String(DB.getAll('tenants').length+1).padStart(3,'0');
+    DB.insert('tenants',{
+      TenantID:id, TenantNumber:num,
+      PropertyCode:propCode, UnitCode:unitCode,
+      FirstName:first, LastName:last,
+      IDNumber:idnum, Address:'',
+      Telephone:tel, Email:email,
+      Photograph:photo,
+      RentAmount:parseFloat(document.getElementById('at-rent').value)||0,
+      RentFrequency:document.getElementById('at-freq').value,
+      DepositAmount:parseFloat(document.getElementById('at-dep').value)||0,
+      MoveInDate:movein, MoveOutDate:'',
+      IDCopy:idcopy, RentAgreement:agrmt, Active:'Y',
+      UserName:'', Password:'',
+      UpdateUser:masterAgency.UserName
+    });
+    DB.update('propunits','UnitCode',unitCode,{UnitStatus:'Occupied'});
+    closeModal(); showView('tenants', document.querySelector('[data-view="tenants"]'));
+    toast('Tenant '+id+' added!','success');
+  }
+
+  // ── TENANTS UPLOAD ──────────────────────────────────────
+  function openTenantsUpload() {
+    openModal('Tenants Upload', `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:10px 12px;background:#fff5f5;border-radius:8px;border:1px solid #f5c6c6">
+        <i class="fa-solid fa-circle-info" style="color:#9b0000;font-size:1.1rem"></i>
+        <span style="font-size:.85rem;color:#555;flex:1">Download the template, fill in tenant details, then upload. Photographs, ID copies and agreements can be attached individually after import.</span>
+        <button type="button" class="btn-primary-custom bg-master" style="padding:5px 14px;font-size:.8rem;white-space:nowrap" onclick="downloadTenantTemplate()">
+          <i class="fa-solid fa-file-arrow-down"></i> Tenants Upload Template
+        </button>
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">Select File (Excel .xlsx / .xls or CSV) *</label>
+        <input class="form-control-sm2" id="tu-file" type="file" accept=".xlsx,.xls,.csv" onchange="previewTenantsUpload()">
+      </div>
+      <div id="tu-preview" style="margin-top:4px"></div>`,
+      `<button class="btn-primary-custom bg-master" id="tu-save-btn" onclick="saveTenantsUpload()" style="display:none"><i class="fa-solid fa-upload"></i> Import Tenants</button><button class="btn-back" onclick="closeModal()">Cancel</button>`,
+      true
+    );
+  }
+
+  function downloadTenantTemplate() {
+    if (typeof XLSX === 'undefined') { toast('Excel library not loaded yet.','error'); return; }
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['FirstName','LastName','IDNumber','Telephone','Email','PropertyCode','UnitNumber','RentAmount','DepositAmount','RentFrequency','MoveInDate'],
+      ['John','Doe','ID123456','555-0100','john.doe@email.com','PR001','101','1200.00','2400.00','Monthly','2026-04-01'],
+      ['Jane','Smith','ID789012','555-0200','jane.smith@email.com','PR001','102','1100.00','2200.00','Monthly','2026-04-01']
+    ]);
+    ws['!cols'] = [{wch:12},{wch:12},{wch:12},{wch:13},{wch:22},{wch:14},{wch:12},{wch:12},{wch:13},{wch:14},{wch:12}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Tenants');
+    const notesWs = XLSX.utils.aoa_to_sheet([
+      ['Field','Allowed Values / Notes'],
+      ['FirstName','Text — required'],['LastName','Text — required'],['IDNumber','Text — required'],
+      ['Telephone','Text — required'],['Email','Valid email — required'],
+      ['PropertyCode','Must match an existing Property Code in the system'],
+      ['UnitNumber','Must match an existing VACANT Unit Number within the specified property'],
+      ['RentAmount','Auto-filled from unit — or override here (number)'],
+      ['DepositAmount','Number (e.g. 2400.00)'],
+      ['RentFrequency','Monthly | Quarterly | SemiAnnually | Annually'],
+      ['MoveInDate','Date in YYYY-MM-DD format (e.g. 2026-04-01)']
+    ]);
+    notesWs['!cols'] = [{wch:16},{wch:58}];
+    XLSX.utils.book_append_sheet(wb, notesWs, 'Field Notes');
+    XLSX.writeFile(wb, 'Tenants_Upload_Template.xlsx');
+  }
+
+  function previewTenantsUpload() {
+    const file = document.getElementById('tu-file').files[0];
+    if (!file) return;
+    document.getElementById('tu-preview').innerHTML = '<div style="padding:10px;font-size:.84rem;color:#888"><i class="fa-solid fa-spinner fa-spin"></i> Reading file…</div>';
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:'', raw:false});
+        window._tenantUploadRows = rows;
+        renderTenantsPreview(rows);
+      } catch(err) {
+        document.getElementById('tu-preview').innerHTML = `<div style="color:#d62828;padding:10px;font-size:.85rem"><i class="fa-solid fa-triangle-exclamation"></i> Error: ${err.message}</div>`;
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function mNormDate(val) {
+    const s = String(val||'').trim();
+    if (!s) return '';
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? s : d.toISOString().split('T')[0];
+  }
+
+  function renderTenantsPreview(rows) {
+    const allPropCodes = P().map(p => p.PropertyCode);
+    const FREQ = ['Monthly','Quarterly','SemiAnnually','Annually'];
+    let validCount = 0;
+    const rowData = rows.map((row) => {
+      const errors = [];
+      const propCode = String(row.PropertyCode||'').trim();
+      const unitNum  = String(row.UnitNumber||'').trim();
+      if (!String(row.FirstName||'').trim()) errors.push('FirstName required');
+      if (!String(row.LastName||'').trim())  errors.push('LastName required');
+      if (!String(row.IDNumber||'').trim())  errors.push('IDNumber required');
+      if (!String(row.Telephone||'').trim()) errors.push('Telephone required');
+      if (!String(row.Email||'').trim())     errors.push('Email required');
+      if (!propCode) errors.push('PropertyCode required');
+      else if (!allPropCodes.includes(propCode)) errors.push('PropertyCode not found');
+      let resolvedUnitCode = '', resolvedRent = 0, resolvedDep = 0;
+      if (!unitNum) errors.push('UnitNumber required');
+      else if (propCode && allPropCodes.includes(propCode)) {
+        const unit = DB.find('propunits',{PropertyCode:propCode}).find(u=>String(u.UnitNumber)===unitNum);
+        if (!unit) errors.push(`Unit ${unitNum} not found in ${propCode}`);
+        else if (unit.UnitStatus==='Occupied') errors.push(`Unit ${unitNum} is already Occupied`);
+        else { resolvedUnitCode=unit.UnitCode; resolvedRent=Number(unit.RentAmount); resolvedDep=Number(unit.DepositAmount); }
+      }
+      const freq = String(row.RentFrequency||'').trim();
+      if (!freq) errors.push('RentFrequency required');
+      else if (!FREQ.includes(freq)) errors.push(`RentFrequency: ${FREQ.join(' | ')}`);
+      const nd = mNormDate(row.MoveInDate);
+      if (!nd) errors.push('MoveInDate required');
+      else if (isNaN(Date.parse(nd))) errors.push('Invalid MoveInDate');
+      const effectiveRent = (row.RentAmount!=='' && !isNaN(Number(row.RentAmount))) ? parseFloat(row.RentAmount) : resolvedRent;
+      const effectiveDep  = (row.DepositAmount!=='' && !isNaN(Number(row.DepositAmount))) ? parseFloat(row.DepositAmount) : resolvedDep;
+      const valid = errors.length === 0;
+      if (valid) validCount++;
+      return {row, propCode, unitNum, resolvedUnitCode, effectiveRent, effectiveDep, normDate:nd, valid, errors};
+    });
+    let html = `<div style="font-size:.82rem;margin-bottom:6px"><strong>${rows.length}</strong> row(s) &nbsp;|&nbsp; <strong style="color:#2d9b59">${validCount} valid</strong> &nbsp;|&nbsp; <strong style="color:#d62828">${rows.length-validCount} errors</strong></div>`;
+    html += `<div style="overflow-x:auto"><table class="data-table" style="font-size:.76rem"><thead><tr><th>#</th><th>Name</th><th>ID Number</th><th>Email</th><th>PropertyCode</th><th>Unit</th><th>Rent</th><th>Freq</th><th>Move-in</th><th>Validation</th></tr></thead><tbody>`;
+    rowData.forEach(({row,propCode,unitNum,normDate:nd,effectiveRent,valid,errors},i) => {
+      html += `<tr style="background:${valid?'':'#fff5f5'}"><td>${i+1}</td><td><strong>${String(row.FirstName||'')} ${String(row.LastName||'')}</strong></td><td style="font-family:monospace;font-size:.74rem">${row.IDNumber||''}</td><td style="font-size:.74rem">${row.Email||''}</td><td style="font-family:monospace">${propCode}</td><td>${unitNum}</td><td>${fmtMoney(effectiveRent)}</td><td>${row.RentFrequency||''}</td><td>${nd||row.MoveInDate||''}</td><td style="color:${valid?'#2d9b59':'#d62828'};font-size:.78rem;min-width:140px">${valid?'<i class="fa-solid fa-check"></i> OK':errors.join('; ')}</td></tr>`;
+    });
+    html += `</tbody></table></div>`;
+    if (rows.length-validCount>0) html += `<div style="font-size:.78rem;color:#888;margin-top:6px"><i class="fa-solid fa-circle-info"></i> Only valid rows imported. Units will be marked Occupied. Photos/documents can be attached via Edit Tenant.</div>`;
+    document.getElementById('tu-preview').innerHTML = html;
+    const btn = document.getElementById('tu-save-btn');
+    if (btn) { btn.style.display = validCount>0?'':'none'; btn.innerHTML=`<i class="fa-solid fa-upload"></i> Import ${validCount} Tenant(s)`; }
+    window._tenantUploadRowData = rowData;
+  }
+
+  function saveTenantsUpload() {
+    const rowData = window._tenantUploadRowData||[];
+    let count = 0;
+    rowData.forEach(({valid, row, propCode, resolvedUnitCode, effectiveRent, effectiveDep, normDate:nd}) => {
+      if (!valid) return;
+      const id  = DB.nextCode('tenants','TenantID','T');
+      const num = 'TN-'+new Date().getFullYear()+'-'+String(DB.getAll('tenants').length+1).padStart(3,'0');
+      DB.insert('tenants',{
+        TenantID:id, TenantNumber:num, PropertyCode:propCode, UnitCode:resolvedUnitCode,
+        FirstName:String(row.FirstName||'').trim(), LastName:String(row.LastName||'').trim(),
+        IDNumber:String(row.IDNumber||'').trim(), Address:'',
+        Telephone:String(row.Telephone||'').trim(), Email:String(row.Email||'').trim(),
+        Photograph:'', IDCopy:'', RentAgreement:'',
+        RentAmount:effectiveRent, RentFrequency:String(row.RentFrequency||'Monthly').trim(),
+        DepositAmount:effectiveDep, MoveInDate:nd, MoveOutDate:'', Active:'Y',
+        UserName:'', Password:'', UpdateUser:masterAgency.UserName
+      });
+      if (resolvedUnitCode) DB.update('propunits','UnitCode',resolvedUnitCode,{UnitStatus:'Occupied'});
+      count++;
+    });
+    closeModal();
+    showView('tenants', document.querySelector('[data-view="tenants"]'));
+    toast(`${count} tenant(s) imported successfully!`,'success');
+  }
+
+  function openEditTenant(id) {
+    const t=DB.findOne('tenants',{TenantID:id});if(!t)return;
+    openModal('Edit Tenant — '+t.TenantNumber,`
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">First Name</label><input class="form-control-sm2" id="et-first" value="${t.FirstName}"></div>
+      <div class="form-group"><label class="form-label-sm">Last Name</label><input class="form-control-sm2" id="et-last" value="${t.LastName}"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">ID Number</label><input class="form-control-sm2" id="et-idnum" value="${t.IDNumber}"></div>
+      <div class="form-group"><label class="form-label-sm">Telephone</label><input class="form-control-sm2" id="et-tel" value="${t.Telephone}"></div></div>
+      <div class="form-group"><label class="form-label-sm">Email</label><input class="form-control-sm2" id="et-email" value="${t.Email}"></div>
+      <div class="form-group"><label class="form-label-sm">Address</label><input class="form-control-sm2" id="et-addr" value="${t.Address||''}"></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Property</label><select class="form-control-sm2" id="et-prop">${propOptions(t.PropertyCode)}</select></div>
+      <div class="form-group"><label class="form-label-sm">Rent ($)</label><input class="form-control-sm2" id="et-rent" type="number" value="${t.RentAmount}"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Move-In</label><input class="form-control-sm2" id="et-movein" type="date" value="${t.MoveInDate||''}"></div>
+      <div class="form-group"><label class="form-label-sm">Move-Out</label><input class="form-control-sm2" id="et-moveout" type="date" value="${t.MoveOutDate||''}"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Active</label><select class="form-control-sm2" id="et-active"><option value="Y" ${t.Active==='Y'?'selected':''}>Yes</option><option value="N" ${t.Active==='N'?'selected':''}>No</option></select></div>
+      <div class="form-group"><label class="form-label-sm">New Password (blank=keep)</label><input class="form-control-sm2" id="et-pass" type="password"></div></div>`,
+      `<button class="btn-primary-custom bg-master" onclick="saveEditTenant('${id}')">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`,true
+    );
+  }
+
+  function saveEditTenant(id) {
+    const updates={
+      FirstName:document.getElementById('et-first').value,
+      LastName:document.getElementById('et-last').value,
+      IDNumber:document.getElementById('et-idnum').value,
+      Telephone:document.getElementById('et-tel').value,
+      Email:document.getElementById('et-email').value,
+      Address:document.getElementById('et-addr').value,
+      PropertyCode:document.getElementById('et-prop').value,
+      RentAmount:parseFloat(document.getElementById('et-rent').value)||0,
+      MoveInDate:document.getElementById('et-movein').value,
+      MoveOutDate:document.getElementById('et-moveout').value,
+      Active:document.getElementById('et-active').value,
+      UpdateUser:masterAgency.UserName
+    };
+    const np=document.getElementById('et-pass').value;
+    if(np) updates.Password=np;
+    DB.update('tenants','TenantID',id,updates);
+    closeModal(); showView('tenants', document.querySelector('[data-view="tenants"]'));
+    toast('Tenant updated!','success');
+  }
+
+  // ── POST TX ────────────────────────────────────────────
+  function ptCascadeClients() {
+    const ag = document.getElementById('pt-agency').value;
+    const cls = C().filter(c => c.AgencyCode === ag && c.Active === 'Y');
+    document.getElementById('pt-client').innerHTML = cls.length
+      ? cls.map(c=>`<option value="${c.ClientCode}">${c.ClientName} (${c.ClientCode})</option>`).join('')
+      : '<option value="">— No clients —</option>';
+    ptCascadeProperties();
+  }
+  function ptCascadeProperties() {
+    const cl = document.getElementById('pt-client').value;
+    const props = P().filter(p => p.ClientCode === cl && p.Active === 'Y');
+    document.getElementById('pt-prop').innerHTML = props.length
+      ? props.map(p=>`<option value="${p.PropertyCode}" data-curr="${p.Currency||'USD'}">${p.PropertyName} (${p.PropertyCode})</option>`).join('')
+      : '<option value="">— No properties —</option>';
+    ptCascadeTenants();
+  }
+  function ptCascadeTenants() {
+    const pc = document.getElementById('pt-prop').value;
+    const tens = T().filter(t => t.PropertyCode === pc && t.Active === 'Y');
+    document.getElementById('pt-tenant').innerHTML = tens.length
+      ? tens.map(t=>`<option value="${t.TenantID}">${t.FirstName} ${t.LastName} — ${t.TenantNumber}</option>`).join('')
+      : '<option value="">— No active tenants —</option>';
+    ptSetCurrency();
+  }
+  function ptSetCurrency() {
+    const propSel = document.getElementById('pt-prop');
+    const currSel = document.getElementById('pt-curr');
+    if (!propSel||!currSel) return;
+    const opt = propSel.options[propSel.selectedIndex];
+    const curr = opt ? (opt.dataset.curr||'USD') : 'USD';
+    for (let i=0;i<currSel.options.length;i++) {
+      if (currSel.options[i].value === curr) { currSel.selectedIndex=i; return; }
+    }
+    const o=document.createElement('option');
+    o.value=curr; o.textContent=curr; o.selected=true; currSel.appendChild(o);
+  }
+
+  function openPostTx() {
+    const today=new Date().toISOString().split('T')[0];
+    const firstAg = A()[0]||{};
+    openModal('Post Transaction',`
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Date <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="pt-date" type="date" value="${today}"></div>
+        <div class="form-group"><label class="form-label-sm">Agency <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="pt-agency" onchange="ptCascadeClients()">${agencyOptions()}</select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Client <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="pt-client" onchange="ptCascadeProperties()"><option value="">—</option></select></div>
+        <div class="form-group"><label class="form-label-sm">Property <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="pt-prop" onchange="ptCascadeTenants()"><option value="">—</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label-sm">Tenant <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="pt-tenant"><option value="">—</option></select></div>
+      <div class="form-group"><label class="form-label-sm">Description <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="pt-desc"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Amount (neg=debit) <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="pt-amt" type="number" step="0.01"></div>
+        <div class="form-group"><label class="form-label-sm">Currency</label><select class="form-control-sm2" id="pt-curr"><option>USD</option><option>EUR</option><option>GBP</option><option>CAD</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label-sm">Authenticated</label><select class="form-control-sm2" id="pt-auth"><option value="Y">Yes</option><option value="N">No</option></select></div>
+      <div class="form-group"><label class="form-label-sm">Note (optional)</label><textarea class="form-control-sm2" id="pt-note" rows="2" placeholder="Any additional notes..."></textarea></div>
+      <div class="form-group"><label class="form-label-sm">Document (optional)</label><input class="form-control-sm2" id="pt-doc" type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"></div>`,
+      `<button class="btn-primary-custom bg-master" onclick="savePostTx()">Post</button><button class="btn-back" onclick="closeModal()">Cancel</button>`,true
+    );
+    setTimeout(()=>ptCascadeClients(),50);
+  }
+
+  function savePostTx() {
+    const tenId = document.getElementById('pt-tenant').value;
+    const propCode = document.getElementById('pt-prop').value;
+    const desc  = document.getElementById('pt-desc').value.trim();
+    const amt   = parseFloat(document.getElementById('pt-amt').value);
+    const note  = document.getElementById('pt-note').value.trim();
+    const docInput = document.getElementById('pt-doc');
+    if (!tenId||!propCode||!desc||isNaN(amt)) { toast('Fill all required fields.','error'); return; }
+    function doInsert(docData) {
+      const ref=DB.nextTxRef();
+      DB.insert('transactions',{
+        Date:document.getElementById('pt-date').value,
+        TenantID:tenId, Authenticated:document.getElementById('pt-auth').value,
+        PropertyCode:propCode,
+        Description:desc, Amount:amt,
+        Currency:document.getElementById('pt-curr').value,
+        TransactionNote:note, TransactionDocument:docData, transactionRef:ref
+      });
+      closeModal(); showView('transactions', document.querySelector('[data-view="transactions"]'));
+      toast('Transaction '+ref+' posted!','success');
+    }
+    if(docInput.files[0]){const reader=new FileReader();reader.onload=e=>doInsert(e.target.result);reader.readAsDataURL(docInput.files[0]);}
+    else{doInsert('');}
+  }
+
+  // ── BULK POST TX ───────────────────────────────────────
+  function bpCascadeClients() {
+    const ag = document.getElementById('bp-agency').value;
+    const cls = C().filter(c => c.AgencyCode === ag && c.Active === 'Y');
+    document.getElementById('bp-client').innerHTML = cls.length
+      ? cls.map(c=>`<option value="${c.ClientCode}">${c.ClientName} (${c.ClientCode})</option>`).join('')
+      : '<option value="">— No clients —</option>';
+    bpCascadeProperties();
+  }
+  function bpCascadeProperties() {
+    const cl = document.getElementById('bp-client').value;
+    const props = P().filter(p => p.ClientCode === cl && p.Active === 'Y');
+    document.getElementById('bp-prop').innerHTML = props.length
+      ? props.map(p=>`<option value="${p.PropertyCode}" data-curr="${p.Currency||'USD'}">${p.PropertyName} (${p.PropertyCode})</option>`).join('')
+      : '<option value="">— No properties —</option>';
+    bpLoadTenants();
+  }
+  function bpLoadTenants() {
+    const pc = document.getElementById('bp-prop').value;
+    const tens = T().filter(t => t.PropertyCode === pc && t.Active === 'Y');
+    const rows = tens.map(t => {
+      const u = DB.findOne('propunits', {UnitCode: t.UnitCode}) || {};
+      return `<tr>
+        <td style="text-align:center;width:40px"><input type="checkbox" class="bulk-chk" value="${t.TenantID}" data-amt="${t.RentAmount}" data-prop="${t.PropertyCode}"></td>
+        <td><strong>${t.FirstName} ${t.LastName}</strong><br><span style="font-size:.75rem;color:#888">${t.TenantNumber}</span></td>
+        <td style="font-size:.82rem">Unit ${u.UnitNumber||'?'}</td>
+        <td style="font-weight:600">$${Number(t.RentAmount).toLocaleString()}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="4" style="text-align:center;padding:16px;color:#aaa">No active tenants for this property.</td></tr>';
+    document.getElementById('bp-tenant-list').innerHTML = rows;
+    // set currency from property
+    const propSel = document.getElementById('bp-prop');
+    const opt = propSel.options[propSel.selectedIndex];
+    const curr = opt ? (opt.dataset.curr||'USD') : 'USD';
+    const currSel = document.getElementById('bp-curr');
+    if (currSel) for (let i=0;i<currSel.options.length;i++) {
+      if (currSel.options[i].value===curr) { currSel.selectedIndex=i; break; }
+    }
+    document.querySelectorAll('.bulk-chk').forEach(cb => cb.addEventListener('change', updateBulkCount));
+    updateBulkCount();
+  }
+
+  function bulkSelectAll(checked) {
+    document.querySelectorAll('.bulk-chk').forEach(cb => { cb.checked = checked; });
+    updateBulkCount();
+  }
+
+  function updateBulkCount() {
+    const n = document.querySelectorAll('.bulk-chk:checked').length;
+    const el = document.getElementById('bp-count');
+    if (el) el.textContent = n + ' selected';
+  }
+
+  function openBulkPostTx() {
+    const today = new Date().toISOString().split('T')[0];
+    openModal('Bulk Post — Monthly Rent Charge', `
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Date <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="bp-date" type="date" value="${today}"></div>
+        <div class="form-group"><label class="form-label-sm">Description <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="bp-desc" value="Monthly Rent Charge"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Agency <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="bp-agency" onchange="bpCascadeClients()">${agencyOptions()}</select></div>
+        <div class="form-group"><label class="form-label-sm">Client <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="bp-client" onchange="bpCascadeProperties()"><option value="">—</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Property <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="bp-prop" onchange="bpLoadTenants()"><option value="">—</option></select></div>
+        <div class="form-group"><label class="form-label-sm">Currency</label><select class="form-control-sm2" id="bp-curr"><option>USD</option><option>EUR</option><option>GBP</option><option>CAD</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Authenticated</label><select class="form-control-sm2" id="bp-auth"><option value="N">No</option><option value="Y">Yes</option></select></div>
+        <div class="form-group"><label class="form-label-sm">Note (optional)</label><input class="form-control-sm2" id="bp-note" placeholder="e.g. April 2026 rent"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin:10px 0 6px">
+        <label class="form-label-sm" style="margin:0">Tenants on Selected Property</label>
+        <button type="button" style="font-size:.75rem;padding:2px 8px;border:1px solid #ddd;border-radius:4px;cursor:pointer;background:#f5f5f5" onclick="bulkSelectAll(true)">Select All</button>
+        <button type="button" style="font-size:.75rem;padding:2px 8px;border:1px solid #ddd;border-radius:4px;cursor:pointer;background:#f5f5f5" onclick="bulkSelectAll(false)">Deselect All</button>
+        <span id="bp-count" style="font-size:.78rem;color:#666;margin-left:auto">0 selected</span>
+      </div>
+      <div style="max-height:240px;overflow-y:auto;border:1px solid #e8e8e8;border-radius:6px">
+        <table class="data-table" style="margin:0">
+          <thead><tr><th style="width:40px"></th><th>Tenant</th><th>Unit</th><th>Rent</th></tr></thead>
+          <tbody id="bp-tenant-list"><tr><td colspan="4" style="text-align:center;padding:16px;color:#aaa">Select an agency, client and property first.</td></tr></tbody>
+        </table>
+      </div>`,
+      `<button class="btn-primary-custom bg-master" onclick="saveBulkPostTx()"><i class="fa-solid fa-paper-plane"></i> Post All Selected</button><button class="btn-back" onclick="closeModal()">Cancel</button>`,
+      true
+    );
+    setTimeout(()=>bpCascadeClients(), 50);
+  }
+
+  function saveBulkPostTx() {
+    const desc = document.getElementById('bp-desc').value.trim();
+    const date = document.getElementById('bp-date').value;
+    const curr = document.getElementById('bp-curr').value;
+    const auth = document.getElementById('bp-auth').value;
+    const note = document.getElementById('bp-note').value.trim();
+    const checked = Array.from(document.querySelectorAll('.bulk-chk:checked'));
+    if (!desc) { toast('Description is required.', 'error'); return; }
+    if (!checked.length) { toast('Select at least one tenant.', 'error'); return; }
+    let count = 0;
+    checked.forEach(cb => {
+      DB.insert('transactions', {
+        Date: date, TenantID: cb.value, Authenticated: auth,
+        PropertyCode: cb.dataset.prop, Description: desc,
+        Amount: parseFloat(cb.dataset.amt)||0, Currency: curr,
+        TransactionNote: note, TransactionDocument: '',
+        transactionRef: DB.nextTxRef()
+      });
+      count++;
+    });
+    closeModal();
+    showView('transactions', document.querySelector('[data-view="transactions"]'));
+    toast(count + ' rent transaction' + (count>1?'s':'') + ' posted successfully!', 'success');
+  }
+
+  function openResetModal() {
+    if(!confirm('RESET ALL DATA to defaults? This will erase everything and reload sample data. Continue?'))return;
+    DB.reset();
+    toast('Data has been reset to defaults.','info');
+    showView('dashboard', document.querySelector('[data-view="dashboard"]'));
+  }
+
+  function toast(msg,type='info') {
+    const c=document.getElementById('toast-container');
+    const d=document.createElement('div');
+    d.className=`toast-msg toast-${type}`;d.textContent=msg;
+    c.appendChild(d);setTimeout(()=>d.remove(),4000);
+  }
+
+  document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+  showView('dashboard', document.querySelector('[data-view="dashboard"]'));
+</script>
+</body>
+</html>

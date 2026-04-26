@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Property Management App — Training Manual</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 13pt; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1a1a2e;
+    background: #fff;
+    line-height: 1.65;
+    padding: 0;
+  }
+
+  /* ── Brand Colours ── */
+  :root {
+    --tenant:  #4361ee;
+    --client:  #2d9b59;
+    --agency:  #7209b7;
+    --master:  #d62828;
+    --accent:  #0f3460;
+    --light:   #f4f6fb;
+    --border:  #dde1ec;
+    --warn:    #e9870a;
+  }
+
+  /* ── Cover Page ── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 100%);
+    color: #fff;
+    text-align: center;
+    padding: 60px 40px;
+    page-break-after: always;
+  }
+  .cover-logo {
+    width: 90px; height: 90px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 22px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 28px;
+    font-size: 42px;
+  }
+  .cover h1 { font-size: 2.8rem; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 10px; }
+  .cover h2 { font-size: 1.3rem; font-weight: 400; opacity: 0.85; margin-bottom: 36px; }
+  .cover-divider {
+    width: 70px; height: 4px;
+    background: linear-gradient(90deg, var(--tenant), var(--client), var(--agency), var(--master));
+    border-radius: 2px; margin: 0 auto 36px;
+  }
+  .cover-meta { font-size: 0.92rem; opacity: 0.7; line-height: 2; }
+  .cover-roles {
+    display: flex; gap: 18px; flex-wrap: wrap; justify-content: center;
+    margin-top: 32px;
+  }
+  .role-pill {
+    padding: 7px 20px; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .pill-tenant { background: var(--tenant); }
+  .pill-client { background: var(--client); }
+  .pill-agency { background: var(--agency); }
+  .pill-master { background: var(--master); }
+
+  /* ── TOC ── */
+  .toc-page {
+    padding: 60px 72px;
+    page-break-after: always;
+  }
+  .toc-title {
+    font-size: 1.7rem; font-weight: 700; color: var(--accent);
+    border-bottom: 3px solid var(--accent); padding-bottom: 10px; margin-bottom: 28px;
+  }
+  .toc-section { margin-bottom: 6px; display: flex; align-items: baseline; gap: 8px; }
+  .toc-num { font-weight: 700; color: var(--accent); min-width: 32px; }
+  .toc-link { color: #1a1a2e; text-decoration: none; font-size: 0.97rem; flex: 1; }
+  .toc-link:hover { text-decoration: underline; }
+  .toc-dots { flex: 1; border-bottom: 1px dotted #aaa; margin: 0 6px; }
+  .toc-page-num { font-size: 0.88rem; color: #666; min-width: 20px; text-align: right; }
+  .toc-group { margin-top: 18px; }
+  .toc-group-title {
+    font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: #888; margin-bottom: 8px; font-weight: 600;
+  }
+  .toc-sub { padding-left: 24px; font-size: 0.92rem; }
+  .toc-sub .toc-num { font-weight: 500; font-size: 0.88rem; min-width: 42px; }
+
+  /* ── Content Layout ── */
+  .content { padding: 56px 72px; }
+  .chapter { page-break-before: always; }
+  .chapter:first-child { page-break-before: auto; }
+
+  /* ── Headings ── */
+  h1.ch { font-size: 1.9rem; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
+  h2.section { font-size: 1.25rem; font-weight: 700; color: var(--accent); margin: 30px 0 12px; border-left: 4px solid var(--accent); padding-left: 12px; }
+  h3.sub { font-size: 1.05rem; font-weight: 700; color: #333; margin: 22px 0 8px; }
+  h4.subsub { font-size: 0.95rem; font-weight: 700; color: #555; margin: 16px 0 6px; }
+  .ch-divider { height: 3px; background: linear-gradient(90deg, var(--accent) 40%, transparent); border-radius: 2px; margin-bottom: 28px; }
+  .ch-num { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.12em; color: #888; font-weight: 600; margin-bottom: 4px; }
+
+  /* Role-Coloured Chapter Headers */
+  .ch-tenant h1.ch, .ch-tenant .ch-divider { color: var(--tenant); background: linear-gradient(90deg, var(--tenant) 40%, transparent); }
+  .ch-client h1.ch, .ch-client .ch-divider { color: var(--client); background: linear-gradient(90deg, var(--client) 40%, transparent); }
+  .ch-agency h1.ch, .ch-agency .ch-divider { color: var(--agency); background: linear-gradient(90deg, var(--agency) 40%, transparent); }
+  .ch-master h1.ch, .ch-master .ch-divider { color: var(--master); background: linear-gradient(90deg, var(--master) 40%, transparent); }
+
+  h2.section.tenant { border-color: var(--tenant); color: var(--tenant); }
+  h2.section.client { border-color: var(--client); color: var(--client); }
+  h2.section.agency { border-color: var(--agency); color: var(--agency); }
+  h2.section.master { border-color: var(--master); color: var(--master); }
+
+  /* ── Body Text ── */
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 8px 0 14px 22px; }
+  li { margin-bottom: 5px; }
+  strong { color: #1a1a2e; }
+
+  /* ── Callout Boxes ── */
+  .callout {
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0;
+    display: flex; gap: 12px; align-items: flex-start;
+    font-size: 0.94rem;
+  }
+  .callout-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+  .callout-body strong { display: block; margin-bottom: 4px; }
+  .callout.tip    { background: #e8f5e9; border-left: 4px solid var(--client); }
+  .callout.note   { background: #e8eaf6; border-left: 4px solid var(--tenant); }
+  .callout.warn   { background: #fff3e0; border-left: 4px solid var(--warn); }
+  .callout.danger { background: #fce4ec; border-left: 4px solid var(--master); }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 22px; font-size: 0.88rem; }
+  thead tr { background: var(--accent); color: #fff; }
+  thead th { padding: 9px 12px; text-align: left; font-weight: 600; }
+  tbody tr:nth-child(even) { background: var(--light); }
+  tbody td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.tenant thead tr { background: var(--tenant); }
+  table.client thead tr { background: var(--client); }
+  table.agency thead tr { background: var(--agency); }
+  table.master thead tr { background: var(--master); }
+
+  /* ── Steps / Workflow ── */
+  .steps { list-style: none; margin: 10px 0 18px; padding: 0; counter-reset: step-counter; }
+  .steps li {
+    counter-increment: step-counter;
+    display: flex; gap: 14px; margin-bottom: 14px; align-items: flex-start;
+  }
+  .steps li::before {
+    content: counter(step-counter);
+    background: var(--accent); color: #fff;
+    border-radius: 50%; width: 26px; height: 26px; min-width: 26px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 700; margin-top: 2px;
+  }
+  .steps.tenant li::before { background: var(--tenant); }
+  .steps.client li::before { background: var(--client); }
+  .steps.agency li::before { background: var(--agency); }
+  .steps.master li::before { background: var(--master); }
+
+  /* ── Field Reference ── */
+  .field-table td:first-child { font-weight: 600; color: #333; white-space: nowrap; }
+  .field-table td:nth-child(2) { color: #555; font-size: 0.85rem; }
+  .req { color: var(--master); font-weight: 700; font-size: 0.8rem; }
+  .opt { color: #888; font-size: 0.8rem; }
+
+  /* ── Badge ── */
+  .badge {
+    display: inline-block; padding: 2px 9px; border-radius: 999px;
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; vertical-align: middle;
+  }
+  .badge-tenant  { background: #e8ecfd; color: var(--tenant); }
+  .badge-client  { background: #e8f5e9; color: var(--client); }
+  .badge-agency  { background: #f3e8fb; color: var(--agency); }
+  .badge-master  { background: #fde8e8; color: var(--master); }
+  .badge-yes     { background: #e8f5e9; color: var(--client); }
+  .badge-no      { background: #fde8e8; color: var(--master); }
+  .badge-pending { background: #fff3e0; color: var(--warn); }
+  .badge-verified{ background: #e8f5e9; color: var(--client); }
+
+  /* ── Screen Labels ── */
+  .screen { display: inline-block; background: #f0f4f8; border: 1px solid #c8d0e0; border-radius: 5px; padding: 1px 8px; font-family: 'Courier New', monospace; font-size: 0.82rem; color: var(--accent); }
+  .key { display: inline-block; background: #eee; border: 1px solid #bbb; border-radius: 4px; padding: 0 7px; font-size: 0.82rem; font-family: monospace; }
+
+  /* ── Navigation Diagram ── */
+  .nav-diagram {
+    background: var(--light); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px 24px; margin: 18px 0; font-size: 0.88rem;
+  }
+  .nav-diagram code { font-family: 'Courier New', monospace; color: #333; }
+  .nav-diagram .arrow { color: #888; margin: 0 6px; }
+
+  /* ── Credentials Demo Box ── */
+  .cred-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+  .cred-card {
+    border-radius: 8px; padding: 14px 18px; font-size: 0.88rem;
+  }
+  .cred-card.tenant { background: #e8ecfd; border: 1px solid #b0bbf5; }
+  .cred-card.client { background: #e8f5e9; border: 1px solid #a5d6a7; }
+  .cred-card.agency { background: #f3e8fb; border: 1px solid #ce93d8; }
+  .cred-card.master { background: #fde8e8; border: 1px solid #ef9a9a; }
+  .cred-card h4 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin-bottom: 8px; }
+  .cred-card.tenant h4 { color: var(--tenant); }
+  .cred-card.client h4 { color: var(--client); }
+  .cred-card.agency h4 { color: var(--agency); }
+  .cred-card.master h4 { color: var(--master); }
+  .cred-card table { margin: 0; font-size: 0.85rem; }
+  .cred-card thead tr { background: transparent; }
+  .cred-card thead th { color: #555; font-size: 0.78rem; padding: 4px 8px; }
+  .cred-card tbody td { padding: 4px 8px; border-bottom: 1px solid rgba(0,0,0,0.07); }
+  .mono { font-family: 'Courier New', monospace; }
+
+  /* ── Role Permission Matrix ── */
+  .matrix td, .matrix th { text-align: center; }
+  .matrix td:first-child { text-align: left; font-weight: 600; }
+  .check { color: var(--client); font-size: 1.1rem; }
+  .cross { color: #ccc; font-size: 1.1rem; }
+  .partial { color: var(--warn); font-size: 1.1rem; }
+
+  /* ── Glossary ── */
+  .glossary dt { font-weight: 700; color: var(--accent); margin-top: 10px; }
+  .glossary dd { margin-left: 18px; color: #444; font-size: 0.92rem; }
+
+  /* ── Print Overrides ── */
+  @media print {
+    body { font-size: 11pt; }
+    html { font-size: 11pt; }
+    .cover { min-height: 100vh; }
+    .chapter { page-break-before: always !important; }
+    .toc-page { page-break-after: always !important; }
+    a { text-decoration: none; color: inherit; }
+    .callout, .cred-card, .nav-diagram { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    thead tr { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .role-pill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .steps li::before { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    h2.section { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+  @page { margin: 18mm 16mm; }
+  @page :first { margin: 0; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════
+     COVER PAGE
+════════════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-logo">🏢</div>
+  <h1>Property Management App</h1>
+  <h2>Complete User Training Manual</h2>
+  <div class="cover-divider"></div>
+  <p style="opacity:0.9;max-width:520px;font-size:1rem;line-height:1.8;">
+    A step-by-step guide covering every feature of the system — from first login
+    and daily operations to bulk data uploads and report generation.
+  </p>
+  <div class="cover-roles">
+    <span class="role-pill pill-tenant">Tenant</span>
+    <span class="role-pill pill-client">Client</span>
+    <span class="role-pill pill-agency">Agency</span>
+    <span class="role-pill pill-master">Master Admin</span>
+  </div>
+  <div class="cover-meta" style="margin-top:48px;">
+    <div>Version 1.0 &nbsp;·&nbsp; April 2026</div>
+    <div>Property Management App — Internal Training Document</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     TABLE OF CONTENTS
+════════════════════════════════════════════════════════════════ -->
+<div class="toc-page">
+  <div class="toc-title">Table of Contents</div>
+
+  <div class="toc-group"><div class="toc-group-title">Overview</div>
+    <div class="toc-section"><span class="toc-num">1</span><a class="toc-link" href="#ch1">System Overview & User Roles</a></div>
+    <div class="toc-section"><span class="toc-num">2</span><a class="toc-link" href="#ch2">Navigating the Application</a></div>
+    <div class="toc-section"><span class="toc-num">3</span><a class="toc-link" href="#ch3">Login, Password Setup & Recovery</a></div>
+  </div>
+
+  <div class="toc-group"><div class="toc-group-title">Role Portals</div>
+    <div class="toc-section"><span class="toc-num">4</span><a class="toc-link" href="#ch4">Tenant Portal</a></div>
+    <div class="toc-section toc-sub"><span class="toc-num">4.1</span><a class="toc-link" href="#ch4-1">Dashboard & Account Balance</a></div>
+    <div class="toc-section toc-sub"><span class="toc-num">4.2</span><a class="toc-link" href="#ch4-2">My Profile</a></div>
+    <div class="toc-section toc-sub"><span class="toc-num">4.3</span><a class="toc-link" href="#ch4-3">Posting a Transaction</a></div>
+    <div class="toc-section toc-sub"><span class="toc-num">4.4</span><a class="toc-link" href="#ch4-4">Viewing My Transactions</a></div>
+
+    <div class="toc-section"><span class="toc-num">5</span><a class="toc-link" href="#ch5">Client Portal</a></div>
+    <div class="toc-section toc-sub"><span class="toc-num">5.1</span><a class="toc-link" href="#ch5-1">Dashboard</a></div>
+    <div class="toc-section toc-sub"><span class="toc-num">5.2</span><a class="toc-link" href="#ch5-2">Managing Properties</a></div>
+    <div class="toc-section toc-sub"><span class="toc-num">5.3</span><a class="toc-link" href="#ch5-3">Managing Property Units</a></div>
+    <div class="toc-section toc-sub"><span class="toc-num">5.4</span><a class="toc-link" href="#ch5-4">Managing Tenants</a></div>
+    <div class="toc-section toc-sub"><span class="toc-num">5.5</span><a class="toc-link" href="#ch5-5">Managing Transactions</a></div>
+
+    <div class="toc-section"><span class="toc-num">6</span><a class="toc-link" href="#ch6">Agency Portal</a></div>
+    <div class="toc-section toc-sub"><span class="toc-num">6.1</span><a class="toc-link" href="#ch6-1">Dashboard</a></div>
+    <div class="toc-section toc-sub"><span class="toc-num">6.2</span><a class="toc-link" href="#ch6-2">Managing Clients</a></div>
+    <div class="toc-section toc-sub"><span class="toc-num">6.3–6.6</span><a class="toc-link" href="#ch6-3">Properties, Units, Tenants & Transactions</a></div>
+
+    <div class="toc-section"><span class="toc-num">7</span><a class="toc-link" href="#ch7">Master Admin Portal</a></div>
+    <div class="toc-section toc-sub"><span class="toc-num">7.1</span><a class="toc-link" href="#ch7-1">Full System Dashboard</a></div>
+    <div class="toc-section toc-sub"><span class="toc-num">7.2</span><a class="toc-link" href="#ch7-2">Agency Management</a></div>
+    <div class="toc-section toc-sub"><span class="toc-num">7.3</span><a class="toc-link" href="#ch7-3">Transaction Verification</a></div>
+  </div>
+
+  <div class="toc-group"><div class="toc-group-title">Advanced Operations</div>
+    <div class="toc-section"><span class="toc-num">8</span><a class="toc-link" href="#ch8">Bulk Data Uploads</a></div>
+    <div class="toc-section"><span class="toc-num">9</span><a class="toc-link" href="#ch9">Reports & Data Export</a></div>
+  </div>
+
+  <div class="toc-group"><div class="toc-group-title">Reference</div>
+    <div class="toc-section"><span class="toc-num">10</span><a class="toc-link" href="#ch10">Role Permissions Matrix</a></div>
+    <div class="toc-section"><span class="toc-num">11</span><a class="toc-link" href="#ch11">Field Reference Guide</a></div>
+    <div class="toc-section"><span class="toc-num">12</span><a class="toc-link" href="#ch12">Glossary</a></div>
+    <div class="toc-section"><span class="toc-num">13</span><a class="toc-link" href="#ch13">Troubleshooting</a></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CHAPTER 1 — SYSTEM OVERVIEW
+════════════════════════════════════════════════════════════════ -->
+<div class="content">
+<div class="chapter" id="ch1">
+  <div class="ch-num">Chapter 1</div>
+  <h1 class="ch">System Overview &amp; User Roles</h1>
+  <div class="ch-divider"></div>
+
+  <p>The <strong>Property Management App</strong> is a browser-based platform that lets property owners, management agencies, and tenants collaborate on property administration — covering everything from unit occupancy to rent payment tracking — all from a single interface.</p>
+
+  <h2 class="section">1.1 What the System Manages</h2>
+  <ul>
+    <li><strong>Agencies</strong> — property management companies that oversee multiple clients.</li>
+    <li><strong>Clients</strong> — property owners whose portfolios are managed by an agency.</li>
+    <li><strong>Properties</strong> — individual buildings or developments (apartments, villas, commercial units, etc.).</li>
+    <li><strong>Property Units</strong> — individual rentable units within a property.</li>
+    <li><strong>Tenants</strong> — occupants assigned to a specific unit with a rental agreement.</li>
+    <li><strong>Transactions</strong> — financial entries (rent payments, deposits, charges) linked to tenants.</li>
+  </ul>
+
+  <h2 class="section">1.2 The Four User Roles</h2>
+  <p>Access is controlled by four distinct roles, each with its own portal and colour theme:</p>
+
+  <table>
+    <thead><tr><th>Role</th><th>Portal File</th><th>Theme Colour</th><th>Scope of Access</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-tenant">Tenant</span></td>
+        <td><span class="screen">tenant.html</span></td>
+        <td>Blue (#4361ee)</td>
+        <td>Own unit, own transactions, own profile only</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-client">Client</span></td>
+        <td><span class="screen">client.html</span></td>
+        <td>Green (#2d9b59)</td>
+        <td>Own properties, units, tenants &amp; transactions</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-agency">Agency</span></td>
+        <td><span class="screen">agency.html</span></td>
+        <td>Purple (#7209b7)</td>
+        <td>All clients, properties and data under the agency</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-master">Master</span></td>
+        <td><span class="screen">master.html</span></td>
+        <td>Red (#d62828)</td>
+        <td>Entire system — all agencies, clients, properties, transactions</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 class="section">1.3 How Data is Stored</h2>
+  <p>All data is stored in your web browser's <strong>local storage</strong>. This means:</p>
+  <ul>
+    <li>No internet connection is required after the files are opened.</li>
+    <li>Data is tied to the browser and device you use — switching browsers or devices will show a fresh database.</li>
+    <li>Your session (login state) is cleared automatically when you close the browser tab.</li>
+  </ul>
+
+  <div class="callout note">
+    <span class="callout-icon">ℹ️</span>
+    <div class="callout-body"><strong>Demo Data Included</strong> The system ships with sample agencies, clients, properties, units, tenants, and 25 transactions so you can explore immediately without entering any data.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CHAPTER 2 — NAVIGATION
+════════════════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch2">
+  <div class="ch-num">Chapter 2</div>
+  <h1 class="ch">Navigating the Application</h1>
+  <div class="ch-divider"></div>
+
+  <h2 class="section">2.1 Page Structure</h2>
+
+  <div class="nav-diagram">
+    <code>
+      index.html (Landing / Login) <br>
+      &nbsp;&nbsp;├─→ <span style="color:var(--tenant);font-weight:600">tenant.html</span> — Tenant Portal<br>
+      &nbsp;&nbsp;├─→ <span style="color:var(--client);font-weight:600">client.html</span> — Client Portal<br>
+      &nbsp;&nbsp;├─→ <span style="color:var(--agency);font-weight:600">agency.html</span> — Agency Portal<br>
+      &nbsp;&nbsp;└─→ <span style="color:var(--master);font-weight:600">master.html</span> — Master Admin Portal<br>
+      <br>
+      credentials.html — Printable login credentials reference<br>
+      report.html &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;— Full data export report
+    </code>
+  </div>
+
+  <h2 class="section">2.2 The Sidebar</h2>
+  <p>Every portal after login has a fixed left sidebar. Click any item to switch to that view instantly — the page does not reload. The sidebar includes:</p>
+  <ul>
+    <li>A <strong>logo/app title</strong> at the top.</li>
+    <li><strong>Navigation links</strong> for each section (Dashboard, properties, tenants, etc.).</li>
+    <li>A <strong>Sign Out</strong> button at the bottom that clears your session and returns you to the login page.</li>
+  </ul>
+
+  <div class="callout tip">
+    <span class="callout-icon">💡</span>
+    <div class="callout-body"><strong>Mobile Users</strong> — On small screens the sidebar hides off-screen. Tap the hamburger (☰) icon at the top-left to open it, then tap a link or tap outside to close it.</div>
+  </div>
+
+  <h2 class="section">2.3 Dark / Light Mode</h2>
+  <p>The landing page has a <strong>theme toggle</strong> (moon/sun icon, top-right). Your preference is remembered in the browser across visits.</p>
+
+  <h2 class="section">2.4 Modals (Pop-up Forms)</h2>
+  <p>Add, edit, and view operations open a <strong>modal overlay</strong> on top of the current page. To close a modal without saving:</p>
+  <ul>
+    <li>Click the <strong>✕ button</strong> in the modal header, <em>or</em></li>
+    <li>Click the <strong>Cancel / Back</strong> button in the footer.</li>
+  </ul>
+
+  <h2 class="section">2.5 Toast Notifications</h2>
+  <p>After every save, delete, or error the system shows a small notification banner in the top-right corner. It disappears automatically after a few seconds. Colours indicate the type:</p>
+  <ul>
+    <li><strong>Green</strong> — success (record saved, deleted, uploaded).</li>
+    <li><strong>Red</strong> — error (validation failure, permission denied).</li>
+    <li><strong>Blue</strong> — informational (e.g. transaction reference number).</li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CHAPTER 3 — LOGIN
+════════════════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch3">
+  <div class="ch-num">Chapter 3</div>
+  <h1 class="ch">Login, Password Setup &amp; Recovery</h1>
+  <div class="ch-divider"></div>
+
+  <p>Open <span class="screen">index.html</span> in your browser. You will see four rotating <strong>login cards</strong> — one for each role. Each card has three tabs:</p>
+  <ul>
+    <li><strong>Login</strong> — for existing users with credentials.</li>
+    <li><strong>First Time Setup</strong> — for new accounts that have never logged in.</li>
+    <li><strong>Forgot Password</strong> — to reset a forgotten password.</li>
+  </ul>
+
+  <h2 class="section">3.1 Standard Login</h2>
+
+  <h3 class="sub">Tenant Login</h3>
+  <ol class="steps steps">
+    <li>On the <strong>Tenant</strong> card, click <strong>Login</strong>.</li>
+    <li>Enter your <strong>Property Code</strong> (e.g. <span class="mono">PR001</span>).</li>
+    <li>Enter your <strong>Username</strong> and <strong>Password</strong>.</li>
+    <li>Click <strong>Sign In</strong>. You are taken to your dashboard.</li>
+  </ol>
+
+  <h3 class="sub">Client, Agency &amp; Master Login</h3>
+  <ol class="steps steps">
+    <li>Click the relevant card's <strong>Login</strong> tab.</li>
+    <li>Enter your <strong>Username</strong> and <strong>Password</strong>.</li>
+    <li>Click <strong>Sign In</strong>.</li>
+  </ol>
+
+  <div class="callout note">
+    <span class="callout-icon">ℹ️</span>
+    <div class="callout-body"><strong>Demo Credentials</strong> — Use these to explore the system before setting up real accounts.</div>
+  </div>
+
+  <div class="cred-grid">
+    <div class="cred-card tenant">
+      <h4>Tenant</h4>
+      <table>
+        <thead><tr><th>Property</th><th>Username</th><th>Password</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">PR001</td><td class="mono">tenant1</td><td class="mono">tenant123</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cred-card client">
+      <h4>Client</h4>
+      <table>
+        <thead><tr><th>Username</th><th>Password</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">client1</td><td class="mono">client123</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cred-card agency">
+      <h4>Agency</h4>
+      <table>
+        <thead><tr><th>Username</th><th>Password</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">agency1</td><td class="mono">agency123</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cred-card master">
+      <h4>Master Admin</h4>
+      <table>
+        <thead><tr><th>Username</th><th>Password</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">master</td><td class="mono">master123</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h2 class="section">3.2 First Time Setup (New Account)</h2>
+  <p>When an administrator creates a new Client, Agency, or Tenant account, the account has no username or password yet. The new user must complete First Time Setup.</p>
+
+  <ol class="steps steps">
+    <li>On the correct role card, click the <strong>First Time Setup</strong> tab.</li>
+    <li>Enter your <strong>account code</strong> (e.g. Client Code, Agency Code, or Tenant ID).</li>
+    <li>Enter the <strong>telephone number</strong> registered on your account — this proves your identity.</li>
+    <li>Choose a <strong>username</strong> (must be unique).</li>
+    <li>Choose a <strong>password</strong> (minimum 6 characters) and <strong>confirm</strong> it.</li>
+    <li>Click <strong>Set Credentials</strong>. Your login is activated — use <strong>Login</strong> tab going forward.</li>
+  </ol>
+
+  <div class="callout warn">
+    <span class="callout-icon">⚠️</span>
+    <div class="callout-body"><strong>Telephone Must Match</strong> — The phone number you enter must exactly match what your administrator registered for your account. Contact your administrator if it does not match.</div>
+  </div>
+
+  <h2 class="section">3.3 Forgot Password</h2>
+  <ol class="steps steps">
+    <li>Click the <strong>Forgot Password</strong> tab on the relevant role card.</li>
+    <li><strong>Phase 1</strong> — Enter your <strong>username</strong> and <strong>account code</strong>, then click <strong>Send Reset Code</strong>. Your email client opens with a pre-filled message containing a 6-digit code.</li>
+    <li>Note the 6-digit code shown on screen (or in the email draft).</li>
+    <li><strong>Phase 2</strong> — Enter the reset code, your <strong>new password</strong>, and <strong>confirm</strong> it.</li>
+    <li>Click <strong>Reset Password</strong>. You are redirected to the Login tab.</li>
+  </ol>
+
+  <div class="callout warn">
+    <span class="callout-icon">⚠️</span>
+    <div class="callout-body"><strong>Code Expiry</strong> — The reset code is valid for <strong>15 minutes</strong> only. If it expires, start the process again.</div>
+  </div>
+
+  <h2 class="section">3.4 Signing Out</h2>
+  <p>Click <strong>Sign Out</strong> in the sidebar. Your session is cleared and you return to the login page. Sessions also clear automatically when you close the browser tab.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CHAPTER 4 — TENANT PORTAL
+════════════════════════════════════════════════════════════════ -->
+<div class="chapter ch-tenant" id="ch4">
+  <div class="ch-num">Chapter 4</div>
+  <h1 class="ch">Tenant Portal</h1>
+  <div class="ch-divider"></div>
+
+  <p>The Tenant Portal gives residents a private space to monitor their account balance, update personal details, post rent payments, and view their full transaction history.</p>
+
+  <p><strong>Sidebar sections:</strong> Dashboard · My Profile · Post Transaction · My Transactions · Sign Out</p>
+
+  <!-- 4.1 -->
+  <h2 class="section tenant" id="ch4-1">4.1 Dashboard &amp; Account Balance</h2>
+  <p>The dashboard is the first screen after login. It shows four <strong>summary cards</strong> at the top:</p>
+
+  <table class="tenant">
+    <thead><tr><th>Card</th><th>What it Shows</th></tr></thead>
+    <tbody>
+      <tr><td>Property</td><td>Name of the property you occupy</td></tr>
+      <tr><td>Unit Details</td><td>Unit number, bedrooms, bathrooms, floor</td></tr>
+      <tr><td>Move-in Date</td><td>Your lease start date</td></tr>
+      <tr><td>Account Balance</td><td>Running total of all your transactions</td></tr>
+    </tbody>
+  </table>
+
+  <p>Below the cards is a <strong>Balance Card</strong> showing:</p>
+  <ul>
+    <li>Your current <strong>account balance</strong> (green = credit/no amount due; red = debit/amount outstanding).</li>
+    <li>Your agreed <strong>rent amount</strong> and <strong>payment frequency</strong>.</li>
+    <li>Your <strong>deposit amount</strong>.</li>
+  </ul>
+
+  <p>At the bottom, the <strong>last 5 transactions</strong> are listed with date, description, amount, status (Verified/Pending), and reference number.</p>
+
+  <!-- 4.2 -->
+  <h2 class="section tenant" id="ch4-2">4.2 My Profile</h2>
+  <p>Click <strong>My Profile</strong> in the sidebar to view and edit your personal information.</p>
+
+  <h3 class="sub">Editing Your Profile</h3>
+  <ol class="steps tenant">
+    <li>Click <strong>My Profile</strong>.</li>
+    <li>Update any of: <strong>First Name, Last Name, Telephone, Email, Address</strong>.</li>
+    <li>To change your password, type a new password in the <strong>New Password</strong> field and confirm it. Leave both blank to keep your current password.</li>
+    <li>Click <strong>Save Changes</strong>.</li>
+  </ol>
+
+  <div class="callout tip">
+    <span class="callout-icon">💡</span>
+    <div class="callout-body">Your <strong>Tenant Number</strong> (format: TN-YYYY-###), <strong>Property</strong>, and <strong>Unit</strong> are read-only. Contact your Client or Agency administrator if these need correcting.</div>
+  </div>
+
+  <!-- 4.3 -->
+  <h2 class="section tenant" id="ch4-3">4.3 Posting a Transaction</h2>
+  <p>Use this screen to submit a <strong>rent payment, deposit, or any financial entry</strong> for your account. All tenant-submitted transactions start as <span class="badge badge-pending">Pending</span> until verified by your manager.</p>
+
+  <ol class="steps tenant">
+    <li>Click <strong>Post Transaction</strong> in the sidebar.</li>
+    <li>Enter the <strong>Date</strong> of the transaction.</li>
+    <li>The <strong>Currency</strong> field is filled automatically from your property — do not change it.</li>
+    <li>Enter a clear <strong>Description</strong> (e.g. <em>Rent Payment — June 2026</em>).</li>
+    <li>Enter the <strong>Amount</strong>. Use a positive number for payments you are making; use a negative number for charges or adjustments (if instructed to do so).</li>
+    <li>Add an optional <strong>Note</strong> for any additional context.</li>
+    <li>Click <strong>Choose File</strong> and attach a supporting document (bank receipt, screenshot, etc.). Accepted formats: PDF, JPG, PNG, DOC, DOCX. <em>This field is required.</em></li>
+    <li>Click <strong>Submit Transaction</strong>. A toast notification shows your <strong>transaction reference number</strong> (e.g. <span class="mono">TXN-00026</span>) — note this for your records.</li>
+  </ol>
+
+  <div class="callout warn">
+    <span class="callout-icon">⚠️</span>
+    <div class="callout-body"><strong>Document Required</strong> — You cannot submit a transaction without attaching a supporting document. Always keep a digital copy of your payment receipt.</div>
+  </div>
+
+  <!-- 4.4 -->
+  <h2 class="section tenant" id="ch4-4">4.4 Viewing My Transactions</h2>
+  <ol class="steps tenant">
+    <li>Click <strong>My Transactions</strong> in the sidebar.</li>
+    <li>A full table of all your transactions is shown: Date, Description, Amount (green = credit, red = debit), and Status.</li>
+    <li>Click on any <strong>Amount</strong> to open a detail modal showing the reference number, notes, and a link to view the attached document.</li>
+  </ol>
+
+  <div class="callout note">
+    <span class="callout-icon">ℹ️</span>
+    <div class="callout-body">Transactions with status <span class="badge badge-pending">Pending</span> have been received but not yet reviewed by your manager. <span class="badge badge-verified">Verified</span> means your manager has confirmed the entry.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CHAPTER 5 — CLIENT PORTAL
+════════════════════════════════════════════════════════════════ -->
+<div class="chapter ch-client" id="ch5">
+  <div class="ch-num">Chapter 5</div>
+  <h1 class="ch">Client Portal</h1>
+  <div class="ch-divider"></div>
+
+  <p>The Client Portal is used by property owners to manage their entire portfolio — properties, units, tenants, and financial transactions.</p>
+
+  <p><strong>Sidebar sections:</strong> Dashboard · My Properties · Property Units · Tenants · Transactions · Sign Out</p>
+
+  <!-- 5.1 -->
+  <h2 class="section client" id="ch5-1">5.1 Dashboard</h2>
+  <p>Four summary cards provide an instant snapshot:</p>
+  <ul>
+    <li><strong>Properties</strong> — number of properties you own.</li>
+    <li><strong>Total Units</strong> — units across all your properties.</li>
+    <li><strong>Active Tenants</strong> — tenants currently on active leases.</li>
+    <li><strong>Occupied Units</strong> — occupied / total ratio.</li>
+  </ul>
+  <p>Below, the <strong>last 10 transactions</strong> are shown with a colour-coded running balance (green if positive, red if negative).</p>
+
+  <!-- 5.2 -->
+  <h2 class="section client" id="ch5-2">5.2 Managing Properties</h2>
+
+  <h3 class="sub">Adding a Property</h3>
+  <ol class="steps client">
+    <li>Click <strong>My Properties</strong>, then <strong>+ Add Property</strong>.</li>
+    <li>Complete the form (see field reference in Chapter 11).</li>
+    <li>Upload an optional <strong>property picture</strong>.</li>
+    <li>Click <strong>Save Property</strong>.</li>
+  </ol>
+
+  <h3 class="sub">Editing a Property</h3>
+  <ol class="steps client">
+    <li>Find the property in the table and click the <strong>Edit (✏️)</strong> button.</li>
+    <li>Modify the required fields in the modal.</li>
+    <li>Click <strong>Save Changes</strong>.</li>
+  </ol>
+
+  <h3 class="sub">Deleting a Property</h3>
+  <ol class="steps client">
+    <li>Click the <strong>Delete (🗑)</strong> button next to the property.</li>
+    <li>Confirm the deletion in the dialog.</li>
+  </ol>
+
+  <div class="callout danger">
+    <span class="callout-icon">🚫</span>
+    <div class="callout-body"><strong>Cannot Delete with Active Tenants</strong> — The delete button is disabled if the property has active tenants. Deactivate or move all tenants first.</div>
+  </div>
+
+  <!-- 5.3 -->
+  <h2 class="section client" id="ch5-3">5.3 Managing Property Units</h2>
+
+  <h3 class="sub">Adding a Unit</h3>
+  <ol class="steps client">
+    <li>Click <strong>Property Units</strong>, then <strong>+ Add Unit</strong>.</li>
+    <li>Select the <strong>Property</strong> from the dropdown.</li>
+    <li>Enter Unit Number, Rent Amount, Deposit Amount, Bedrooms, Bathrooms, Floor, and Status (<em>Occupied</em> or <em>Vacant</em>).</li>
+    <li>Click <strong>Save Unit</strong>.</li>
+  </ol>
+
+  <h3 class="sub">Bulk Unit Upload</h3>
+  <ol class="steps client">
+    <li>Click <strong>Units Upload</strong>.</li>
+    <li>Click <strong>Download Template</strong> to get the Excel template.</li>
+    <li>Fill in the spreadsheet columns: <em>PropertyCode, UnitNumber, RentAmount, DepositAmount, Bedrooms, Bathrooms, Floor, UnitStatus</em>.</li>
+    <li>Save the file and click <strong>Choose File</strong> to upload it (.xlsx, .xls, or .csv).</li>
+    <li>Review the <strong>preview panel</strong> — valid rows are shown in green, errors in red with an explanation.</li>
+    <li>Click <strong>Import X Unit(s)</strong> to import the valid rows.</li>
+  </ol>
+
+  <div class="callout tip">
+    <span class="callout-icon">💡</span>
+    <div class="callout-body">Only valid rows are imported. Rows with errors are skipped — fix errors in the spreadsheet and re-upload for the skipped rows.</div>
+  </div>
+
+  <!-- 5.4 -->
+  <h2 class="section client" id="ch5-4">5.4 Managing Tenants</h2>
+
+  <h3 class="sub">Adding a Tenant</h3>
+  <ol class="steps client">
+    <li>Click <strong>Tenants</strong>, then <strong>+ Add Tenant</strong>.</li>
+    <li>Fill in personal details: First Name, Last Name, ID Number, Telephone, Email, Address.</li>
+    <li>Select the <strong>Property</strong>, then select the <strong>Unit</strong> (the unit list updates automatically).</li>
+    <li>Set Rent Amount, Rent Frequency, Deposit Amount, and Move-in Date.</li>
+    <li>Upload the three required documents:
+      <ul>
+        <li><strong>Photograph</strong> — tenant photo (JPG/PNG)</li>
+        <li><strong>ID Copy</strong> — government-issued ID scan (PDF/JPG/PNG)</li>
+        <li><strong>Rent Agreement</strong> — signed lease (PDF/JPG/PNG/DOC/DOCX)</li>
+      </ul>
+    </li>
+    <li>Click <strong>Save Tenant</strong>. A Tenant Number (TN-YYYY-###) is generated automatically.</li>
+  </ol>
+
+  <div class="callout warn">
+    <span class="callout-icon">⚠️</span>
+    <div class="callout-body"><strong>All three documents are required</strong> when adding a tenant manually. For bulk uploads, documents must be attached later via Edit Tenant.</div>
+  </div>
+
+  <h3 class="sub">Bulk Tenant Upload</h3>
+  <ol class="steps client">
+    <li>Click <strong>Tenants Upload</strong> and then <strong>Download Template</strong>.</li>
+    <li>Fill the spreadsheet. Required columns: <em>FirstName, LastName, IDNumber, Telephone, Email, Address, PropertyCode, UnitNumber, RentAmount, DepositAmount, RentFrequency, MoveInDate</em>.</li>
+    <li>Dates must be in <strong>YYYY-MM-DD</strong> format. RentFrequency must be one of: <em>Monthly, Quarterly, SemiAnnually, Annually</em>.</li>
+    <li>Upload the file, review the validation preview, then click <strong>Import</strong>.</li>
+    <li>After import, edit each tenant individually to attach their documents.</li>
+  </ol>
+
+  <h3 class="sub">Editing a Tenant</h3>
+  <p>Click <strong>Edit</strong> next to a tenant to update Name, Telephone, Email, Address, Rent Amount, Move-out Date, or Active status. Property and Unit cannot be changed via this form.</p>
+
+  <!-- 5.5 -->
+  <h2 class="section client" id="ch5-5">5.5 Managing Transactions</h2>
+
+  <h3 class="sub">Posting a Single Transaction</h3>
+  <ol class="steps client">
+    <li>Click <strong>Transactions</strong>, then <strong>+ Post Transaction</strong>.</li>
+    <li>Select <strong>Property</strong>, then <strong>Tenant</strong> (tenant list updates automatically).</li>
+    <li>Enter Date, Description, Amount (negative for debit/charge), and optional Note.</li>
+    <li>Attach a supporting <strong>Document</strong>.</li>
+    <li>Click <strong>Post Transaction</strong>.</li>
+  </ol>
+
+  <h3 class="sub">Bulk Post Transactions</h3>
+  <p>Use this to charge rent to multiple tenants in one action — ideal for month-end rent runs.</p>
+  <ol class="steps client">
+    <li>Click <strong>Bulk Post</strong>.</li>
+    <li>Enter the <strong>Date</strong> and select the <strong>Property</strong>.</li>
+    <li>Choose <strong>Charge Type</strong>:
+      <ul>
+        <li><em>Monthly Rent</em> — uses each tenant's individual rent amount automatically.</li>
+        <li><em>Custom Charge</em> — enter a single amount applied to all selected tenants.</li>
+      </ul>
+    </li>
+    <li>Enter a <strong>Description</strong> (e.g. <em>Rent — July 2026</em>).</li>
+    <li>In the tenant list, check the tenants to charge. Use <strong>Select All</strong> / <strong>None</strong> to speed this up.</li>
+    <li>Click <strong>Post Transactions</strong>. One transaction is created per selected tenant.</li>
+  </ol>
+
+  <h3 class="sub">Editing a Transaction</h3>
+  <p>Click <strong>Edit</strong> next to any <span class="badge badge-pending">Pending</span> (unverified) transaction to update its Date, Amount, Description, Note, or attached Document.</p>
+
+  <div class="callout danger">
+    <span class="callout-icon">🚫</span>
+    <div class="callout-body"><strong>Verified transactions cannot be edited or deleted.</strong> Contact your Agency or Master Admin if a verified transaction needs correction.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CHAPTER 6 — AGENCY PORTAL
+════════════════════════════════════════════════════════════════ -->
+<div class="chapter ch-agency" id="ch6">
+  <div class="ch-num">Chapter 6</div>
+  <h1 class="ch">Agency Portal</h1>
+  <div class="ch-divider"></div>
+
+  <p>Agency users manage a portfolio of clients and have oversight of all properties, units, tenants, and transactions under the agency's umbrella.</p>
+
+  <p><strong>Sidebar sections:</strong> Dashboard · Clients · Properties · Units · Tenants · Transactions · Sign Out</p>
+
+  <!-- 6.1 -->
+  <h2 class="section agency" id="ch6-1">6.1 Dashboard</h2>
+  <p>The dashboard shows agency-wide statistics:</p>
+  <ul>
+    <li>Number of <strong>clients</strong> managed.</li>
+    <li>Total <strong>properties</strong> under the agency.</li>
+    <li>Count of <strong>active tenants</strong>.</li>
+    <li><strong>Occupied units</strong> vs. total units.</li>
+  </ul>
+  <p>Two quick-view tables show the <strong>client list</strong> (first 10) and the <strong>10 most recent transactions</strong> with amounts and status.</p>
+
+  <!-- 6.2 -->
+  <h2 class="section agency" id="ch6-2">6.2 Managing Clients</h2>
+
+  <h3 class="sub">Adding a Client</h3>
+  <ol class="steps agency">
+    <li>Click <strong>Clients</strong>, then <strong>+ Add Client</strong>.</li>
+    <li>Enter a unique <strong>Client Code</strong> (e.g. <span class="mono">CL006</span>), Name, Telephone, Email, and Address.</li>
+    <li>Set <strong>Active</strong> to <em>Yes</em>.</li>
+    <li>Click <strong>Save Client</strong>. The new client can now complete <strong>First Time Setup</strong> on the login page to get their credentials.</li>
+  </ol>
+
+  <h3 class="sub">Editing &amp; Deactivating a Client</h3>
+  <p>Click <strong>Edit</strong> next to a client to update their details or toggle their Active status to <em>No</em> to prevent login without deleting the record.</p>
+
+  <h3 class="sub">Deleting a Client</h3>
+  <p>Only possible if the client has no properties. Delete or re-assign all their properties first.</p>
+
+  <!-- 6.3–6.6 -->
+  <h2 class="section agency" id="ch6-3">6.3 Properties, Units, Tenants &amp; Transactions</h2>
+  <p>These sections work identically to the Client Portal described in Chapter 5, with one key difference: the Agency can manage data <strong>across all clients</strong> it oversees, not just one. When adding a property or tenant, an extra dropdown lets you specify which <strong>client</strong> the record belongs to.</p>
+
+  <div class="callout note">
+    <span class="callout-icon">ℹ️</span>
+    <div class="callout-body"><strong>Transaction Verification</strong> is not available in the Agency role. Only a Master Admin can verify (authenticate) transactions. Refer to Chapter 7.3.</div>
+  </div>
+
+  <h3 class="sub">Key Differences from Client Portal</h3>
+  <table class="agency">
+    <thead><tr><th>Feature</th><th>Client</th><th>Agency</th></tr></thead>
+    <tbody>
+      <tr><td>Scope</td><td>Own properties only</td><td>All clients' properties</td></tr>
+      <tr><td>Add Property</td><td>Linked to self</td><td>Choose target client</td></tr>
+      <tr><td>Manage Clients</td><td>❌</td><td>✅</td></tr>
+      <tr><td>Verify Transactions</td><td>❌</td><td>❌</td></tr>
+      <tr><td>Bulk Upload Units/Tenants</td><td>✅</td><td>✅</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CHAPTER 7 — MASTER ADMIN PORTAL
+════════════════════════════════════════════════════════════════ -->
+<div class="chapter ch-master" id="ch7">
+  <div class="ch-num">Chapter 7</div>
+  <h1 class="ch">Master Admin Portal</h1>
+  <div class="ch-divider"></div>
+
+  <p>The Master Admin has unrestricted access to every record in the system. This role is intended for the top-level administrator responsible for the platform as a whole.</p>
+
+  <p><strong>Sidebar sections:</strong> Dashboard · Agencies · Clients · Properties · Units · Tenants · Transactions · Sign Out</p>
+
+  <!-- 7.1 -->
+  <h2 class="section master" id="ch7-1">7.1 Full System Dashboard</h2>
+  <p>The Master dashboard shows aggregated statistics for the <strong>entire platform</strong>:</p>
+  <ul>
+    <li>Total agencies, clients, properties.</li>
+    <li>Occupied / total units and active tenants.</li>
+    <li>Combined balance across <em>all</em> transactions system-wide.</li>
+  </ul>
+  <p>Below are two tables: all agencies and the 10 most recent transactions across the whole system.</p>
+
+  <!-- 7.2 -->
+  <h2 class="section master" id="ch7-2">7.2 Agency Management</h2>
+
+  <h3 class="sub">Adding an Agency</h3>
+  <ol class="steps master">
+    <li>Click <strong>Agencies</strong>, then <strong>+ Add Agency</strong>.</li>
+    <li>Enter a unique <strong>Agency Code</strong>, Name, Address, Telephone, and Email.</li>
+    <li>Set <strong>Type</strong>: <em>Standard</em> for a sub-agency, <em>Master</em> for top-level admin access.</li>
+    <li>Set Active to <em>Yes</em> and click <strong>Save Agency</strong>.</li>
+  </ol>
+
+  <div class="callout danger">
+    <span class="callout-icon">🚫</span>
+    <div class="callout-body"><strong>Master Flag</strong> — Setting Type to "Master" grants full system access. Only assign this to trusted administrators. There should generally be only one Master agency.</div>
+  </div>
+
+  <h3 class="sub">Filtering Views by Agency</h3>
+  <p>On the Clients, Properties, Units, Tenants, and Transactions screens, a <strong>filter dropdown</strong> at the top lets the Master Admin limit the view to records belonging to a specific agency — useful for focused auditing.</p>
+
+  <h3 class="sub">Resetting Tenant Credentials</h3>
+  <p>In the Tenants section, a <strong>Reset</strong> option allows the Master Admin to clear a tenant's username and password, forcing them to go through First Time Setup again on their next login.</p>
+
+  <!-- 7.3 -->
+  <h2 class="section master" id="ch7-3">7.3 Transaction Verification</h2>
+  <p>Verifying (authenticating) a transaction confirms it is correct and locks it from further edits or deletion. Only the Master Admin can do this.</p>
+
+  <ol class="steps master">
+    <li>Click <strong>Transactions</strong> in the sidebar.</li>
+    <li>Find the transaction with status <span class="badge badge-pending">Pending</span>.</li>
+    <li>Click the transaction's <strong>Edit / Verify</strong> button to open the detail modal.</li>
+    <li>Review the date, amount, description, and attached document.</li>
+    <li>Click <strong>Verify Transaction</strong> (or the Confirm/Authenticate button).</li>
+    <li>The status changes to <span class="badge badge-verified">Verified</span>. The transaction is now locked.</li>
+  </ol>
+
+  <div class="callout warn">
+    <span class="callout-icon">⚠️</span>
+    <div class="callout-body"><strong>Verification is permanent.</strong> Once a transaction is verified it cannot be edited or deleted by anyone — including the Master Admin. Verify only after confirming accuracy.</div>
+  </div>
+
+  <h3 class="sub">Deleting Transactions</h3>
+  <p>Only <span class="badge badge-pending">Pending</span> transactions can be deleted. Attempting to delete a verified transaction will show an error toast.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CHAPTER 8 — BULK UPLOADS
+════════════════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch8">
+  <div class="ch-num">Chapter 8</div>
+  <h1 class="ch">Bulk Data Uploads</h1>
+  <div class="ch-divider"></div>
+
+  <p>When setting up a new property portfolio, entering units and tenants one by one would be time-consuming. The system supports <strong>Excel/CSV bulk uploads</strong> for both Units and Tenants.</p>
+
+  <h2 class="section">8.1 General Bulk Upload Workflow</h2>
+  <ol class="steps">
+    <li>Click the <strong>Upload</strong> button (Units Upload or Tenants Upload) on the relevant list screen.</li>
+    <li>Click <strong>Download Template</strong> to get the correctly formatted spreadsheet.</li>
+    <li>Open the template and fill in your data, one row per record.</li>
+    <li>Save as <strong>.xlsx</strong>, <strong>.xls</strong>, or <strong>.csv</strong>.</li>
+    <li>Back in the app, click <strong>Choose File</strong> and select your file.</li>
+    <li>The system validates each row and shows a <strong>preview</strong>:
+      <ul>
+        <li>✅ Valid rows — highlighted green, ready to import.</li>
+        <li>❌ Invalid rows — highlighted red with an error message explaining the issue.</li>
+      </ul>
+    </li>
+    <li>Click <strong>Import X Record(s)</strong> to import only the valid rows.</li>
+    <li>Fix any errors in the spreadsheet and re-upload to import the previously skipped rows.</li>
+  </ol>
+
+  <h2 class="section">8.2 Unit Upload — Column Guide</h2>
+  <table>
+    <thead><tr><th>Column</th><th>Required</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>PropertyCode</td><td><span class="req">REQ</span></td><td>Must match an existing property code (e.g. PR001)</td></tr>
+      <tr><td>UnitNumber</td><td><span class="req">REQ</span></td><td>Must be unique within the property (e.g. 101)</td></tr>
+      <tr><td>RentAmount</td><td><span class="req">REQ</span></td><td>Numeric, no currency symbol</td></tr>
+      <tr><td>DepositAmount</td><td><span class="req">REQ</span></td><td>Numeric, no currency symbol</td></tr>
+      <tr><td>Bedrooms</td><td><span class="req">REQ</span></td><td>Integer (e.g. 2)</td></tr>
+      <tr><td>Bathrooms</td><td><span class="req">REQ</span></td><td>Integer (e.g. 1)</td></tr>
+      <tr><td>Floor</td><td><span class="req">REQ</span></td><td>Integer (e.g. 3)</td></tr>
+      <tr><td>UnitStatus</td><td><span class="req">REQ</span></td><td>Must be exactly <em>Occupied</em> or <em>Vacant</em></td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="section">8.3 Tenant Upload — Column Guide</h2>
+  <table>
+    <thead><tr><th>Column</th><th>Required</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>FirstName</td><td><span class="req">REQ</span></td><td>Text</td></tr>
+      <tr><td>LastName</td><td><span class="req">REQ</span></td><td>Text</td></tr>
+      <tr><td>IDNumber</td><td><span class="req">REQ</span></td><td>National ID or passport number</td></tr>
+      <tr><td>Telephone</td><td><span class="req">REQ</span></td><td>Text (no specific format enforced)</td></tr>
+      <tr><td>Email</td><td><span class="req">REQ</span></td><td>Valid email format</td></tr>
+      <tr><td>Address</td><td><span class="req">REQ</span></td><td>Text</td></tr>
+      <tr><td>PropertyCode</td><td><span class="req">REQ</span></td><td>Must match existing property</td></tr>
+      <tr><td>UnitNumber</td><td><span class="req">REQ</span></td><td>Must exist within the specified property</td></tr>
+      <tr><td>RentAmount</td><td><span class="req">REQ</span></td><td>Numeric</td></tr>
+      <tr><td>DepositAmount</td><td><span class="req">REQ</span></td><td>Numeric</td></tr>
+      <tr><td>RentFrequency</td><td><span class="req">REQ</span></td><td><em>Monthly</em>, <em>Quarterly</em>, <em>SemiAnnually</em>, or <em>Annually</em></td></tr>
+      <tr><td>MoveInDate</td><td><span class="req">REQ</span></td><td>Format: YYYY-MM-DD (e.g. 2026-01-15)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <span class="callout-icon">⚠️</span>
+    <div class="callout-body"><strong>Documents Not Included in Bulk Upload</strong> — Tenant photographs, ID copies, and rent agreements cannot be uploaded via spreadsheet. After importing, edit each tenant individually to attach their documents.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CHAPTER 9 — REPORTS
+════════════════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch9">
+  <div class="ch-num">Chapter 9</div>
+  <h1 class="ch">Reports &amp; Data Export</h1>
+  <div class="ch-divider"></div>
+
+  <p>The system provides two dedicated report pages plus in-portal dashboards for on-screen monitoring.</p>
+
+  <h2 class="section">9.1 Full Data Report (<span class="screen">report.html</span>)</h2>
+  <p>This is a comprehensive, <strong>print-ready report</strong> of all data in the system. Open it directly in the browser:</p>
+
+  <ol class="steps">
+    <li>Open <span class="screen">report.html</span> in your browser (or navigate to it from the app folder).</li>
+    <li>The page loads instantly, pulling all data from the browser's local storage.</li>
+    <li>Review the sections:
+      <ul>
+        <li><strong>Agencies</strong> — all agency records.</li>
+        <li><strong>Clients</strong> — all client records.</li>
+        <li><strong>Properties</strong> — all properties with details.</li>
+        <li><strong>Property Units</strong> — all units, status, and rent info.</li>
+        <li><strong>Tenants</strong> — all tenants across all properties.</li>
+        <li><strong>Transactions</strong> — full transaction history with amounts.</li>
+        <li><strong>Summary Statistics</strong> — counts, active/inactive breakdown, occupancy.</li>
+      </ul>
+    </li>
+    <li>To print or save as PDF: press <key>Ctrl+P</key> (Windows) or <key>⌘+P</key> (Mac). Select <strong>Save as PDF</strong> as the destination.</li>
+  </ol>
+
+  <div class="callout tip">
+    <span class="callout-icon">💡</span>
+    <div class="callout-body">The report is formatted for printing with colour-coded section headers, automatic page breaks, and print-safe colour adjustments. Use <strong>landscape orientation</strong> in your print dialog for wider tables.</div>
+  </div>
+
+  <h2 class="section">9.2 Credentials Report (<span class="screen">credentials.html</span>)</h2>
+  <p>This page generates a printable list of all user login credentials in the system — useful for distributing access details to new users during onboarding.</p>
+
+  <ol class="steps">
+    <li>Open <span class="screen">credentials.html</span>.</li>
+    <li>The page shows login details for: Master, Agencies, Clients, and Tenants (including role, code, name, username, password, email, and active status).</li>
+    <li>Print using <key>Ctrl+P</key> / <key>⌘+P</key>.</li>
+  </ol>
+
+  <div class="callout danger">
+    <span class="callout-icon">🔒</span>
+    <div class="callout-body"><strong>Sensitive Document</strong> — The credentials report contains all usernames and passwords in plain text. Treat printed copies as confidential. Distribute only to authorised personnel and shred after use.</div>
+  </div>
+
+  <h2 class="section">9.3 Dashboard Summaries (In-Portal)</h2>
+  <p>Each role's dashboard provides a live overview without leaving the portal:</p>
+
+  <table>
+    <thead><tr><th>Portal</th><th>Report Information Available</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge badge-tenant">Tenant</span></td><td>Balance, rent due, last 5 transactions</td></tr>
+      <tr><td><span class="badge badge-client">Client</span></td><td>Property count, occupancy, tenant count, last 10 transactions, running balance</td></tr>
+      <tr><td><span class="badge badge-agency">Agency</span></td><td>Client count, all properties/tenants, occupancy, last 10 transactions</td></tr>
+      <tr><td><span class="badge badge-master">Master</span></td><td>System-wide totals for all entities, all transactions, global balance</td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="section">9.4 Printing Any Screen</h2>
+  <p>Any page in the browser can be printed with <key>Ctrl+P</key>. For best results on dashboard/table screens, use <strong>landscape orientation</strong> and set margins to <em>Minimum</em> in your browser's print dialog.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CHAPTER 10 — PERMISSIONS MATRIX
+════════════════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch10">
+  <div class="ch-num">Chapter 10</div>
+  <h1 class="ch">Role Permissions Matrix</h1>
+  <div class="ch-divider"></div>
+
+  <p>The table below shows what each role can do across all modules. Use this as a quick reference when users ask why they cannot access a specific feature.</p>
+
+  <p><strong>Key:</strong> ✅ = Full access &nbsp; 🔶 = Partial / restricted &nbsp; ❌ = No access</p>
+
+  <table class="matrix">
+    <thead>
+      <tr>
+        <th style="text-align:left">Feature</th>
+        <th><span class="badge badge-tenant">Tenant</span></th>
+        <th><span class="badge badge-client">Client</span></th>
+        <th><span class="badge badge-agency">Agency</span></th>
+        <th><span class="badge badge-master">Master</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>View own dashboard</td><td class="check">✅</td><td class="check">✅</td><td class="check">✅</td><td class="check">✅</td></tr>
+      <tr><td>Edit own profile</td><td class="check">✅</td><td class="partial">🔶</td><td class="partial">🔶</td><td class="partial">🔶</td></tr>
+      <tr><td>Change own password</td><td class="check">✅</td><td class="check">✅</td><td class="check">✅</td><td class="check">✅</td></tr>
+      <tr><td>View transactions</td><td class="partial">🔶 Own only</td><td class="partial">🔶 Own properties</td><td class="partial">🔶 Agency scope</td><td class="check">✅ All</td></tr>
+      <tr><td>Post transaction</td><td class="check">✅</td><td class="check">✅</td><td class="check">✅</td><td class="check">✅</td></tr>
+      <tr><td>Edit transaction</td><td class="cross">❌</td><td class="partial">🔶 Pending only</td><td class="partial">🔶 Pending only</td><td class="partial">🔶 Pending only</td></tr>
+      <tr><td>Delete transaction</td><td class="cross">❌</td><td class="partial">🔶 Pending only</td><td class="partial">🔶 Pending only</td><td class="partial">🔶 Pending only</td></tr>
+      <tr><td>Verify transaction</td><td class="cross">❌</td><td class="cross">❌</td><td class="cross">❌</td><td class="check">✅</td></tr>
+      <tr><td>Manage properties</td><td class="cross">❌</td><td class="check">✅ Own</td><td class="check">✅ Agency scope</td><td class="check">✅ All</td></tr>
+      <tr><td>Manage units</td><td class="cross">❌</td><td class="check">✅ Own</td><td class="check">✅ Agency scope</td><td class="check">✅ All</td></tr>
+      <tr><td>Manage tenants</td><td class="cross">❌</td><td class="check">✅ Own</td><td class="check">✅ Agency scope</td><td class="check">✅ All</td></tr>
+      <tr><td>Manage clients</td><td class="cross">❌</td><td class="cross">❌</td><td class="check">✅ Own agency</td><td class="check">✅ All</td></tr>
+      <tr><td>Manage agencies</td><td class="cross">❌</td><td class="cross">❌</td><td class="cross">❌</td><td class="check">✅</td></tr>
+      <tr><td>Bulk upload units</td><td class="cross">❌</td><td class="check">✅</td><td class="check">✅</td><td class="check">✅</td></tr>
+      <tr><td>Bulk upload tenants</td><td class="cross">❌</td><td class="check">✅</td><td class="check">✅</td><td class="check">✅</td></tr>
+      <tr><td>Bulk post transactions</td><td class="cross">❌</td><td class="check">✅</td><td class="check">✅</td><td class="check">✅</td></tr>
+      <tr><td>Reset tenant password</td><td class="cross">❌</td><td class="cross">❌</td><td class="cross">❌</td><td class="check">✅</td></tr>
+      <tr><td>View Credentials Report</td><td class="cross">❌</td><td class="cross">❌</td><td class="cross">❌</td><td class="check">✅</td></tr>
+      <tr><td>View Full Data Report</td><td class="cross">❌</td><td class="cross">❌</td><td class="cross">❌</td><td class="check">✅</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CHAPTER 11 — FIELD REFERENCE
+════════════════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch11">
+  <div class="ch-num">Chapter 11</div>
+  <h1 class="ch">Field Reference Guide</h1>
+  <div class="ch-divider"></div>
+
+  <h2 class="section">11.1 Property Fields</h2>
+  <table class="field-table">
+    <thead><tr><th>Field</th><th>Required</th><th>Description &amp; Allowed Values</th></tr></thead>
+    <tbody>
+      <tr><td>Property Code</td><td><span class="req">REQ</span></td><td>Auto-generated (e.g. PR001). Unique across system. Read-only after creation.</td></tr>
+      <tr><td>Property Name</td><td><span class="req">REQ</span></td><td>Full descriptive name of the building/development.</td></tr>
+      <tr><td>Property Type</td><td><span class="req">REQ</span></td><td>Apartment, Villa, Loft, Condo, House, Suite, or Commercial.</td></tr>
+      <tr><td>Country</td><td><span class="req">REQ</span></td><td>Country of the property.</td></tr>
+      <tr><td>City</td><td><span class="req">REQ</span></td><td>City of the property.</td></tr>
+      <tr><td>Location / Address</td><td><span class="req">REQ</span></td><td>Street address or location description.</td></tr>
+      <tr><td>Manager Name</td><td><span class="req">REQ</span></td><td>On-site manager or caretaker.</td></tr>
+      <tr><td>Manager Phone</td><td><span class="req">REQ</span></td><td>Contact number for the manager.</td></tr>
+      <tr><td>Currency</td><td><span class="req">REQ</span></td><td>USD, EUR, GBP, or CAD. All transactions for this property use this currency.</td></tr>
+      <tr><td>Active</td><td><span class="req">REQ</span></td><td>Yes / No. Inactive properties are hidden from dropdowns.</td></tr>
+      <tr><td>Notes</td><td><span class="opt">OPT</span></td><td>Any additional information about the property.</td></tr>
+      <tr><td>Property Picture</td><td><span class="opt">OPT</span></td><td>Image file (JPG, PNG). Stored as base64.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="section">11.2 Property Unit Fields</h2>
+  <table class="field-table">
+    <thead><tr><th>Field</th><th>Required</th><th>Description &amp; Allowed Values</th></tr></thead>
+    <tbody>
+      <tr><td>Unit Code</td><td><span class="req">REQ</span></td><td>Auto-generated (e.g. UN001).</td></tr>
+      <tr><td>Property</td><td><span class="req">REQ</span></td><td>Select from existing properties.</td></tr>
+      <tr><td>Unit Number</td><td><span class="req">REQ</span></td><td>Must be unique within the selected property (e.g. 101, A2).</td></tr>
+      <tr><td>Rent Amount</td><td><span class="req">REQ</span></td><td>Numeric. Monthly rent for this unit.</td></tr>
+      <tr><td>Deposit Amount</td><td><span class="req">REQ</span></td><td>Numeric. Security deposit required.</td></tr>
+      <tr><td>Bedrooms</td><td><span class="req">REQ</span></td><td>Integer (0 for studio).</td></tr>
+      <tr><td>Bathrooms</td><td><span class="req">REQ</span></td><td>Integer.</td></tr>
+      <tr><td>Floor</td><td><span class="req">REQ</span></td><td>Integer (0 for ground floor).</td></tr>
+      <tr><td>Status</td><td><span class="req">REQ</span></td><td>Occupied or Vacant.</td></tr>
+      <tr><td>Notes</td><td><span class="opt">OPT</span></td><td>Any notes about the unit.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="section">11.3 Tenant Fields</h2>
+  <table class="field-table">
+    <thead><tr><th>Field</th><th>Required</th><th>Description &amp; Allowed Values</th></tr></thead>
+    <tbody>
+      <tr><td>Tenant Number</td><td>—</td><td>Auto-generated (format: TN-YYYY-###).</td></tr>
+      <tr><td>First Name</td><td><span class="req">REQ</span></td><td>Legal first name.</td></tr>
+      <tr><td>Last Name</td><td><span class="req">REQ</span></td><td>Legal surname.</td></tr>
+      <tr><td>ID Number</td><td><span class="req">REQ</span></td><td>National ID, passport, or equivalent.</td></tr>
+      <tr><td>Telephone</td><td><span class="req">REQ</span></td><td>Contact phone. Also used for First Time Setup verification.</td></tr>
+      <tr><td>Email</td><td><span class="req">REQ</span></td><td>Valid email address.</td></tr>
+      <tr><td>Address</td><td><span class="req">REQ</span></td><td>Home address (prior or current).</td></tr>
+      <tr><td>Property</td><td><span class="req">REQ</span></td><td>Select from dropdown.</td></tr>
+      <tr><td>Unit</td><td><span class="req">REQ</span></td><td>Select from units in the chosen property.</td></tr>
+      <tr><td>Rent Amount</td><td><span class="req">REQ</span></td><td>Agreed monthly (or periodic) rent.</td></tr>
+      <tr><td>Rent Frequency</td><td><span class="req">REQ</span></td><td>Monthly, Quarterly, SemiAnnually, or Annually.</td></tr>
+      <tr><td>Deposit Amount</td><td><span class="req">REQ</span></td><td>Security deposit paid.</td></tr>
+      <tr><td>Move-in Date</td><td><span class="req">REQ</span></td><td>Lease start date.</td></tr>
+      <tr><td>Move-out Date</td><td><span class="opt">OPT</span></td><td>Lease end date. Filled when tenant vacates.</td></tr>
+      <tr><td>Photograph</td><td><span class="req">REQ</span></td><td>Tenant photo (JPG/PNG).</td></tr>
+      <tr><td>ID Copy</td><td><span class="req">REQ</span></td><td>Scanned ID document (PDF/JPG/PNG).</td></tr>
+      <tr><td>Rent Agreement</td><td><span class="req">REQ</span></td><td>Signed lease document (PDF/JPG/PNG/DOC/DOCX).</td></tr>
+      <tr><td>Active</td><td><span class="req">REQ</span></td><td>Yes / No.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="section">11.4 Transaction Fields</h2>
+  <table class="field-table">
+    <thead><tr><th>Field</th><th>Required</th><th>Description &amp; Allowed Values</th></tr></thead>
+    <tbody>
+      <tr><td>Transaction Ref</td><td>—</td><td>Auto-generated (format: TXN-#####).</td></tr>
+      <tr><td>Date</td><td><span class="req">REQ</span></td><td>Date of the financial event (YYYY-MM-DD).</td></tr>
+      <tr><td>Currency</td><td>—</td><td>Read-only, inherited from the property.</td></tr>
+      <tr><td>Property</td><td><span class="req">REQ</span></td><td>Select from client's properties (Client/Agency/Master only).</td></tr>
+      <tr><td>Tenant</td><td><span class="req">REQ</span></td><td>Select tenant in the chosen property.</td></tr>
+      <tr><td>Description</td><td><span class="req">REQ</span></td><td>Clear description (e.g. <em>Rent Payment — June 2026</em>).</td></tr>
+      <tr><td>Amount</td><td><span class="req">REQ</span></td><td>Numeric. Positive = money received. Negative = charge/debit.</td></tr>
+      <tr><td>Note</td><td><span class="opt">OPT</span></td><td>Additional context or remarks.</td></tr>
+      <tr><td>Document</td><td><span class="req">REQ</span></td><td>Supporting document (PDF/JPG/PNG/DOC/DOCX).</td></tr>
+      <tr><td>Status</td><td>—</td><td>Pending (N) or Verified (Y). Set by Master Admin only.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CHAPTER 12 — GLOSSARY
+════════════════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch12">
+  <div class="ch-num">Chapter 12</div>
+  <h1 class="ch">Glossary</h1>
+  <div class="ch-divider"></div>
+
+  <dl class="glossary">
+    <dt>Active</dt>
+    <dd>A status flag (Yes/No) on records. Inactive records are hidden from selection dropdowns but preserved in the database.</dd>
+
+    <dt>Agency</dt>
+    <dd>A property management company that manages one or more clients (property owners) and their portfolios on the platform.</dd>
+
+    <dt>Authenticated / Verified</dt>
+    <dd>A transaction status indicating that a Master Admin has reviewed and confirmed the entry. Verified transactions are locked from editing or deletion.</dd>
+
+    <dt>Base64</dt>
+    <dd>A method of encoding binary files (images, PDFs) as text so they can be stored in the browser's local storage. File attachments in this system are stored as base64.</dd>
+
+    <dt>Bulk Post</dt>
+    <dd>A feature that creates one transaction per selected tenant in a single action — useful for month-end rent charges across a whole property.</dd>
+
+    <dt>Client</dt>
+    <dd>A property owner whose portfolio is managed by an agency on the platform.</dd>
+
+    <dt>Credit</dt>
+    <dd>A positive transaction amount representing money received into an account (e.g. rent paid by tenant).</dd>
+
+    <dt>Debit</dt>
+    <dd>A negative transaction amount representing a charge or money owed (e.g. maintenance fee charged to tenant).</dd>
+
+    <dt>First Time Setup</dt>
+    <dd>The one-time process for a new user to create their username and password before their first login.</dd>
+
+    <dt>Local Storage</dt>
+    <dd>Browser-based data storage used by this application. Data persists between browser sessions but is tied to the specific browser and device.</dd>
+
+    <dt>Master Admin</dt>
+    <dd>The top-level administrator with unrestricted access to all data and the exclusive ability to verify transactions, manage agencies, and reset tenant credentials.</dd>
+
+    <dt>Modal</dt>
+    <dd>A pop-up form overlay that appears on top of the current page. Used for all add, edit, and view operations.</dd>
+
+    <dt>Pending</dt>
+    <dd>The default status for a newly posted transaction, indicating it has not yet been reviewed or verified by a Master Admin.</dd>
+
+    <dt>Property Code</dt>
+    <dd>A unique auto-generated identifier for each property (e.g. PR001).</dd>
+
+    <dt>Rent Frequency</dt>
+    <dd>How often a tenant pays rent: Monthly, Quarterly (every 3 months), SemiAnnually (every 6 months), or Annually (once per year).</dd>
+
+    <dt>Running Balance</dt>
+    <dd>The sum of all transaction amounts for a tenant or portfolio — positive means a net credit, negative means a net debit/outstanding amount.</dd>
+
+    <dt>Session</dt>
+    <dd>A temporary login state stored in the browser's session storage. Cleared automatically when the browser tab is closed.</dd>
+
+    <dt>Tenant Number</dt>
+    <dd>A unique auto-generated identifier for each tenant (format: TN-YYYY-###, where YYYY is the year of registration).</dd>
+
+    <dt>Toast</dt>
+    <dd>A small, temporary notification banner that appears in the top-right corner of the screen after an action, then disappears automatically.</dd>
+
+    <dt>Transaction Reference</dt>
+    <dd>A unique identifier for each transaction (format: TXN-#####). Note this number when submitting a payment for future enquiries.</dd>
+
+    <dt>Unit Code</dt>
+    <dd>A unique auto-generated identifier for each property unit (e.g. UN001).</dd>
+  </dl>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CHAPTER 13 — TROUBLESHOOTING
+════════════════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch13">
+  <div class="ch-num">Chapter 13</div>
+  <h1 class="ch">Troubleshooting</h1>
+  <div class="ch-divider"></div>
+
+  <table>
+    <thead><tr><th>Problem</th><th>Likely Cause</th><th>Solution</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Cannot log in — "Invalid credentials"</td>
+        <td>Wrong username, password, or property code (Tenants).</td>
+        <td>Double-check all fields. Note: usernames and passwords are case-sensitive. Use Forgot Password if needed.</td>
+      </tr>
+      <tr>
+        <td>Cannot log in — "Account inactive"</td>
+        <td>The account's Active flag is set to No.</td>
+        <td>Contact your Agency or Master Admin to re-activate the account.</td>
+      </tr>
+      <tr>
+        <td>First Time Setup: "Phone number does not match"</td>
+        <td>The telephone number entered does not match the one registered by the administrator.</td>
+        <td>Contact your administrator to confirm the exact phone number on file.</td>
+      </tr>
+      <tr>
+        <td>Reset code expired</td>
+        <td>More than 15 minutes passed since the reset code was generated.</td>
+        <td>Start the Forgot Password process again to generate a new code.</td>
+      </tr>
+      <tr>
+        <td>Delete button is greyed out / disabled</td>
+        <td>The record has dependent data (e.g. a property with active tenants cannot be deleted).</td>
+        <td>Deactivate or remove all dependent records first, then delete.</td>
+      </tr>
+      <tr>
+        <td>Cannot edit or delete a transaction</td>
+        <td>The transaction has been verified (status = Verified).</td>
+        <td>Contact your Master Admin. Verified transactions are locked by design.</td>
+      </tr>
+      <tr>
+        <td>File upload fails silently</td>
+        <td>File type not supported, or file is very large.</td>
+        <td>Check the accepted file types listed in the upload field. Try a smaller or compressed file.</td>
+      </tr>
+      <tr>
+        <td>Bulk upload shows all rows as errors</td>
+        <td>Column headers do not match the template, or the wrong file was uploaded.</td>
+        <td>Always start from the downloaded template. Do not rename or reorder the columns.</td>
+      </tr>
+      <tr>
+        <td>Unit dropdown is empty when adding a tenant</td>
+        <td>No units exist for the selected property, or all units are occupied.</td>
+        <td>Add units to the property first, then return to add the tenant.</td>
+      </tr>
+      <tr>
+        <td>Data has disappeared after switching browsers or devices</td>
+        <td>Data is stored in browser local storage, which is device and browser-specific.</td>
+        <td>Always use the same browser on the same device. Data does not sync across devices.</td>
+      </tr>
+      <tr>
+        <td>Dashboard shows zero records but data was entered</td>
+        <td>Session expired (browser was closed and reopened).</td>
+        <td>Log in again. Your data is still in the browser's local storage.</td>
+      </tr>
+      <tr>
+        <td>Report page shows no data</td>
+        <td>Opened <span class="screen">report.html</span> in a different browser to where data was entered.</td>
+        <td>Open the report in the same browser where the app data was entered.</td>
+      </tr>
+      <tr>
+        <td>"Username already exists" when setting up</td>
+        <td>Another user in the same role has the same username.</td>
+        <td>Choose a different, unique username.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 class="section">Getting Further Help</h2>
+  <p>If you encounter an issue not listed above:</p>
+  <ul>
+    <li><strong>Tenants</strong> — contact your Client or Agency administrator.</li>
+    <li><strong>Clients</strong> — contact your Agency administrator.</li>
+    <li><strong>Agencies</strong> — contact the Master Admin.</li>
+    <li><strong>Master Admin</strong> — consult the application's technical documentation or developer.</li>
+  </ul>
+
+  <div style="margin-top:60px;padding-top:24px;border-top:2px solid var(--border);text-align:center;color:#888;font-size:0.85rem;">
+    <p><strong>Property Management App — Training Manual</strong></p>
+    <p>Version 1.0 &nbsp;·&nbsp; April 2026 &nbsp;·&nbsp; Internal Use Only</p>
+    <p>This document was generated from the live application. For the most current information, refer to the application itself.</p>
+  </div>
+</div>
+</div><!-- /content -->
+
+</body>
+</html>
