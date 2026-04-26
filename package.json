@@ -2,9 +2,11 @@
   "name": "property-management-app",
   "version": "1.0.0",
   "private": true,
-  "engines": { "node": ">=18.x" },
+  "engines": {
+    "node": ">=18.x"
+  },
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.3",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.12.0"
   }

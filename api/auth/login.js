@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { getPool }   = require('../lib/db');
 const { signToken } = require('../lib/auth');
 const cors          = require('../lib/cors');
