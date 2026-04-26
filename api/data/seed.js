@@ -10,7 +10,9 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const user = requireAuth(req);
-  if (!user || user.role !== 'master') {
+  const { seedSecret } = req.body || {};
+  const validSecret = seedSecret && process.env.SEED_SECRET && seedSecret === process.env.SEED_SECRET;
+  if (!validSecret && (!user || user.role !== 'master')) {
     return res.status(403).json({ error: 'Master access required' });
   }
 
