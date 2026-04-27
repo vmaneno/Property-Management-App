@@ -41,6 +41,7 @@
         <li class="nav-item"><button class="nav-link-btn" data-view="units"         onclick="showView('units',this)"><i class="fa-solid fa-door-open"></i> Units</button></li>
         <li class="nav-item"><button class="nav-link-btn" data-view="tenants"       onclick="showView('tenants',this)"><i class="fa-solid fa-users"></i> Tenants</button></li>
         <li class="nav-item"><button class="nav-link-btn" data-view="transactions"  onclick="showView('transactions',this)"><i class="fa-solid fa-money-bill-transfer"></i> Transactions</button></li>
+        <li class="nav-item"><button class="nav-link-btn" data-view="profile"       onclick="showView('profile',this)"><i class="fa-solid fa-circle-user"></i> My Profile</button></li>
       </ul>
     </nav>
     <div class="sidebar-footer">
@@ -129,8 +130,8 @@
   function showView(view, btn) {
     document.querySelectorAll('.nav-link-btn').forEach(b=>b.classList.remove('active'));
     if(btn) btn.classList.add('active');
-    const titles={dashboard:'Master Dashboard',agencies:'Agencies',clients:'All Clients',properties:'All Properties',units:'All Units',tenants:'All Tenants',transactions:'All Transactions'};
-    document.getElementById('page-title').textContent=titles[view];
+    const titles={dashboard:'Master Dashboard',agencies:'Agencies',clients:'All Clients',properties:'All Properties',units:'All Units',tenants:'All Tenants',transactions:'All Transactions',profile:'My Profile'};
+    document.getElementById('page-title').textContent=titles[view]||view;
     const ta=document.getElementById('topbar-actions');
     ta.innerHTML='';
     const c=document.getElementById('view-container');
@@ -141,6 +142,7 @@
     else if (view==='units')        { c.innerHTML=renderUnits();        ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddUnit()"><i class="fa-solid fa-plus"></i> Add Unit</button> <button class="btn-primary-custom bg-master" onclick="openUnitsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Units Upload</button>`; }
     else if (view==='tenants')      { c.innerHTML=renderTenants();      ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddTenant()"><i class="fa-solid fa-plus"></i> Add Tenant</button> <button class="btn-primary-custom bg-master" onclick="openTenantsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Tenants Upload</button>`; }
     else if (view==='transactions') { c.innerHTML=renderTransactions(); ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openPostTx()"><i class="fa-solid fa-plus"></i> Post Transaction</button><button class="btn-primary-custom" style="background:#1a6b3c;margin-left:8px" onclick="openBulkPostTx()"><i class="fa-solid fa-layer-group"></i> Bulk Posting</button><button class="btn-primary-custom" style="background:#555;margin-left:8px" onclick="openResetModal()"><i class="fa-solid fa-rotate"></i> Reset Data</button>`; }
+    else if (view==='profile')      { c.innerHTML=renderProfile(); }
   }
 
   function renderDashboard() {
@@ -1423,6 +1425,116 @@
     DB.reset();
     toast('Data has been reset to defaults.','info');
     showView('dashboard', document.querySelector('[data-view="dashboard"]'));
+  }
+
+  function renderProfile() {
+    const a = DB.findOne('agencies', { AgencyCode: masterAgency.AgencyCode }) || masterAgency;
+    return `
+    <div class="table-card" style="max-width:640px;margin:0 auto;">
+      <div class="table-card-header"><h5><i class="fa-solid fa-circle-user" style="margin-right:8px"></i>Admin Profile</h5></div>
+      <div class="modal-body-pad" style="padding:24px 28px;">
+
+        <div style="display:flex;align-items:center;gap:18px;margin-bottom:28px;">
+          <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#9b0000,#5c0000);display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:700;color:#fff;">
+            ${a.AgencyName ? a.AgencyName[0].toUpperCase() : 'M'}
+          </div>
+          <div>
+            <div style="font-size:1.15rem;font-weight:600;">${a.AgencyName || '—'}</div>
+            <div style="font-size:.85rem;color:var(--text-muted,#888);">Master Admin &mdash; ${a.AgencyCode}</div>
+          </div>
+        </div>
+
+        <form onsubmit="saveProfile(event)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Agency Name</label>
+              <input class="form-control" id="prof-name" value="${a.AgencyName || ''}" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input class="form-control" id="prof-email" type="email" value="${a.Email || ''}" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Telephone</label>
+              <input class="form-control" id="prof-tel" value="${a.Telephone || ''}">
+            </div>
+
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Address</label>
+              <input class="form-control" id="prof-address" value="${a.Address || ''}">
+            </div>
+
+          </div>
+
+          <hr style="margin:24px 0;border-color:var(--border-color,#e0e0e0)">
+          <h6 style="margin-bottom:16px;font-weight:600;"><i class="fa-solid fa-lock" style="margin-right:6px"></i>Change Password</h6>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Current Password</label>
+              <input class="form-control" id="prof-cur-pwd" type="password" placeholder="Enter current password">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">New Password</label>
+              <input class="form-control" id="prof-new-pwd" type="password" placeholder="New password (min 6 chars)">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Confirm New Password</label>
+              <input class="form-control" id="prof-conf-pwd" type="password" placeholder="Repeat new password">
+            </div>
+
+          </div>
+
+          <div style="margin-top:24px;display:flex;gap:12px;justify-content:flex-end;">
+            <button type="submit" class="btn-primary-custom bg-master"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+  }
+
+  function saveProfile(e) {
+    e.preventDefault();
+    const a = DB.findOne('agencies', { AgencyCode: masterAgency.AgencyCode });
+    if (!a) { toast('Agency record not found.', 'error'); return; }
+
+    const name    = document.getElementById('prof-name').value.trim();
+    const email   = document.getElementById('prof-email').value.trim();
+    const tel     = document.getElementById('prof-tel').value.trim();
+    const address = document.getElementById('prof-address').value.trim();
+    const curPwd  = document.getElementById('prof-cur-pwd').value;
+    const newPwd  = document.getElementById('prof-new-pwd').value;
+    const confPwd = document.getElementById('prof-conf-pwd').value;
+
+    if (!name || !email) { toast('Name and email are required.', 'error'); return; }
+
+    const updates = { AgencyName: name, Email: email, Telephone: tel, Address: address };
+
+    if (curPwd || newPwd || confPwd) {
+      if (!curPwd) { toast('Enter your current password to change it.', 'error'); return; }
+      if (curPwd !== (a.Password || a.password || '')) { toast('Current password is incorrect.', 'error'); return; }
+      if (newPwd.length < 6) { toast('New password must be at least 6 characters.', 'error'); return; }
+      if (newPwd !== confPwd) { toast('New passwords do not match.', 'error'); return; }
+      updates.Password = newPwd;
+      updates.password = newPwd;
+    }
+
+    DB.update('agencies', 'AgencyCode', masterAgency.AgencyCode, updates);
+    masterAgency = DB.findOne('agencies', { AgencyCode: masterAgency.AgencyCode });
+    document.getElementById('sb-name').textContent = masterAgency.AgencyName;
+    document.getElementById('sb-avatar').textContent = masterAgency.AgencyName[0].toUpperCase();
+
+    document.getElementById('prof-cur-pwd').value = '';
+    document.getElementById('prof-new-pwd').value = '';
+    document.getElementById('prof-conf-pwd').value = '';
+
+    toast('Profile updated successfully.', 'success');
   }
 
   function toast(msg,type='info') {
