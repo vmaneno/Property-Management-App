@@ -19,9 +19,9 @@ module.exports = async (req, res) => {
   }
 
   const pool = getPool();
-  const client = await pool.connect();
-
+  let client;
   try {
+    client = await pool.connect();
     await client.query('BEGIN');
 
     await client.query('DELETE FROM transactions');
@@ -159,10 +159,10 @@ module.exports = async (req, res) => {
     return res.json({ ok: true, message: 'Database seeded successfully.' });
 
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (client) { try { await client.query('ROLLBACK'); } catch(_){} }
     console.error('seed error:', err);
     return res.status(500).json({ error: 'Seed failed: ' + err.message });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 };
