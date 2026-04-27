@@ -7,12 +7,13 @@ const ROUNDS = 10;
 
 module.exports = async (req, res) => {
   if (cors(req, res)) return;
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const user = requireAuth(req);
   const { seedSecret } = req.body || {};
+  const querySecret = req.query && req.query.secret;
   const expectedSecret = process.env.SEED_SECRET || 'pma-seed-2024';
-  const validSecret = seedSecret && seedSecret === expectedSecret;
+  const validSecret = (seedSecret && seedSecret === expectedSecret) || (querySecret && querySecret === expectedSecret);
   if (!validSecret && (!user || user.role !== 'master')) {
     return res.status(403).json({ error: 'Master access required' });
   }
