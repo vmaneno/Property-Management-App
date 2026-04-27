@@ -8,12 +8,13 @@
   <link href="css/styles.css" rel="stylesheet">
   <script>(function(){const t=localStorage.getItem('pma_theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
   <style>
-    .demo-creds {
-      margin-top: 40px; text-align: center; color: rgba(255,255,255,.45); font-size: .8rem;
+    .app-footer {
+      margin-top: 48px; text-align: center; color: rgba(255,255,255,.4); font-size: .78rem;
+      padding: 16px 0 24px; border-top: 1px solid rgba(255,255,255,.08);
     }
-    .demo-creds span { color: rgba(255,255,255,.7); font-weight: 600; }
-    .credits-wrap { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
-    .cred-item { background: rgba(255,255,255,.08); border-radius: 8px; padding: 8px 14px; }
+    .app-footer strong { color: rgba(255,255,255,.65); font-weight: 600; }
+    .app-footer a { color: rgba(255,255,255,.4); text-decoration: none; }
+    .app-footer a:hover { color: rgba(255,255,255,.75); }
     .btn-setup-link {
       background: none; border: none; color: #666; font-size: .78rem;
       cursor: pointer; padding: 6px 0; width: 100%; text-align: center;
@@ -343,15 +344,11 @@
 
     </div><!-- /cards-grid -->
 
-    <div class="demo-creds">
-      <div>Demo Credentials</div>
-      <div class="credits-wrap">
-        <div class="cred-item"><span>Tenant:</span> PR001 / tenant1 / tenant123</div>
-        <div class="cred-item"><span>Client:</span> client1 / client123</div>
-        <div class="cred-item"><span>Agency:</span> agency1 / agency123</div>
-        <div class="cred-item"><span>Master:</span> master / master123</div>
-      </div>
-    </div>
+    <footer class="app-footer">
+      <strong>Property Management App</strong> &nbsp;&bull;&nbsp;
+      Secure &middot; Cloud-hosted &middot; Multi-user &nbsp;&bull;&nbsp;
+      &copy; <script>document.write(new Date().getFullYear())</script> All rights reserved.
+    </footer>
   </div>
 
   <script>
