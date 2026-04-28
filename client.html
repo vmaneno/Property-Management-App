@@ -7,6 +7,15 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="css/styles.css" rel="stylesheet">
   <script>(function(){const t=localStorage.getItem('pma_theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+  <style>
+    @media print {
+      .sidebar,.topbar,.sidebar-overlay,.toast-container,.modal-overlay,
+      .rpt-controls-area,.rpt-tab-bar,.rpt-print-btn { display:none !important; }
+      body,.dash-wrap,.main-content,.page-content { all:unset; display:block !important; }
+      .table-card { box-shadow:none !important; border:1px solid #ccc; }
+      .data-table th,.data-table td { font-size:.8rem; }
+    }
+  </style>
 </head>
 <body>
 <div class="dash-wrap">
@@ -31,6 +40,7 @@
         <li class="nav-item"><button class="nav-link-btn" data-view="tenants"      onclick="showView('tenants',this)"><i class="fa-solid fa-users"></i> Tenants</button></li>
         <li class="nav-item"><button class="nav-link-btn" data-view="transactions" onclick="showView('transactions',this)"><i class="fa-solid fa-money-bill-transfer"></i> Transactions</button></li>
         <li class="nav-item"><button class="nav-link-btn" data-view="profile"      onclick="showView('profile',this)"><i class="fa-solid fa-circle-user"></i> My Profile</button></li>
+        <li class="nav-item"><button class="nav-link-btn" data-view="reports"     onclick="showView('reports',this)"><i class="fa-solid fa-print"></i> Print Reports</button></li>
       </ul>
     </nav>
     <div class="sidebar-footer">
@@ -117,7 +127,7 @@
   function showView(view, btn) {
     document.querySelectorAll('.nav-link-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
-    const titles = { dashboard:'Dashboard', properties:'My Properties', units:'Property Units', tenants:'Tenants', transactions:'Transactions', profile:'My Profile' };
+    const titles = { dashboard:'Dashboard', properties:'My Properties', units:'Property Units', tenants:'Tenants', transactions:'Transactions', profile:'My Profile', reports:'Print Reports' };
     document.getElementById('page-title').textContent = titles[view] || view;
     const ta = document.getElementById('topbar-actions');
     ta.innerHTML = '';
@@ -128,6 +138,7 @@
     else if (view === 'tenants')    { c.innerHTML = renderTenants(); ta.innerHTML = `<button class="btn-primary-custom bg-client" onclick="openAddTenant()"><i class="fa-solid fa-plus"></i> Add Tenant</button> <button class="btn-primary-custom bg-client" onclick="openTenantsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Tenants Upload</button>`; }
     else if (view === 'transactions') { c.innerHTML = renderTransactions(); ta.innerHTML = `<button class="btn-primary-custom bg-client" onclick="openPostTx()"><i class="fa-solid fa-plus"></i> Post Transaction</button> <button class="btn-primary-custom bg-client" onclick="openBulkPostTx()" style="margin-left:8px"><i class="fa-solid fa-layer-group"></i> Bulk Posting</button>`; }
     else if (view === 'profile')      { c.innerHTML = renderProfile(); }
+    else if (view === 'reports')      { c.innerHTML = renderReports(); }
   }
 
   function renderDashboard() {
@@ -145,10 +156,19 @@
       <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#d62828,#9b0000)"><i class="fa-solid fa-circle-check"></i></div><div class="stat-info"><div class="stat-val">${occupied}/${units.length}</div><div class="stat-lbl">Occupied Units</div></div></div>
     </div>
     <div class="table-card">
-      <div class="table-card-header"><h5>Recent Transactions</h5><span style="font-size:.9rem;">Balance: <strong style="color:${balance>=0?'#2d9b59':'#d62828'}">${fmtMoney(balance)}</strong></span></div>
+      <div class="table-card-header">
+        <h5>Recent Transactions</h5>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <select id="dash-prop-filter" class="form-control-sm2" style="width:auto;min-width:160px;" onchange="filterDashTx()">
+            <option value="">All Properties</option>
+            ${props.map(p=>`<option value="${p.PropertyCode}">${p.PropertyName}</option>`).join('')}
+          </select>
+          <span style="font-size:.9rem;">Balance: <strong id="dash-bal-val" style="color:${balance>=0?'#2d9b59':'#d62828'}">${fmtMoney(balance)}</strong></span>
+        </div>
+      </div>
       <div class="table-responsive">
         <table class="data-table"><thead><tr><th>Date</th><th>Tenant</th><th>Description</th><th>Amount</th><th>Ref</th><th>Status</th></tr></thead>
-        <tbody>${txs.slice(0,10).map(tx=>{
+        <tbody id="dash-tx-tbody">${txs.slice(0,10).map(tx=>{
           const ten=DB.findOne('tenants',{TenantID:tx.TenantID})||{};
           return `<tr><td>${fmtDate(tx.Date)}</td><td>${ten.FirstName||''} ${ten.LastName||''}</td><td>${tx.Description}</td>
           <td style="font-weight:600;color:${Number(tx.Amount)>=0?'#2d9b59':'#d62828'}">${Number(tx.Amount)>=0?'+':''}${fmtMoney(tx.Amount)}</td>
@@ -158,6 +178,24 @@
         </table>
       </div>
     </div>`;
+  }
+
+  function filterDashTx() {
+    const propCode = document.getElementById('dash-prop-filter').value;
+    const allTxs   = myTxs();
+    const filtered = propCode ? allTxs.filter(tx=>tx.PropertyCode===propCode) : allTxs;
+    const bal      = filtered.reduce((s,t)=>s+Number(t.Amount),0);
+    const balEl    = document.getElementById('dash-bal-val');
+    if (balEl) { balEl.textContent=fmtMoney(bal); balEl.style.color=bal>=0?'#2d9b59':'#d62828'; }
+    const tbody = document.getElementById('dash-tx-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = filtered.slice(0,10).map(tx=>{
+      const ten=DB.findOne('tenants',{TenantID:tx.TenantID})||{};
+      return `<tr><td>${fmtDate(tx.Date)}</td><td>${ten.FirstName||''} ${ten.LastName||''}</td><td>${tx.Description}</td>
+      <td style="font-weight:600;color:${Number(tx.Amount)>=0?'#2d9b59':'#d62828'}">${Number(tx.Amount)>=0?'+':''}${fmtMoney(tx.Amount)}</td>
+      <td style="font-size:.78rem;font-family:monospace">${tx.transactionRef}</td>
+      <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td></tr>`;
+    }).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:#aaa">No transactions yet.</td></tr>';
   }
 
   function renderProperties() {
@@ -1079,7 +1117,7 @@
         <form onsubmit="saveProfile(event)">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
 
-            <div class="form-group" style="grid-column:1/-1">
+            <div class="form-group">
               <label class="form-label">Client Name</label>
               <input class="form-control" id="prof-name" value="${cl.ClientName || ''}" required>
             </div>
@@ -1094,7 +1132,7 @@
               <input class="form-control" id="prof-tel" value="${cl.Telephone || ''}">
             </div>
 
-            <div class="form-group" style="grid-column:1/-1">
+            <div class="form-group">
               <label class="form-label">Address</label>
               <input class="form-control" id="prof-address" value="${cl.Address || ''}">
             </div>
@@ -1105,11 +1143,6 @@
           <h6 style="margin-bottom:16px;font-weight:600;"><i class="fa-solid fa-lock" style="margin-right:6px"></i>Change Password</h6>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-
-            <div class="form-group" style="grid-column:1/-1">
-              <label class="form-label">Current Password</label>
-              <input class="form-control" id="prof-cur-pwd" type="password" placeholder="Enter current password">
-            </div>
 
             <div class="form-group">
               <label class="form-label">New Password</label>
@@ -1140,7 +1173,6 @@
     const email   = document.getElementById('prof-email').value.trim();
     const tel     = document.getElementById('prof-tel').value.trim();
     const address = document.getElementById('prof-address').value.trim();
-    const curPwd  = document.getElementById('prof-cur-pwd').value;
     const newPwd  = document.getElementById('prof-new-pwd').value;
     const confPwd = document.getElementById('prof-conf-pwd').value;
 
@@ -1148,9 +1180,7 @@
 
     const updates = { ClientName: name, Email: email, Telephone: tel, Address: address };
 
-    if (curPwd || newPwd || confPwd) {
-      if (!curPwd) { toast('Enter your current password to change it.', 'error'); return; }
-      if (curPwd !== (cl.Password || cl.password || '')) { toast('Current password is incorrect.', 'error'); return; }
+    if (newPwd || confPwd) {
       if (newPwd.length < 6) { toast('New password must be at least 6 characters.', 'error'); return; }
       if (newPwd !== confPwd) { toast('New passwords do not match.', 'error'); return; }
       updates.Password = newPwd;
@@ -1162,11 +1192,236 @@
     document.getElementById('sb-name').textContent = client.ClientName;
     document.getElementById('sb-avatar').textContent = client.ClientName[0].toUpperCase();
 
-    document.getElementById('prof-cur-pwd').value = '';
     document.getElementById('prof-new-pwd').value = '';
     document.getElementById('prof-conf-pwd').value = '';
 
     toast('Profile updated successfully.', 'success');
+  }
+
+  // ── REPORTS ────────────────────────────────────────────
+  function renderReports() {
+    const props = myProps();
+    const propOpts = props.map(p=>`<option value="${p.PropertyCode}">${p.PropertyName} (${p.PropertyCode})</option>`).join('');
+    const tenants  = myTenants().filter(t=>t.Active==='Y');
+    const tenOpts  = tenants.map(t=>`<option value="${t.TenantID}">${t.FirstName} ${t.LastName} (${t.TenantNumber})</option>`).join('');
+    return `
+    <div class="rpt-tab-bar" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+      <button class="btn-primary-custom bg-client" id="rtab-ptx"   onclick="showRptTab('ptx')"   style="opacity:1">Property Transactions</button>
+      <button class="btn-primary-custom bg-client" id="rtab-tstmt" onclick="showRptTab('tstmt')" style="opacity:.45">Tenant Statements</button>
+      <button class="btn-primary-custom bg-client" id="rtab-tlist" onclick="showRptTab('tlist')" style="opacity:.45">List of Tenants</button>
+    </div>
+
+    <!-- Report 1: Property Transactions -->
+    <div id="rpanel-ptx">
+      <div class="table-card" style="margin-bottom:16px;">
+        <div class="table-card-header rpt-controls-area"><h5><i class="fa-solid fa-money-bill-transfer"></i> Property Transactions</h5></div>
+        <div class="modal-body-pad rpt-controls-area">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label-sm">Property *</label>
+              <select class="form-control-sm2" id="rpt-ptx-prop">${propOpts||'<option value="">No properties</option>'}</select>
+            </div>
+            <div class="form-group"><label class="form-label-sm">Date From *</label>
+              <input class="form-control-sm2" id="rpt-ptx-from" type="date">
+            </div>
+            <div class="form-group"><label class="form-label-sm">Date To *</label>
+              <input class="form-control-sm2" id="rpt-ptx-to" type="date">
+            </div>
+          </div>
+          <button class="btn-primary-custom bg-client" onclick="genPropTxReport()"><i class="fa-solid fa-chart-bar"></i> Generate</button>
+        </div>
+      </div>
+      <div id="rpt-ptx-out" style="display:none"></div>
+    </div>
+
+    <!-- Report 2: Tenant Statements -->
+    <div id="rpanel-tstmt" style="display:none">
+      <div class="table-card" style="margin-bottom:16px;">
+        <div class="table-card-header rpt-controls-area"><h5><i class="fa-solid fa-file-invoice-dollar"></i> Tenant Statements</h5></div>
+        <div class="modal-body-pad rpt-controls-area">
+          <div class="form-group"><label class="form-label-sm">Select Tenants * (hold Ctrl/Cmd for multiple)</label>
+            <select class="form-control-sm2" id="rpt-tstmt-tens" multiple style="height:140px;">${tenOpts||'<option value="">No active tenants</option>'}</select>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:4px;margin-bottom:12px;">
+            <button type="button" class="btn-back" style="font-size:.78rem;padding:3px 10px" onclick="document.querySelectorAll('#rpt-tstmt-tens option').forEach(o=>o.selected=true)">Select All</button>
+            <button type="button" class="btn-back" style="font-size:.78rem;padding:3px 10px" onclick="document.querySelectorAll('#rpt-tstmt-tens option').forEach(o=>o.selected=false)">Clear</button>
+          </div>
+          <button class="btn-primary-custom bg-client" onclick="genTenantStmtReport()"><i class="fa-solid fa-chart-bar"></i> Generate</button>
+        </div>
+      </div>
+      <div id="rpt-tstmt-out" style="display:none"></div>
+    </div>
+
+    <!-- Report 3: List of Tenants -->
+    <div id="rpanel-tlist" style="display:none">
+      <div class="table-card" style="margin-bottom:16px;">
+        <div class="table-card-header rpt-controls-area"><h5><i class="fa-solid fa-users"></i> List of Tenants</h5></div>
+        <div class="modal-body-pad rpt-controls-area">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label-sm">Property</label>
+              <select class="form-control-sm2" id="rpt-tlist-prop">
+                <option value="">All Properties</option>${propOpts}
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label-sm">Status</label>
+              <select class="form-control-sm2" id="rpt-tlist-status">
+                <option value="">All</option><option value="Y">Active Only</option><option value="N">Inactive Only</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-primary-custom bg-client" onclick="genTenantListReport()"><i class="fa-solid fa-chart-bar"></i> Generate</button>
+        </div>
+      </div>
+      <div id="rpt-tlist-out" style="display:none"></div>
+    </div>`;
+  }
+
+  function showRptTab(tab) {
+    ['ptx','tstmt','tlist'].forEach(t => {
+      document.getElementById('rpanel-'+t).style.display  = t===tab ? '' : 'none';
+      document.getElementById('rtab-'+t).style.opacity    = t===tab ? '1' : '.45';
+    });
+  }
+
+  function genPropTxReport() {
+    const propCode = document.getElementById('rpt-ptx-prop').value;
+    const from     = document.getElementById('rpt-ptx-from').value;
+    const to       = document.getElementById('rpt-ptx-to').value;
+    if (!propCode) { toast('Select a property.','error'); return; }
+    if (!from || !to) { toast('Enter both date range dates.','error'); return; }
+    const prop = DB.findOne('properties',{PropertyCode:propCode})||{};
+    const tIds = myTenants().filter(t=>t.PropertyCode===propCode).map(t=>t.TenantID);
+    const txs  = DB.getAll('transactions')
+      .filter(tx=>tIds.includes(tx.TenantID) && tx.Date>=from && tx.Date<=to)
+      .sort((a,b)=>new Date(a.Date)-new Date(b.Date));
+    let runBal = 0;
+    const rows = txs.map(tx=>{
+      runBal += Number(tx.Amount);
+      const ten = DB.findOne('tenants',{TenantID:tx.TenantID})||{};
+      const cr  = Number(tx.Amount)>=0;
+      return `<tr>
+        <td>${fmtDate(tx.Date)}</td>
+        <td>${ten.FirstName||''} ${ten.LastName||''}</td>
+        <td>${tx.Description}</td>
+        <td style="font-family:monospace;font-size:.78rem">${tx.transactionRef}</td>
+        <td style="text-align:right;color:#d62828">${!cr?fmtMoney(Math.abs(Number(tx.Amount))):'—'}</td>
+        <td style="text-align:right;color:#1a6b3c">${cr?fmtMoney(Number(tx.Amount)):'—'}</td>
+        <td style="text-align:right;font-weight:700;color:${runBal>=0?'#1a6b3c':'#d62828'}">${fmtMoney(runBal)}</td>
+        <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td>
+      </tr>`;
+    }).join('');
+    const out = document.getElementById('rpt-ptx-out');
+    out.style.display = '';
+    out.innerHTML = `
+    <div class="table-card">
+      <div class="table-card-header">
+        <div>
+          <div style="font-weight:700;font-size:1rem">${prop.PropertyName||propCode} — Transactions</div>
+          <div style="font-size:.82rem;color:#888">${fmtDate(from)} to ${fmtDate(to)}</div>
+        </div>
+        <button class="btn-primary-custom bg-client rpt-print-btn" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead><tr><th>Date</th><th>Tenant</th><th>Description</th><th>Reference</th><th style="text-align:right">Debit</th><th style="text-align:right">Credit</th><th style="text-align:right">Balance</th><th>Status</th></tr></thead>
+          <tbody>${rows||'<tr><td colspan="8" style="text-align:center;padding:30px;color:#aaa">No transactions in this range.</td></tr>'}</tbody>
+          <tfoot><tr style="background:#f8f9ff">
+            <td colspan="6" style="text-align:right;font-weight:700;padding:12px 16px">Closing Balance:</td>
+            <td style="text-align:right;font-weight:700;color:${runBal>=0?'#1a6b3c':'#d62828'};padding:12px 16px">${fmtMoney(runBal)}</td><td></td>
+          </tr></tfoot>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  function genTenantStmtReport() {
+    const selected = Array.from(document.querySelectorAll('#rpt-tstmt-tens option:checked')).map(o=>o.value);
+    if (!selected.length) { toast('Select at least one tenant.','error'); return; }
+    const out = document.getElementById('rpt-tstmt-out');
+    out.style.display = '';
+    out.innerHTML = selected.map(tid => {
+      const t    = DB.findOne('tenants',{TenantID:tid});
+      if (!t) return '';
+      const prop = DB.findOne('properties',{PropertyCode:t.PropertyCode})||{};
+      const unit = DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
+      const txs  = DB.find('transactions',{TenantID:tid}).sort((a,b)=>new Date(a.Date)-new Date(b.Date));
+      let runBal = 0;
+      const rows = txs.map(tx=>{
+        runBal += Number(tx.Amount);
+        const cr = Number(tx.Amount)>=0;
+        return `<tr>
+          <td>${fmtDate(tx.Date)}</td>
+          <td>${tx.Description}</td>
+          <td style="font-family:monospace;font-size:.78rem">${tx.transactionRef}</td>
+          <td style="text-align:right;color:#d62828">${!cr?fmtMoney(Math.abs(Number(tx.Amount))):'—'}</td>
+          <td style="text-align:right;color:#1a6b3c">${cr?fmtMoney(Number(tx.Amount)):'—'}</td>
+          <td style="text-align:right;font-weight:700;color:${runBal>=0?'#1a6b3c':'#d62828'}">${fmtMoney(runBal)}</td>
+          <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td>
+        </tr>`;
+      }).join('');
+      return `
+      <div class="table-card" style="margin-bottom:20px;page-break-after:always;">
+        <div class="table-card-header">
+          <div>
+            <div style="font-weight:700">${t.FirstName} ${t.LastName} <span style="font-weight:400;font-size:.85rem;color:#888">(${t.TenantNumber})</span></div>
+            <div style="font-size:.82rem;color:#888">${prop.PropertyName||'—'} · Unit ${unit.UnitNumber||'—'} · Rent $${Number(t.RentAmount).toLocaleString()}/${t.RentFrequency}</div>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead><tr><th>Date</th><th>Description</th><th>Reference</th><th style="text-align:right">Debit</th><th style="text-align:right">Credit</th><th style="text-align:right">Balance</th><th>Status</th></tr></thead>
+            <tbody>${rows||'<tr><td colspan="7" style="text-align:center;padding:20px;color:#aaa">No transactions.</td></tr>'}</tbody>
+            <tfoot><tr style="background:#f8f9ff">
+              <td colspan="5" style="text-align:right;font-weight:700;padding:10px 16px">Closing Balance:</td>
+              <td style="text-align:right;font-weight:700;color:${runBal>=0?'#1a6b3c':'#d62828'};padding:10px 16px">${fmtMoney(runBal)}</td><td></td>
+            </tr></tfoot>
+          </table>
+        </div>
+      </div>`;
+    }).join('') + `<div style="text-align:right;margin-top:8px;"><button class="btn-primary-custom bg-client rpt-print-btn" onclick="window.print()"><i class="fa-solid fa-print"></i> Print All Statements</button></div>`;
+  }
+
+  function genTenantListReport() {
+    const propCode  = document.getElementById('rpt-tlist-prop').value;
+    const statusFlt = document.getElementById('rpt-tlist-status').value;
+    let tenants     = myTenants();
+    if (propCode)   tenants = tenants.filter(t=>t.PropertyCode===propCode);
+    if (statusFlt)  tenants = tenants.filter(t=>t.Active===statusFlt);
+    tenants.sort((a,b)=>((a.FirstName+a.LastName).localeCompare(b.FirstName+b.LastName)));
+    const propLabel = propCode ? (DB.findOne('properties',{PropertyCode:propCode})||{}).PropertyName||propCode : 'All Properties';
+    const rows = tenants.map((t,i)=>{
+      const prop = DB.findOne('properties',{PropertyCode:t.PropertyCode})||{};
+      const unit = DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
+      return `<tr>
+        <td>${i+1}</td>
+        <td style="font-family:monospace;font-size:.8rem">${t.TenantNumber}</td>
+        <td><strong>${t.FirstName} ${t.LastName}</strong></td>
+        <td>${t.Telephone}</td>
+        <td>${t.Email}</td>
+        <td>${prop.PropertyName||'—'}</td>
+        <td>Unit ${unit.UnitNumber||'—'}</td>
+        <td>$${Number(t.RentAmount).toLocaleString()} / ${t.RentFrequency}</td>
+        <td>${fmtDate(t.MoveInDate)}</td>
+        <td><span class="badge-${t.Active==='Y'?'active':'inactive'}">${t.Active==='Y'?'Active':'Inactive'}</span></td>
+      </tr>`;
+    }).join('');
+    const out = document.getElementById('rpt-tlist-out');
+    out.style.display = '';
+    out.innerHTML = `
+    <div class="table-card">
+      <div class="table-card-header">
+        <div>
+          <div style="font-weight:700;font-size:1rem">Tenant List — ${propLabel}</div>
+          <div style="font-size:.82rem;color:#888">Printed: ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})} · ${tenants.length} tenant(s)</div>
+        </div>
+        <button class="btn-primary-custom bg-client rpt-print-btn" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead><tr><th>#</th><th>ID</th><th>Name</th><th>Telephone</th><th>Email</th><th>Property</th><th>Unit</th><th>Rent</th><th>Move-In</th><th>Status</th></tr></thead>
+          <tbody>${rows||'<tr><td colspan="10" style="text-align:center;padding:30px;color:#aaa">No tenants found.</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
   }
 
   function toast(msg, type='info') {
