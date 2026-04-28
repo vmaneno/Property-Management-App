@@ -1598,6 +1598,7 @@
           <button class="rpt-tab"        onclick="showRptTab('propTx',this)">Property Transactions</button>
           <button class="rpt-tab"        onclick="showRptTab('tenantStmt',this)">Tenant Statements</button>
           <button class="rpt-tab"        onclick="showRptTab('tenantList',this)">List of Tenants</button>
+          <button class="rpt-tab"        onclick="showRptTab('unitList',this)">Units List</button>
         </div>
 
         <div id="rpt-clientTx">
@@ -1649,12 +1650,25 @@
           </div>
           <div id="r-tl-out"></div>
         </div>
+
+        <div id="rpt-unitList" style="display:none;opacity:0">
+          <div class="rpt-controls-area" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+            <div><label class="form-label-sm">Client</label><br>
+              <select class="form-control-sm2" id="r-ul-client" style="min-width:180px" onchange="rptCascadePropsForUnitList()"><option value="">All Clients</option>${clientOpts}</select></div>
+            <div><label class="form-label-sm">Property</label><br>
+              <select class="form-control-sm2" id="r-ul-prop" style="min-width:180px"><option value="">All Properties</option>${propOpts}</select></div>
+            <div><label class="form-label-sm">Status</label><br>
+              <select class="form-control-sm2" id="r-ul-status"><option value="">All</option><option value="Occupied">Occupied</option><option value="Vacant">Vacant</option></select></div>
+            <button class="btn-primary-custom bg-master" onclick="genUnitListReport()"><i class="fa-solid fa-play"></i> Generate</button>
+          </div>
+          <div id="r-ul-out"></div>
+        </div>
       </div>
     </div>`;
   }
 
   function showRptTab(name, btn) {
-    ['clientTx','propTx','tenantStmt','tenantList'].forEach(t=>{
+    ['clientTx','propTx','tenantStmt','tenantList','unitList'].forEach(t=>{
       const el=document.getElementById('rpt-'+t);
       if(el){el.style.display='none';el.style.opacity='0';}
     });
@@ -1815,6 +1829,55 @@
             <td>${fmtDate(t.MoveInDate)}</td>
             <td>${t.MoveOutDate?fmtDate(t.MoveOutDate):'—'}</td>
             <td><span class="badge-${t.Active==='Y'?'active':'inactive'}">${t.Active==='Y'?'Active':'Inactive'}</span></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+      <div class="rpt-print-btn"><button class="btn-primary-custom bg-master" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button></div>`;
+  }
+
+  function rptCascadePropsForUnitList() {
+    const cc = document.getElementById('r-ul-client').value;
+    const sel = document.getElementById('r-ul-prop');
+    const filtered = cc ? P().filter(p=>p.ClientCode===cc) : P();
+    sel.innerHTML = '<option value="">All Properties</option>' + filtered.map(p=>`<option value="${p.PropertyCode}">${p.PropertyName}</option>`).join('');
+  }
+
+  function genUnitListReport() {
+    const clientCode = document.getElementById('r-ul-client').value;
+    const propCode   = document.getElementById('r-ul-prop').value;
+    const status     = document.getElementById('r-ul-status').value;
+    let units = U();
+    if (propCode) units = units.filter(u=>u.PropertyCode===propCode);
+    else if (clientCode) {
+      const pCodes = P().filter(p=>p.ClientCode===clientCode).map(p=>p.PropertyCode);
+      units = units.filter(u=>pCodes.includes(u.PropertyCode));
+    }
+    if (status) units = units.filter(u=>u.UnitStatus===status);
+    units = units.slice().sort((a,b)=>{
+      const pa=DB.findOne('properties',{PropertyCode:a.PropertyCode})||{};
+      const pb=DB.findOne('properties',{PropertyCode:b.PropertyCode})||{};
+      return (pa.PropertyName||'').localeCompare(pb.PropertyName||'') || (a.UnitNumber||'').localeCompare(b.UnitNumber||'');
+    });
+    const cl   = clientCode ? (DB.findOne('clients',{ClientCode:clientCode})||{ClientName:clientCode}) : {ClientName:'All Clients'};
+    const prop = propCode   ? (DB.findOne('properties',{PropertyCode:propCode})||{PropertyName:propCode}) : {PropertyName:'All Properties'};
+    const statusLabel = status || 'All';
+    document.getElementById('r-ul-out').innerHTML = `
+      <div style="margin-bottom:10px;font-weight:600">${cl.ClientName} &mdash; ${prop.PropertyName} &mdash; Status: ${statusLabel} &mdash; ${units.length} unit(s)</div>
+      <table class="data-table" style="width:100%;font-size:.82rem">
+        <thead><tr><th>Unit Code</th><th>Unit #</th><th>Property</th><th>Client</th><th>Beds/Baths/Floor</th><th>Rent</th><th>Deposit</th><th>Status</th><th>Active</th></tr></thead>
+        <tbody>${units.map(u=>{
+          const p=DB.findOne('properties',{PropertyCode:u.PropertyCode})||{};
+          const c=DB.findOne('clients',{ClientCode:p.ClientCode})||{};
+          return `<tr>
+            <td style="font-family:monospace">${u.UnitCode}</td>
+            <td><strong>${u.UnitNumber}</strong></td>
+            <td>${p.PropertyName||'?'}</td>
+            <td>${c.ClientName||'?'}</td>
+            <td>${u.Bedrooms}BR / ${u.Bathrooms}BA / Fl.${u.Floor}</td>
+            <td>${p.Currency||'$'}${Number(u.RentAmount).toLocaleString()}</td>
+            <td>${p.Currency||'$'}${Number(u.DepositAmount).toLocaleString()}</td>
+            <td><span class="${u.UnitStatus==='Occupied'?'badge-occupied':'badge-vacant'}">${u.UnitStatus}</span></td>
+            <td><span class="badge-${u.Active==='Y'?'active':'inactive'}">${u.Active==='Y'?'Yes':'No'}</span></td>
           </tr>`;
         }).join('')}</tbody>
       </table>
