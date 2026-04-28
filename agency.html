@@ -498,7 +498,7 @@
       <div class="form-group"><label class="form-label-sm">Location / Address *</label><input class="form-control-sm2" id="ap-loc"></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Manager *</label><input class="form-control-sm2" id="ap-mgr"></div>
       <div class="form-group"><label class="form-label-sm">Manager Phone *</label><input class="form-control-sm2" id="ap-mgrph"></div></div>
-      <div class="form-row"><div class="form-group"><label class="form-label-sm">Currency *</label><select class="form-control-sm2" id="ap-curr"><option>USD</option><option>EUR</option><option>GBP</option><option>CAD</option></select></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Currency *</label><select class="form-control-sm2" id="ap-curr"><option>USD</option><option>EUR</option><option>GBP</option><option>CAD</option><option>KES</option><option>TZS</option><option>UGX</option></select></div>
       <div class="form-group"><label class="form-label-sm">Active</label><select class="form-control-sm2" id="ap-active"><option value="Y">Yes</option><option value="N">No</option></select></div></div>`,
       `<button class="btn-primary-custom bg-agency" onclick="saveAddProperty()">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`
     );
@@ -547,7 +547,7 @@
       <div class="form-group"><label class="form-label-sm">Location</label><input class="form-control-sm2" id="ep-loc" value="${p.PropertyLocation}"></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Manager</label><input class="form-control-sm2" id="ep-mgr" value="${p.Manager}"></div>
       <div class="form-group"><label class="form-label-sm">Manager Phone</label><input class="form-control-sm2" id="ep-mgrph" value="${p.ManagerPhone}"></div></div>
-      <div class="form-row"><div class="form-group"><label class="form-label-sm">Currency</label><select class="form-control-sm2" id="ep-curr"><option value="USD" ${p.Currency==='USD'?'selected':''}>USD</option><option value="EUR" ${p.Currency==='EUR'?'selected':''}>EUR</option><option value="GBP" ${p.Currency==='GBP'?'selected':''}>GBP</option></select></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Currency</label><select class="form-control-sm2" id="ep-curr"><option value="USD" ${p.Currency==='USD'?'selected':''}>USD</option><option value="EUR" ${p.Currency==='EUR'?'selected':''}>EUR</option><option value="GBP" ${p.Currency==='GBP'?'selected':''}>GBP</option><option value="CAD" ${p.Currency==='CAD'?'selected':''}>CAD</option><option value="KES" ${p.Currency==='KES'?'selected':''}>KES</option><option value="TZS" ${p.Currency==='TZS'?'selected':''}>TZS</option><option value="UGX" ${p.Currency==='UGX'?'selected':''}>UGX</option></select></div>
       <div class="form-group"><label class="form-label-sm">Active</label><select class="form-control-sm2" id="ep-active"><option value="Y" ${p.Active==='Y'?'selected':''}>Yes</option><option value="N" ${p.Active==='N'?'selected':''}>No</option></select></div></div>`,
       `<button class="btn-primary-custom bg-agency" onclick="saveEditProperty('${code}')">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`
     );
