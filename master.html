@@ -111,12 +111,13 @@
   const sess = JSON.parse(sessionStorage.getItem('pma_session') || 'null');
   if (!sess || sess.role !== 'master') { window.location.href = 'index.html'; }
 
-  let masterAgency = DB.findOne('agencies', { AgencyCode: sess.id, Master: 'Y' });
+  let masterAgency = DB.findOne('agencies', { AgencyCode: sess.id, Master: 'Y' })
+                  || DB.findOne('agencies', { AgencyCode: sess.id });
   if (!masterAgency) { window.location.href = 'index.html'; }
 
-  document.getElementById('sb-avatar').textContent = masterAgency.AgencyName[0].toUpperCase();
-  document.getElementById('sb-name').textContent   = masterAgency.AgencyName;
-  document.getElementById('sb-code').textContent   = 'Master — ' + masterAgency.AgencyCode;
+  document.getElementById('sb-avatar').textContent = (masterAgency.AgencyName||'M')[0].toUpperCase();
+  document.getElementById('sb-name').textContent   = masterAgency.AgencyName || 'Master';
+  document.getElementById('sb-code').textContent   = 'Master — ' + (masterAgency.AgencyCode || sess.id);
 
   function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
 
