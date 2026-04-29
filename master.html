@@ -1293,17 +1293,30 @@
     toast(`${count} tenant(s) imported successfully!`,'success');
   }
 
+  function etUnitOptions(propCode, selUnit) {
+    const units = U().filter(u => u.PropertyCode === propCode);
+    if (!units.length) return '<option value="">— No units —</option>';
+    return units.map(u=>`<option value="${u.UnitCode}" ${u.UnitCode===selUnit?'selected':''}>${u.UnitNumber}</option>`).join('');
+  }
+
+  function etCascadeUnits() {
+    const propCode = document.getElementById('et-prop').value;
+    const sel = document.getElementById('et-unit');
+    if (sel) sel.innerHTML = etUnitOptions(propCode, '');
+  }
+
   function openEditTenant(id) {
     const t=DB.findOne('tenants',{TenantID:id});if(!t)return;
     openModal('Edit Tenant — '+t.TenantNumber,`
       <div class="form-row"><div class="form-group"><label class="form-label-sm">First Name</label><input class="form-control-sm2" id="et-first" value="${t.FirstName}"></div>
       <div class="form-group"><label class="form-label-sm">Last Name</label><input class="form-control-sm2" id="et-last" value="${t.LastName}"></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">ID Number</label><input class="form-control-sm2" id="et-idnum" value="${t.IDNumber}"></div>
-      <div class="form-group"><label class="form-label-sm">Telephone</label><input class="form-control-sm2" id="et-tel" value="${t.Telephone}"></div></div>
-      <div class="form-group"><label class="form-label-sm">Email</label><input class="form-control-sm2" id="et-email" value="${t.Email}"></div>
-      <div class="form-group"><label class="form-label-sm">Address</label><input class="form-control-sm2" id="et-addr" value="${t.Address||''}"></div>
-      <div class="form-row"><div class="form-group"><label class="form-label-sm">Property</label><select class="form-control-sm2" id="et-prop">${propOptions(t.PropertyCode)}</select></div>
-      <div class="form-group"><label class="form-label-sm">Rent ($)</label><input class="form-control-sm2" id="et-rent" type="number" value="${t.RentAmount}"></div></div>
+      <div class="form-group"><label class="form-label-sm">Telephone</label><input class="form-control-sm2" id="et-tel" value="${t.Telephone}"></div>
+      <div class="form-group"><label class="form-label-sm">Unit</label><select class="form-control-sm2" id="et-unit">${etUnitOptions(t.PropertyCode, t.UnitCode)}</select></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Email</label><input class="form-control-sm2" id="et-email" value="${t.Email}"></div>
+      <div class="form-group"><label class="form-label-sm">Address</label><input class="form-control-sm2" id="et-addr" value="${t.Address||''}"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Property</label><select class="form-control-sm2" id="et-prop" onchange="etCascadeUnits()">${propOptions(t.PropertyCode)}</select></div>
+      <div class="form-group"><label class="form-label-sm">Rent</label><input class="form-control-sm2" id="et-rent" type="number" value="${t.RentAmount}"></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Move-In</label><input class="form-control-sm2" id="et-movein" type="date" value="${t.MoveInDate||''}"></div>
       <div class="form-group"><label class="form-label-sm">Move-Out</label><input class="form-control-sm2" id="et-moveout" type="date" value="${t.MoveOutDate||''}"></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Active</label><select class="form-control-sm2" id="et-active"><option value="Y" ${t.Active==='Y'?'selected':''}>Yes</option><option value="N" ${t.Active==='N'?'selected':''}>No</option></select></div>
@@ -1321,6 +1334,7 @@
       Email:document.getElementById('et-email').value,
       Address:document.getElementById('et-addr').value,
       PropertyCode:document.getElementById('et-prop').value,
+      UnitCode:document.getElementById('et-unit').value,
       RentAmount:parseFloat(document.getElementById('et-rent').value)||0,
       MoveInDate:document.getElementById('et-movein').value,
       MoveOutDate:document.getElementById('et-moveout').value,
