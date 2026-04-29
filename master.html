@@ -31,6 +31,11 @@
     .unit-count-pill { background:#ffe5e5;color:#9b0000;border-radius:10px;padding:2px 9px;font-size:.72rem;font-weight:700; }
     .unit-grp-body .table-responsive { margin:0; }
     .unit-grp-body .data-table { border-radius:0; }
+    .tenant-group-hdr { display:flex;align-items:center;justify-content:space-between;padding:13px 20px;cursor:pointer;background:#fafafa;border-bottom:1px solid #f0f0f0;transition:background .15s;gap:12px;flex-wrap:wrap; }
+    .tenant-group-hdr:hover { background:#fff5f5; }
+    .tenant-count-pill { background:#ffe5e5;color:#9b0000;border-radius:10px;padding:2px 9px;font-size:.72rem;font-weight:700; }
+    .tenant-grp-body .table-responsive { margin:0; }
+    .tenant-grp-body .data-table { border-radius:0; }
     @media print {
       .sidebar,.topbar,.rpt-controls-area,.rpt-tab-bar,.rpt-print-btn { display:none!important; }
       .main-content { margin:0!important;padding:0!important; }
@@ -163,7 +168,7 @@
     else if (view==='clients')      { c.innerHTML=renderClients();      ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddClient()"><i class="fa-solid fa-plus"></i> Add Client</button>`; }
     else if (view==='properties')   { c.innerHTML=renderProperties();   ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddProperty()"><i class="fa-solid fa-plus"></i> Add Property</button>`; }
     else if (view==='units')        { c.innerHTML=renderUnits(); buildUnitGroups(); ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddUnit()"><i class="fa-solid fa-plus"></i> Add Unit</button> <button class="btn-primary-custom bg-master" onclick="openUnitsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Units Upload</button>`; }
-    else if (view==='tenants')      { c.innerHTML=renderTenants();      ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddTenant()"><i class="fa-solid fa-plus"></i> Add Tenant</button> <button class="btn-primary-custom bg-master" onclick="openTenantsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Tenants Upload</button>`; }
+    else if (view==='tenants')      { c.innerHTML=renderTenants(); buildTenantGroups(); ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddTenant()"><i class="fa-solid fa-plus"></i> Add Tenant</button> <button class="btn-primary-custom bg-master" onclick="openTenantsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Tenants Upload</button>`; }
     else if (view==='transactions') { c.innerHTML=renderTransactions(); filterTxView(); ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openPostTx()"><i class="fa-solid fa-plus"></i> Post Transaction</button><button class="btn-primary-custom" style="background:#1a6b3c;margin-left:8px" onclick="openBulkPostTx()"><i class="fa-solid fa-layer-group"></i> Bulk Posting</button>`; }
     else if (view==='profile')      { c.innerHTML=renderProfile(); }
     else if (view==='reports')      { c.innerHTML=renderReports(); }
@@ -521,47 +526,128 @@
     toast(name+' deleted.','info');
   }
 
+  window._tSearch    = '';
+  window._tCollapsed = {};
+
   function renderTenants() {
-    const sorted = T().slice().sort((a,b)=>{
-      const pa=DB.findOne('properties',{PropertyCode:a.PropertyCode})||{};
-      const pb=DB.findOne('properties',{PropertyCode:b.PropertyCode})||{};
-      const ua=DB.findOne('propunits',{UnitCode:a.UnitCode})||{};
-      const ub=DB.findOne('propunits',{UnitCode:b.UnitCode})||{};
-      const pName = (pa.PropertyName||'').localeCompare(pb.PropertyName||'');
-      if (pName !== 0) return pName;
-      return (ua.UnitNumber||'').localeCompare(ub.UnitNumber||'');
+    window._tSearch = '';
+    return `<div class="table-card">
+      <div class="table-card-header"><h5 id="tenants-hdr-title">All Tenants</h5></div>
+      <div class="filter-bar" style="gap:10px;flex-wrap:wrap;align-items:center;">
+        <i class="fa-solid fa-magnifying-glass" style="color:#aaa;flex-shrink:0"></i>
+        <input id="filter-tenants-search" placeholder="Search by name, unit# or tenant#..."
+               style="flex:1;min-width:200px"
+               oninput="window._tSearch=this.value.toLowerCase();buildTenantGroups()">
+      </div>
+      <div id="tenant-groups"></div>
+    </div>`;
+  }
+
+  function toggleTenantGroup(propCode) {
+    window._tCollapsed[propCode] = !window._tCollapsed[propCode];
+    buildTenantGroups();
+  }
+
+  function buildTenantGroups() {
+    const search = window._tSearch || '';
+    const allTx  = DB.getAll('transactions');
+
+    let tenants = T().slice().sort((a,b) => {
+      const pa = DB.findOne('properties',{PropertyCode:a.PropertyCode})||{};
+      const pb = DB.findOne('properties',{PropertyCode:b.PropertyCode})||{};
+      const ua = DB.findOne('propunits',{UnitCode:a.UnitCode})||{};
+      const ub = DB.findOne('propunits',{UnitCode:b.UnitCode})||{};
+      const pCmp = (pa.PropertyName||'').localeCompare(pb.PropertyName||'');
+      if (pCmp !== 0) return pCmp;
+      return (ua.UnitNumber||'').localeCompare(ub.UnitNumber||'',undefined,{numeric:true});
     });
-    let lastTenantProp='';
-    const tenantRows = sorted.map(t=>{
-      const p=DB.findOne('properties',{PropertyCode:t.PropertyCode})||{};
-      const u=DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
-      const propName=p.PropertyName||t.PropertyCode||'?';
-      const canDel = t.Active !== 'Y' && !DB.getAll('transactions').some(tx=>tx.TenantID===t.TenantID);
-      let breakRow='';
-      if(propName!==lastTenantProp){
-        if(lastTenantProp!=='') breakRow=`<tr><td colspan="9" style="padding:0;border-top:3px solid #9b0000"></td></tr>`;
-        lastTenantProp=propName;
+
+    if (search) {
+      tenants = tenants.filter(t => {
+        const u = DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
+        return (t.FirstName+' '+t.LastName).toLowerCase().includes(search)
+            || (t.LastName+' '+t.FirstName).toLowerCase().includes(search)
+            || (u.UnitNumber||'').toLowerCase().includes(search)
+            || (t.TenantNumber||'').toLowerCase().includes(search);
+      });
+    }
+
+    const titleEl = document.getElementById('tenants-hdr-title');
+    if (titleEl) titleEl.textContent = 'All Tenants (' + tenants.length + ')';
+
+    const groups = {};
+    const order  = [];
+    tenants.forEach(t => {
+      const p = DB.findOne('properties',{PropertyCode:t.PropertyCode})||{};
+      if (!groups[t.PropertyCode]) {
+        groups[t.PropertyCode] = {propName: p.PropertyName||t.PropertyCode, tenants:[]};
+        order.push(t.PropertyCode);
       }
-      return breakRow+`<tr>
+      groups[t.PropertyCode].tenants.push(t);
+    });
+
+    const container = document.getElementById('tenant-groups');
+    if (!container) return;
+
+    if (!order.length) {
+      container.innerHTML = '<div style="padding:24px;text-align:center;color:#aaa;font-size:.9rem">No tenants match the current search.</div>';
+      return;
+    }
+
+    container.innerHTML = order.map(propCode => {
+      const grp       = groups[propCode];
+      const collapsed = window._tCollapsed[propCode];
+      const totalRent = grp.tenants.reduce((s,t) => s + Number(t.RentAmount||0), 0);
+      const totalDep  = grp.tenants.reduce((s,t) => s + Number(t.DepositAmount||0), 0);
+
+      const rows = grp.tenants.map(t => {
+        const u      = DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
+        const canDel = t.Active !== 'Y' && !allTx.some(tx => tx.TenantID === t.TenantID);
+        return `<tr>
           <td style="font-size:.78rem;font-family:monospace">${t.TenantNumber}</td>
           <td><strong>${t.FirstName} ${t.LastName}</strong><br><span class="text-muted-sm">${t.Email}</span></td>
           <td style="font-size:.78rem">${t.IDNumber}</td>
-          <td>${propName} / Unit ${u.UnitNumber||'?'}</td>
+          <td><strong>${u.UnitNumber||'?'}</strong></td>
           <td>$${Number(t.RentAmount).toLocaleString()} / ${t.RentFrequency}</td>
+          <td>$${Number(t.DepositAmount||0).toLocaleString()}</td>
           <td>${fmtDate(t.MoveInDate)}</td>
-          <td>${t.MoveOutDate?fmtDate(t.MoveOutDate):'—'}</td>
           <td><span class="badge-${t.Active==='Y'?'active':'inactive'}">${t.Active==='Y'?'Active':'Inactive'}</span></td>
           <td>
             <button class="btn-edit" onclick="openEditTenant('${t.TenantID}')"><i class="fa-solid fa-pen"></i></button>
             ${canDel?`<button class="btn-del" onclick="deleteTenant('${t.TenantID}','${t.FirstName} ${t.LastName}')"><i class="fa-solid fa-trash"></i></button>`:''}
           </td>
         </tr>`;
+      }).join('');
+
+      return `<div class="unit-group">
+        <div class="tenant-group-hdr" onclick="toggleTenantGroup('${propCode}')">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <i class="fa-solid fa-building" style="color:#9b0000"></i>
+            <strong style="font-size:.93rem">${grp.propName}</strong>
+            <span class="tenant-count-pill">${grp.tenants.length} tenant${grp.tenants.length!==1?'s':''}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+            <span style="font-size:.78rem;text-align:right">
+              <span style="color:#aaa;font-size:.7rem;display:block">Total Rent</span>
+              <strong>$${totalRent.toLocaleString()}</strong>
+            </span>
+            <span style="font-size:.78rem;text-align:right">
+              <span style="color:#aaa;font-size:.7rem;display:block">Total Deposit</span>
+              <strong>$${totalDep.toLocaleString()}</strong>
+            </span>
+            <i class="fa-solid fa-chevron-${collapsed?'right':'down'}" style="color:#9b0000;font-size:.8rem"></i>
+          </div>
+        </div>
+        <div class="tenant-grp-body" style="display:${collapsed?'none':'block'}">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead><tr><th>Tenant#</th><th>Name</th><th>ID</th><th>Unit#</th><th>Rent</th><th>Deposit</th><th>Move-in</th><th>Active</th><th>Actions</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
     }).join('');
-    return `<div class="table-card"><div class="table-card-header"><h5>All Tenants (${sorted.length})</h5></div>
-    <div class="table-responsive"><table class="data-table">
-      <thead><tr><th>Tenant#</th><th>Name</th><th>ID</th><th>Property / Unit</th><th>Rent</th><th>Move-in</th><th>Move-out</th><th>Active</th><th>Actions</th></tr></thead>
-      <tbody>${tenantRows}</tbody>
-    </table></div></div>`;
   }
 
   function viewTxDetail(ref) {
