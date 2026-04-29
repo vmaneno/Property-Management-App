@@ -1797,7 +1797,7 @@
     const out = document.getElementById('r-cl-out');
     out.innerHTML = `<div style="margin-bottom:10px;font-weight:600">${cl.ClientName} &mdash; ${from||'Start'} to ${to||'Today'} &mdash; ${txs.length} transactions</div>
       ${_txTable(txs,bal)}
-      <div class="rpt-print-btn"><button class="btn-primary-custom bg-master" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button></div>`;
+      <div class="rpt-print-btn"><button class="btn-primary-custom bg-master" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button> <button class="btn-primary-custom" style="background:#1a6b3c" onclick="exportRptXLSX('r-cl-out','client-transactions')"><i class="fa-solid fa-file-excel"></i> Export Excel</button> <button class="btn-primary-custom" style="background:#555" onclick="exportRptCSV('r-cl-out','client-transactions')"><i class="fa-solid fa-file-csv"></i> Export CSV</button></div>`;
   }
 
   function rptCascadePropsForTx() {
@@ -1825,7 +1825,7 @@
     const out  = document.getElementById('r-pt-out');
     out.innerHTML = `<div style="margin-bottom:10px;font-weight:600">${prop.PropertyName} &mdash; ${from||'Start'} to ${to||'Today'} &mdash; ${txs.length} transactions</div>
       ${_txTable(txs,bal)}
-      <div class="rpt-print-btn"><button class="btn-primary-custom bg-master" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button></div>`;
+      <div class="rpt-print-btn"><button class="btn-primary-custom bg-master" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button> <button class="btn-primary-custom" style="background:#1a6b3c" onclick="exportRptXLSX('r-pt-out','property-transactions')"><i class="fa-solid fa-file-excel"></i> Export Excel</button> <button class="btn-primary-custom" style="background:#555" onclick="exportRptCSV('r-pt-out','property-transactions')"><i class="fa-solid fa-file-csv"></i> Export CSV</button></div>`;
   }
 
   function rptCascadeProps() {
@@ -1866,7 +1866,7 @@
       </div>`;
     });
     document.getElementById('r-ts-out').innerHTML = html +
-      `<div class="rpt-print-btn"><button class="btn-primary-custom bg-master" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button></div>`;
+      `<div class="rpt-print-btn"><button class="btn-primary-custom bg-master" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button> <button class="btn-primary-custom" style="background:#1a6b3c" onclick="exportRptXLSX('r-ts-out','tenant-statements')"><i class="fa-solid fa-file-excel"></i> Export Excel</button> <button class="btn-primary-custom" style="background:#555" onclick="exportRptCSV('r-ts-out','tenant-statements')"><i class="fa-solid fa-file-csv"></i> Export CSV</button></div>`;
   }
 
   function rptCascadePropsForList() {
@@ -1891,7 +1891,7 @@
     document.getElementById('r-tl-out').innerHTML = `
       <div style="margin-bottom:10px;font-weight:600">${prop.PropertyName} &mdash; ${tenants.length} tenant(s)</div>
       <table class="data-table" style="width:100%;font-size:.82rem">
-        <thead><tr><th>#</th><th>Name</th><th>ID Number</th><th>Property / Unit</th><th>Rent</th><th>Move-in</th><th>Move-out</th><th>Status</th></tr></thead>
+        <thead><tr><th>#</th><th>Name</th><th>ID Number</th><th>Unit Number</th><th>Rent</th><th>Move-in</th><th>Move-out</th><th>Status</th></tr></thead>
         <tbody>${tenants.map(t=>{
           const p=DB.findOne('properties',{PropertyCode:t.PropertyCode})||{};
           const u=DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
@@ -1899,7 +1899,7 @@
             <td style="font-family:monospace">${t.TenantNumber}</td>
             <td>${t.FirstName} ${t.LastName}</td>
             <td>${t.IDNumber}</td>
-            <td>${p.PropertyName||'?'} / Unit ${u.UnitNumber||'?'}</td>
+            <td>${u.UnitNumber||'?'}</td>
             <td>$${Number(t.RentAmount).toLocaleString()} / ${t.RentFrequency}</td>
             <td>${fmtDate(t.MoveInDate)}</td>
             <td>${t.MoveOutDate?fmtDate(t.MoveOutDate):'—'}</td>
@@ -1907,7 +1907,7 @@
           </tr>`;
         }).join('')}</tbody>
       </table>
-      <div class="rpt-print-btn"><button class="btn-primary-custom bg-master" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button></div>`;
+      <div class="rpt-print-btn"><button class="btn-primary-custom bg-master" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button> <button class="btn-primary-custom" style="background:#1a6b3c" onclick="exportRptXLSX('r-tl-out','tenant-list')"><i class="fa-solid fa-file-excel"></i> Export Excel</button> <button class="btn-primary-custom" style="background:#555" onclick="exportRptCSV('r-tl-out','tenant-list')"><i class="fa-solid fa-file-csv"></i> Export CSV</button></div>`;
   }
 
   function rptCascadePropsForUnitList() {
@@ -1939,7 +1939,7 @@
     document.getElementById('r-ul-out').innerHTML = `
       <div style="margin-bottom:10px;font-weight:600">${cl.ClientName} &mdash; ${prop.PropertyName} &mdash; Status: ${statusLabel} &mdash; ${units.length} unit(s)</div>
       <table class="data-table" style="width:100%;font-size:.82rem">
-        <thead><tr><th>Unit Code</th><th>Unit #</th><th>Property</th><th>Client</th><th>Beds/Baths/Floor</th><th>Rent</th><th>Deposit</th><th>Status</th><th>Active</th></tr></thead>
+        <thead><tr><th>Unit Code</th><th>Unit #</th><th>Property</th><th>Client</th><th>Rent</th><th>Deposit</th><th>Status</th><th>Active</th></tr></thead>
         <tbody>${units.map(u=>{
           const p=DB.findOne('properties',{PropertyCode:u.PropertyCode})||{};
           const c=DB.findOne('clients',{ClientCode:p.ClientCode})||{};
@@ -1948,7 +1948,6 @@
             <td><strong>${u.UnitNumber}</strong></td>
             <td>${p.PropertyName||'?'}</td>
             <td>${c.ClientName||'?'}</td>
-            <td>${u.Bedrooms}BR / ${u.Bathrooms}BA / Fl.${u.Floor}</td>
             <td>${p.Currency||'$'}${Number(u.RentAmount).toLocaleString()}</td>
             <td>${p.Currency||'$'}${Number(u.DepositAmount).toLocaleString()}</td>
             <td><span class="${u.UnitStatus==='Occupied'?'badge-occupied':'badge-vacant'}">${u.UnitStatus}</span></td>
@@ -1956,7 +1955,28 @@
           </tr>`;
         }).join('')}</tbody>
       </table>
-      <div class="rpt-print-btn"><button class="btn-primary-custom bg-master" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button></div>`;
+      <div class="rpt-print-btn"><button class="btn-primary-custom bg-master" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button> <button class="btn-primary-custom" style="background:#1a6b3c" onclick="exportRptXLSX('r-ul-out','unit-list')"><i class="fa-solid fa-file-excel"></i> Export Excel</button> <button class="btn-primary-custom" style="background:#555" onclick="exportRptCSV('r-ul-out','unit-list')"><i class="fa-solid fa-file-csv"></i> Export CSV</button></div>`;
+  }
+
+  function exportRptCSV(outId, filename) {
+    const tbl = document.getElementById(outId).querySelector('table');
+    if (!tbl) { toast('Generate a report first.','error'); return; }
+    const rows = Array.from(tbl.querySelectorAll('tr'));
+    const csv = rows.map(r => Array.from(r.querySelectorAll('th,td')).map(c => {
+      const t = c.innerText.replace(/"/g,'""');
+      return `"${t}"`;
+    }).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = filename+'.csv'; a.click();
+  }
+
+  function exportRptXLSX(outId, filename) {
+    if (typeof XLSX === 'undefined') { toast('Excel library not loaded.','error'); return; }
+    const tbl = document.getElementById(outId).querySelector('table');
+    if (!tbl) { toast('Generate a report first.','error'); return; }
+    const wb = XLSX.utils.table_to_book(tbl, {sheet:'Report'});
+    XLSX.writeFile(wb, filename+'.xlsx');
   }
 
   function toast(msg,type='info') {
