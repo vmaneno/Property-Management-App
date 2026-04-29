@@ -21,6 +21,16 @@
     .rpt-tab.active { background:#9b0000;color:#fff;border-color:#9b0000; }
     .rpt-controls-area { margin-bottom:16px; }
     .rpt-print-btn { margin-top:14px; }
+    .unit-status-btn { padding:5px 14px;border:1px solid #ddd;border-radius:16px;cursor:pointer;font-size:.8rem;background:#f9f9f9;font-weight:600;color:#666;transition:all .15s; }
+    .unit-status-btn:hover { border-color:#9b0000;color:#9b0000; }
+    .unit-status-btn.uf-active { background:#9b0000;color:#fff;border-color:#9b0000; }
+    .unit-group { border-bottom:1px solid #f0f0f0; }
+    .unit-group:last-child { border-bottom:none; }
+    .unit-group-hdr { display:flex;align-items:center;justify-content:space-between;padding:13px 20px;cursor:pointer;background:#fafafa;border-bottom:1px solid #f0f0f0;transition:background .15s;gap:12px;flex-wrap:wrap; }
+    .unit-group-hdr:hover { background:#fff5f5; }
+    .unit-count-pill { background:#ffe5e5;color:#9b0000;border-radius:10px;padding:2px 9px;font-size:.72rem;font-weight:700; }
+    .unit-grp-body .table-responsive { margin:0; }
+    .unit-grp-body .data-table { border-radius:0; }
     @media print {
       .sidebar,.topbar,.rpt-controls-area,.rpt-tab-bar,.rpt-print-btn { display:none!important; }
       .main-content { margin:0!important;padding:0!important; }
@@ -152,7 +162,7 @@
     else if (view==='agencies')     { c.innerHTML=renderAgencies();     ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddAgency()"><i class="fa-solid fa-plus"></i> Add Agency</button>`; }
     else if (view==='clients')      { c.innerHTML=renderClients();      ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddClient()"><i class="fa-solid fa-plus"></i> Add Client</button>`; }
     else if (view==='properties')   { c.innerHTML=renderProperties();   ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddProperty()"><i class="fa-solid fa-plus"></i> Add Property</button>`; }
-    else if (view==='units')        { c.innerHTML=renderUnits();        ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddUnit()"><i class="fa-solid fa-plus"></i> Add Unit</button> <button class="btn-primary-custom bg-master" onclick="openUnitsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Units Upload</button>`; }
+    else if (view==='units')        { c.innerHTML=renderUnits(); buildUnitGroups(); ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddUnit()"><i class="fa-solid fa-plus"></i> Add Unit</button> <button class="btn-primary-custom bg-master" onclick="openUnitsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Units Upload</button>`; }
     else if (view==='tenants')      { c.innerHTML=renderTenants();      ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddTenant()"><i class="fa-solid fa-plus"></i> Add Tenant</button> <button class="btn-primary-custom bg-master" onclick="openTenantsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Tenants Upload</button>`; }
     else if (view==='transactions') { c.innerHTML=renderTransactions(); filterTxView(); ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openPostTx()"><i class="fa-solid fa-plus"></i> Post Transaction</button><button class="btn-primary-custom" style="background:#1a6b3c;margin-left:8px" onclick="openBulkPostTx()"><i class="fa-solid fa-layer-group"></i> Bulk Posting</button>`; }
     else if (view==='profile')      { c.innerHTML=renderProfile(); }
@@ -362,44 +372,137 @@
     </table></div></div>`;
   }
 
+  window._uSearch    = '';
+  window._uStatus    = '';
+  window._uCollapsed = {};
+
   function renderUnits() {
-    const sorted = U().slice().sort((a,b)=>{
-      const pa=DB.findOne('properties',{PropertyCode:a.PropertyCode})||{};
-      const pb=DB.findOne('properties',{PropertyCode:b.PropertyCode})||{};
-      const pCmp=(pa.PropertyName||'').localeCompare(pb.PropertyName||'');
-      if(pCmp!==0) return pCmp;
+    window._uSearch = '';
+    window._uStatus = '';
+    return `<div class="table-card">
+      <div class="table-card-header"><h5 id="units-hdr-title">All Units</h5></div>
+      <div class="filter-bar" style="gap:10px;flex-wrap:wrap;align-items:center;">
+        <i class="fa-solid fa-magnifying-glass" style="color:#aaa;flex-shrink:0"></i>
+        <input id="filter-units-search" placeholder="Search by property or unit..."
+               style="flex:1;min-width:180px"
+               oninput="window._uSearch=this.value.toLowerCase();buildUnitGroups()">
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button id="uf-btn-all"      class="unit-status-btn uf-active" onclick="setUnitStatus('')">All</button>
+          <button id="uf-btn-occupied" class="unit-status-btn"            onclick="setUnitStatus('Occupied')">Occupied</button>
+          <button id="uf-btn-vacant"   class="unit-status-btn"            onclick="setUnitStatus('Vacant')">Vacant</button>
+        </div>
+      </div>
+      <div id="unit-groups"></div>
+    </div>`;
+  }
+
+  function setUnitStatus(s) {
+    window._uStatus = s;
+    ['all','occupied','vacant'].forEach(k => {
+      const el = document.getElementById('uf-btn-' + k);
+      if (el) el.classList.remove('uf-active');
+    });
+    const btn = document.getElementById('uf-btn-' + (s ? s.toLowerCase() : 'all'));
+    if (btn) btn.classList.add('uf-active');
+    buildUnitGroups();
+  }
+
+  function toggleUnitGroup(propCode) {
+    window._uCollapsed[propCode] = !window._uCollapsed[propCode];
+    buildUnitGroups();
+  }
+
+  function buildUnitGroups() {
+    const search = window._uSearch || '';
+    const status = window._uStatus || '';
+
+    let units = U().slice().sort((a,b) => {
+      const pa = DB.findOne('properties',{PropertyCode:a.PropertyCode})||{};
+      const pb = DB.findOne('properties',{PropertyCode:b.PropertyCode})||{};
+      const pCmp = (pa.PropertyName||'').localeCompare(pb.PropertyName||'');
+      if (pCmp !== 0) return pCmp;
       return (a.UnitNumber||'').localeCompare(b.UnitNumber||'',undefined,{numeric:true});
     });
-    let lastProp='';
-    const rows = sorted.map(u=>{
-      const p=DB.findOne('properties',{PropertyCode:u.PropertyCode})||{};
-      const propName=p.PropertyName||u.PropertyCode;
-      let breakRow='';
-      if(propName!==lastProp){
-        if(lastProp!=='') breakRow=`<tr><td colspan="7" style="padding:0;border-top:3px solid #9b0000"></td></tr>`;
-        lastProp=propName;
+
+    if (status) units = units.filter(u => u.UnitStatus === status);
+    if (search) {
+      units = units.filter(u => {
+        const p = DB.findOne('properties',{PropertyCode:u.PropertyCode})||{};
+        return (p.PropertyName||'').toLowerCase().includes(search)
+            || (u.UnitNumber||'').toLowerCase().includes(search)
+            || (u.UnitCode||'').toLowerCase().includes(search);
+      });
+    }
+
+    const titleEl = document.getElementById('units-hdr-title');
+    if (titleEl) titleEl.textContent = 'All Units (' + units.length + ')';
+
+    const groups = {};
+    const order  = [];
+    units.forEach(u => {
+      const p = DB.findOne('properties',{PropertyCode:u.PropertyCode})||{};
+      if (!groups[u.PropertyCode]) {
+        groups[u.PropertyCode] = {propName: p.PropertyName||u.PropertyCode, units:[]};
+        order.push(u.PropertyCode);
       }
-      return breakRow+`<tr>
-          <td style="font-family:monospace">${u.UnitCode}</td>
-          <td>${propName}</td>
-          <td><strong>${u.UnitNumber}</strong></td>
-          <td>$${Number(u.RentAmount).toLocaleString()}</td>
-          <td>$${Number(u.DepositAmount).toLocaleString()}</td>
-          <td><span class="${u.UnitStatus==='Occupied'?'badge-occupied':'badge-vacant'}">${u.UnitStatus}</span></td>
-          <td><span class="badge-${u.Active==='Y'?'active':'inactive'}">${u.Active==='Y'?'Yes':'No'}</span></td>
-          <td>
-            <button class="btn-edit" onclick="openEditUnit('${u.UnitCode}')"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn-del"  onclick="deleteUnit('${u.UnitCode}','${u.UnitNumber}')"><i class="fa-solid fa-trash"></i></button>
-          </td>
-        </tr>`;
+      groups[u.PropertyCode].units.push(u);
+    });
+
+    const container = document.getElementById('unit-groups');
+    if (!container) return;
+
+    if (!order.length) {
+      container.innerHTML = '<div style="padding:24px;text-align:center;color:#aaa;font-size:.9rem">No units match the current filter.</div>';
+      return;
+    }
+
+    container.innerHTML = order.map(propCode => {
+      const grp       = groups[propCode];
+      const collapsed = window._uCollapsed[propCode];
+      const totalRent = grp.units.reduce((s,u) => s + Number(u.RentAmount||0), 0);
+      const totalDep  = grp.units.reduce((s,u) => s + Number(u.DepositAmount||0), 0);
+      const rows = grp.units.map(u => `<tr>
+        <td style="font-family:monospace">${u.UnitCode}</td>
+        <td><strong>${u.UnitNumber}</strong></td>
+        <td>$${Number(u.RentAmount).toLocaleString()}</td>
+        <td>$${Number(u.DepositAmount).toLocaleString()}</td>
+        <td><span class="${u.UnitStatus==='Occupied'?'badge-occupied':'badge-vacant'}">${u.UnitStatus}</span></td>
+        <td><span class="badge-${u.Active==='Y'?'active':'inactive'}">${u.Active==='Y'?'Yes':'No'}</span></td>
+        <td>
+          <button class="btn-edit" onclick="openEditUnit('${u.UnitCode}')"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn-del"  onclick="deleteUnit('${u.UnitCode}','${u.UnitNumber}')"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>`).join('');
+
+      return `<div class="unit-group">
+        <div class="unit-group-hdr" onclick="toggleUnitGroup('${propCode}')">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <i class="fa-solid fa-building" style="color:#9b0000"></i>
+            <strong style="font-size:.93rem">${grp.propName}</strong>
+            <span class="unit-count-pill">${grp.units.length} unit${grp.units.length!==1?'s':''}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+            <span style="font-size:.78rem;text-align:right">
+              <span style="color:#aaa;font-size:.7rem;display:block">Total Rent</span>
+              <strong>$${totalRent.toLocaleString()}</strong>
+            </span>
+            <span style="font-size:.78rem;text-align:right">
+              <span style="color:#aaa;font-size:.7rem;display:block">Total Deposit</span>
+              <strong>$${totalDep.toLocaleString()}</strong>
+            </span>
+            <i class="fa-solid fa-chevron-${collapsed?'right':'down'}" style="color:#9b0000;font-size:.8rem"></i>
+          </div>
+        </div>
+        <div class="unit-grp-body" style="display:${collapsed?'none':'block'}">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead><tr><th>Code</th><th>Unit#</th><th>Rent</th><th>Deposit</th><th>Status</th><th>Active</th><th>Actions</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
     }).join('');
-    return `<div class="table-card">
-    <div class="table-card-header"><h5>All Units (${sorted.length})</h5></div>
-    <div class="filter-bar"><i class="fa-solid fa-magnifying-glass" style="color:#aaa"></i><input id="filter-units" placeholder="Search units..." oninput="filterTable('filter-units','tbl-units')"></div>
-    <div class="table-responsive"><table class="data-table" id="tbl-units">
-      <thead><tr><th>Code</th><th>Property</th><th>Unit#</th><th>Rent</th><th>Deposit</th><th>Status</th><th>Active</th><th>Actions</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table></div></div>`;
   }
 
   function deleteTenant(id, name) {
