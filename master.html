@@ -1623,6 +1623,41 @@
           </div>
         </form>
       </div>
+    </div>
+
+    <div class="table-card" style="max-width:640px;margin:20px auto 0;">
+      <div class="table-card-header"><h5><i class="fa-solid fa-database" style="margin-right:8px"></i>Data Backup &amp; Restore</h5></div>
+      <div style="padding:24px 28px;">
+
+        <p style="font-size:.85rem;color:var(--text-muted,#666);margin-bottom:20px;line-height:1.6;">
+          Download a full backup of all your data — agencies, clients, properties, units, tenants and transactions.
+          Store it safely and use it to restore missing records at any time.
+        </p>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px;">
+          <button class="btn-primary-custom bg-master" onclick="backupAllData()">
+            <i class="fa-solid fa-file-arrow-down"></i> Backup to JSON
+          </button>
+          <button class="btn-primary-custom" style="background:#1a6b3c" onclick="backupAllDataXLSX()">
+            <i class="fa-solid fa-file-excel"></i> Backup to Excel
+          </button>
+        </div>
+
+        <hr style="margin-bottom:24px;border-color:var(--border-color,#e0e0e0)">
+        <h6 style="margin-bottom:8px;font-weight:600;"><i class="fa-solid fa-upload" style="margin-right:6px"></i>Restore from JSON Backup</h6>
+        <p style="font-size:.8rem;color:var(--text-muted,#888);margin-bottom:14px;line-height:1.5;">
+          Select a <code>.json</code> backup file previously downloaded from this app.
+          Only records that are missing from the database will be inserted — existing data will not be overwritten.
+        </p>
+        <label style="display:inline-flex;align-items:center;gap:10px;cursor:pointer;background:#f5f5f5;border:1.5px dashed #ccc;border-radius:8px;padding:12px 20px;font-size:.85rem;font-weight:600;color:#444;transition:border-color .2s"
+               onmouseover="this.style.borderColor='#9b0000'" onmouseout="this.style.borderColor='#ccc'">
+          <i class="fa-solid fa-folder-open" style="color:#9b0000"></i>
+          Choose backup file…
+          <input type="file" accept=".json" style="display:none" onchange="restoreFromBackup(this)">
+        </label>
+        <div id="restore-status" style="margin-top:12px;font-size:.82rem;color:#1a6b3c;min-height:18px"></div>
+
+      </div>
     </div>`;
   }
 
@@ -1956,6 +1991,72 @@
         }).join('')}</tbody>
       </table>
       <div class="rpt-print-btn"><button class="btn-primary-custom bg-master" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button> <button class="btn-primary-custom" style="background:#1a6b3c" onclick="exportRptXLSX('r-ul-out','unit-list')"><i class="fa-solid fa-file-excel"></i> Export Excel</button> <button class="btn-primary-custom" style="background:#555" onclick="exportRptCSV('r-ul-out','unit-list')"><i class="fa-solid fa-file-csv"></i> Export CSV</button></div>`;
+  }
+
+  function backupAllData() {
+    const backup = {
+      version: 'pma_v1',
+      timestamp: new Date().toISOString(),
+      agencies:     DB.getAll('agencies'),
+      clients:      DB.getAll('clients'),
+      properties:   DB.getAll('properties'),
+      propunits:    DB.getAll('propunits'),
+      tenants:      DB.getAll('tenants'),
+      transactions: DB.getAll('transactions')
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'pma-backup-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    toast('Backup downloaded successfully.','success');
+  }
+
+  function backupAllDataXLSX() {
+    if (typeof XLSX === 'undefined') { toast('Excel library not loaded.','error'); return; }
+    const wb = XLSX.utils.book_new();
+    [['agencies','Agencies'],['clients','Clients'],['properties','Properties'],
+     ['propunits','Units'],['tenants','Tenants'],['transactions','Transactions']].forEach(([t,name])=>{
+      const data = DB.getAll(t);
+      if (data.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), name);
+    });
+    XLSX.writeFile(wb, 'pma-backup-' + new Date().toISOString().slice(0,10) + '.xlsx');
+    toast('Excel backup downloaded.','success');
+  }
+
+  function restoreFromBackup(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById('restore-status');
+    statusEl.textContent = 'Reading file…';
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      let backup;
+      try { backup = JSON.parse(e.target.result); }
+      catch { toast('Invalid backup file — could not parse JSON.','error'); statusEl.textContent=''; return; }
+
+      const keyFields = {
+        agencies:'AgencyCode', clients:'ClientCode', properties:'PropertyCode',
+        propunits:'UnitCode',  tenants:'TenantID',   transactions:'transactionRef'
+      };
+      let inserted = 0;
+      ['agencies','clients','properties','propunits','tenants','transactions'].forEach(t => {
+        const records = backup[t] || [];
+        const existingKeys = new Set(DB.getAll(t).map(r => r[keyFields[t]]));
+        records.forEach(rec => {
+          if (!existingKeys.has(rec[keyFields[t]])) {
+            DB.insert(t, rec);
+            inserted++;
+          }
+        });
+      });
+
+      input.value = '';
+      statusEl.textContent = inserted + ' record(s) restored successfully.';
+      toast(inserted + ' record(s) restored.','success');
+      if (inserted > 0) setTimeout(()=>{ DB.init(); showView('dashboard',document.querySelector('[data-view="dashboard"]')); },1800);
+    };
+    reader.readAsText(file);
   }
 
   function exportRptCSV(outId, filename) {
