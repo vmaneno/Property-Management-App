@@ -153,7 +153,7 @@
     else if (view==='properties')   { c.innerHTML=renderProperties();   ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddProperty()"><i class="fa-solid fa-plus"></i> Add Property</button>`; }
     else if (view==='units')        { c.innerHTML=renderUnits();        ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddUnit()"><i class="fa-solid fa-plus"></i> Add Unit</button> <button class="btn-primary-custom bg-master" onclick="openUnitsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Units Upload</button>`; }
     else if (view==='tenants')      { c.innerHTML=renderTenants();      ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddTenant()"><i class="fa-solid fa-plus"></i> Add Tenant</button> <button class="btn-primary-custom bg-master" onclick="openTenantsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Tenants Upload</button>`; }
-    else if (view==='transactions') { c.innerHTML=renderTransactions(); ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openPostTx()"><i class="fa-solid fa-plus"></i> Post Transaction</button><button class="btn-primary-custom" style="background:#1a6b3c;margin-left:8px" onclick="openBulkPostTx()"><i class="fa-solid fa-layer-group"></i> Bulk Posting</button><button class="btn-primary-custom" style="background:#555;margin-left:8px" onclick="openResetModal()"><i class="fa-solid fa-rotate"></i> Reset Data</button>`; }
+    else if (view==='transactions') { c.innerHTML=renderTransactions(); filterTxView(); ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openPostTx()"><i class="fa-solid fa-plus"></i> Post Transaction</button><button class="btn-primary-custom" style="background:#1a6b3c;margin-left:8px" onclick="openBulkPostTx()"><i class="fa-solid fa-layer-group"></i> Bulk Posting</button><button class="btn-primary-custom" style="background:#555;margin-left:8px" onclick="openResetModal()"><i class="fa-solid fa-rotate"></i> Reset Data</button>`; }
     else if (view==='profile')      { c.innerHTML=renderProfile(); }
     else if (view==='reports')      { c.innerHTML=renderReports(); }
   }
@@ -322,45 +322,66 @@
   }
 
   function renderProperties() {
-    return `<div class="table-card">
-    <div class="table-card-header"><h5>All Properties (${P().length})</h5></div>
-    <div class="filter-bar"><i class="fa-solid fa-magnifying-glass" style="color:#aaa"></i><input id="filter-properties" placeholder="Search properties..." oninput="filterTable('filter-properties','tbl-properties')"></div>
-    <div class="table-responsive"><table class="data-table" id="tbl-properties">
-      <thead><tr><th>Code</th><th>Name</th><th>Agency</th><th>Client</th><th>City</th><th>Type</th><th>Utilities</th><th>Active</th><th>Actions</th></tr></thead>
-      <tbody>${P().map(p=>{
-        const ag=DB.findOne('agencies',{AgencyCode:p.AgencyCode})||{};
-        const cl=DB.findOne('clients',{ClientCode:p.ClientCode})||{};
-        return`<tr>
+    const sorted = P().slice().sort((a,b)=>{
+      const agA=DB.findOne('agencies',{AgencyCode:a.AgencyCode})||{};
+      const agB=DB.findOne('agencies',{AgencyCode:b.AgencyCode})||{};
+      const agCmp=(agA.AgencyName||'').localeCompare(agB.AgencyName||'');
+      if(agCmp!==0) return agCmp;
+      return (a.PropertyName||'').localeCompare(b.PropertyName||'');
+    });
+    let lastAgency='';
+    const rows = sorted.map(p=>{
+      const ag=DB.findOne('agencies',{AgencyCode:p.AgencyCode})||{};
+      const cl=DB.findOne('clients',{ClientCode:p.ClientCode})||{};
+      let breakRow='';
+      if(ag.AgencyName!==lastAgency){
+        if(lastAgency!=='') breakRow=`<tr><td colspan="8" style="padding:0;border-top:3px solid #9b0000"></td></tr>`;
+        lastAgency=ag.AgencyName||p.AgencyCode;
+      }
+      return breakRow+`<tr>
           <td style="font-family:monospace">${p.PropertyCode}</td>
           <td><strong>${p.PropertyName}</strong><br><span class="text-muted-sm">${p.City}</span></td>
           <td>${ag.AgencyName||p.AgencyCode}</td>
           <td>${cl.ClientName||p.ClientCode}</td>
           <td>${p.City}, ${p.Country}</td>
           <td>${p.PropertyType}</td>
-          <td><span class="badge-${p.Utilities==='Y'?'yes':'no'}">${p.Utilities==='Y'?'Yes':'No'}</span></td>
           <td><span class="badge-${p.Active==='Y'?'active':'inactive'}">${p.Active==='Y'?'Active':'Inactive'}</span></td>
           <td>
             <button class="btn-edit"  onclick="openEditProperty('${p.PropertyCode}')"><i class="fa-solid fa-pen"></i></button>
             <button class="btn-del"   onclick="deleteProperty('${p.PropertyCode}','${p.PropertyName.replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>
           </td>
         </tr>`;
-      }).join('')}</tbody>
+    }).join('');
+    return `<div class="table-card">
+    <div class="table-card-header"><h5>All Properties (${sorted.length})</h5></div>
+    <div class="filter-bar"><i class="fa-solid fa-magnifying-glass" style="color:#aaa"></i><input id="filter-properties" placeholder="Search properties..." oninput="filterTable('filter-properties','tbl-properties')"></div>
+    <div class="table-responsive"><table class="data-table" id="tbl-properties">
+      <thead><tr><th>Code</th><th>Name</th><th>Agency</th><th>Client</th><th>City</th><th>Type</th><th>Active</th><th>Actions</th></tr></thead>
+      <tbody>${rows}</tbody>
     </table></div></div>`;
   }
 
   function renderUnits() {
-    return `<div class="table-card">
-    <div class="table-card-header"><h5>All Units (${U().length})</h5></div>
-    <div class="filter-bar"><i class="fa-solid fa-magnifying-glass" style="color:#aaa"></i><input id="filter-units" placeholder="Search units..." oninput="filterTable('filter-units','tbl-units')"></div>
-    <div class="table-responsive"><table class="data-table" id="tbl-units">
-      <thead><tr><th>Code</th><th>Property</th><th>Unit#</th><th>Bed/Bath/Floor</th><th>Rent</th><th>Deposit</th><th>Status</th><th>Active</th><th>Actions</th></tr></thead>
-      <tbody>${U().map(u=>{
-        const p=DB.findOne('properties',{PropertyCode:u.PropertyCode})||{};
-        return`<tr>
+    const sorted = U().slice().sort((a,b)=>{
+      const pa=DB.findOne('properties',{PropertyCode:a.PropertyCode})||{};
+      const pb=DB.findOne('properties',{PropertyCode:b.PropertyCode})||{};
+      const pCmp=(pa.PropertyName||'').localeCompare(pb.PropertyName||'');
+      if(pCmp!==0) return pCmp;
+      return (a.UnitNumber||'').localeCompare(b.UnitNumber||'',undefined,{numeric:true});
+    });
+    let lastProp='';
+    const rows = sorted.map(u=>{
+      const p=DB.findOne('properties',{PropertyCode:u.PropertyCode})||{};
+      const propName=p.PropertyName||u.PropertyCode;
+      let breakRow='';
+      if(propName!==lastProp){
+        if(lastProp!=='') breakRow=`<tr><td colspan="7" style="padding:0;border-top:3px solid #9b0000"></td></tr>`;
+        lastProp=propName;
+      }
+      return breakRow+`<tr>
           <td style="font-family:monospace">${u.UnitCode}</td>
-          <td>${p.PropertyName||u.PropertyCode}</td>
+          <td>${propName}</td>
           <td><strong>${u.UnitNumber}</strong></td>
-          <td>${u.Bedrooms}BR / ${u.Bathrooms}BA / Fl.${u.Floor}</td>
           <td>$${Number(u.RentAmount).toLocaleString()}</td>
           <td>$${Number(u.DepositAmount).toLocaleString()}</td>
           <td><span class="${u.UnitStatus==='Occupied'?'badge-occupied':'badge-vacant'}">${u.UnitStatus}</span></td>
@@ -370,7 +391,13 @@
             <button class="btn-del"  onclick="deleteUnit('${u.UnitCode}','${u.UnitNumber}')"><i class="fa-solid fa-trash"></i></button>
           </td>
         </tr>`;
-      }).join('')}</tbody>
+    }).join('');
+    return `<div class="table-card">
+    <div class="table-card-header"><h5>All Units (${sorted.length})</h5></div>
+    <div class="filter-bar"><i class="fa-solid fa-magnifying-glass" style="color:#aaa"></i><input id="filter-units" placeholder="Search units..." oninput="filterTable('filter-units','tbl-units')"></div>
+    <div class="table-responsive"><table class="data-table" id="tbl-units">
+      <thead><tr><th>Code</th><th>Property</th><th>Unit#</th><th>Rent</th><th>Deposit</th><th>Status</th><th>Active</th><th>Actions</th></tr></thead>
+      <tbody>${rows}</tbody>
     </table></div></div>`;
   }
 
@@ -400,18 +427,22 @@
       if (pName !== 0) return pName;
       return (ua.UnitNumber||'').localeCompare(ub.UnitNumber||'');
     });
-    return `<div class="table-card"><div class="table-card-header"><h5>All Tenants (${sorted.length})</h5></div>
-    <div class="table-responsive"><table class="data-table">
-      <thead><tr><th>Tenant#</th><th>Name</th><th>ID</th><th>Property / Unit</th><th>Rent</th><th>Move-in</th><th>Move-out</th><th>Active</th><th>Actions</th></tr></thead>
-      <tbody>${sorted.map(t=>{
-        const p=DB.findOne('properties',{PropertyCode:t.PropertyCode})||{};
-        const u=DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
-        const canDel = t.Active !== 'Y' && !DB.getAll('transactions').some(tx=>tx.TenantID===t.TenantID);
-        return`<tr>
+    let lastTenantProp='';
+    const tenantRows = sorted.map(t=>{
+      const p=DB.findOne('properties',{PropertyCode:t.PropertyCode})||{};
+      const u=DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
+      const propName=p.PropertyName||t.PropertyCode||'?';
+      const canDel = t.Active !== 'Y' && !DB.getAll('transactions').some(tx=>tx.TenantID===t.TenantID);
+      let breakRow='';
+      if(propName!==lastTenantProp){
+        if(lastTenantProp!=='') breakRow=`<tr><td colspan="9" style="padding:0;border-top:3px solid #9b0000"></td></tr>`;
+        lastTenantProp=propName;
+      }
+      return breakRow+`<tr>
           <td style="font-size:.78rem;font-family:monospace">${t.TenantNumber}</td>
           <td><strong>${t.FirstName} ${t.LastName}</strong><br><span class="text-muted-sm">${t.Email}</span></td>
           <td style="font-size:.78rem">${t.IDNumber}</td>
-          <td>${p.PropertyName||'?'} / Unit ${u.UnitNumber||'?'}</td>
+          <td>${propName} / Unit ${u.UnitNumber||'?'}</td>
           <td>$${Number(t.RentAmount).toLocaleString()} / ${t.RentFrequency}</td>
           <td>${fmtDate(t.MoveInDate)}</td>
           <td>${t.MoveOutDate?fmtDate(t.MoveOutDate):'—'}</td>
@@ -421,7 +452,11 @@
             ${canDel?`<button class="btn-del" onclick="deleteTenant('${t.TenantID}','${t.FirstName} ${t.LastName}')"><i class="fa-solid fa-trash"></i></button>`:''}
           </td>
         </tr>`;
-      }).join('')}</tbody>
+    }).join('');
+    return `<div class="table-card"><div class="table-card-header"><h5>All Tenants (${sorted.length})</h5></div>
+    <div class="table-responsive"><table class="data-table">
+      <thead><tr><th>Tenant#</th><th>Name</th><th>ID</th><th>Property / Unit</th><th>Rent</th><th>Move-in</th><th>Move-out</th><th>Active</th><th>Actions</th></tr></thead>
+      <tbody>${tenantRows}</tbody>
     </table></div></div>`;
   }
 
@@ -444,24 +479,49 @@
   }
 
   function renderTransactions() {
-    const txs = DB.getAll('transactions').slice().sort((a,b)=>{
-      const ta=DB.findOne('tenants',{TenantID:a.TenantID})||{};
-      const tb=DB.findOne('tenants',{TenantID:b.TenantID})||{};
-      const nameA=(ta.FirstName||'')+' '+(ta.LastName||'');
-      const nameB=(tb.FirstName||'')+' '+(tb.LastName||'');
-      const nc=nameA.localeCompare(nameB);
-      if(nc!==0) return nc;
-      return new Date(b.Date)-new Date(a.Date);
-    });
+    const clientOpts = C().map(c=>`<option value="${c.ClientCode}">${c.ClientName}</option>`).join('');
+    const propOpts   = P().map(p=>`<option value="${p.PropertyCode}">${p.PropertyName}</option>`).join('');
+    return `<div class="table-card">
+    <div class="table-card-header" style="flex-wrap:wrap;gap:8px;">
+      <h5>All Transactions</h5>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <select id="tx-client-filter" class="form-control-sm2" style="min-width:150px;font-size:.82rem;padding:4px 8px;" onchange="filterTxView()">
+          <option value="">All Clients</option>${clientOpts}
+        </select>
+        <select id="tx-prop-filter" class="form-control-sm2" style="min-width:150px;font-size:.82rem;padding:4px 8px;" onchange="filterTxView()">
+          <option value="">All Properties</option>${propOpts}
+        </select>
+      </div>
+    </div>
+    <div id="tx-table-wrap"></div></div>`;
+  }
+
+  function filterTxView() {
+    const clientCode = document.getElementById('tx-client-filter').value;
+    const propSel    = document.getElementById('tx-prop-filter');
+    const prevProp   = propSel.value;
+    const allProps   = P();
+    const filteredProps = clientCode ? allProps.filter(p=>p.ClientCode===clientCode) : allProps;
+    propSel.innerHTML = '<option value="">All Properties</option>' +
+      filteredProps.map(p=>`<option value="${p.PropertyCode}" ${p.PropertyCode===prevProp?'selected':''}>${p.PropertyName}</option>`).join('');
+    const propCode = propSel.value;
+    let txs = DB.getAll('transactions').slice().sort((a,b)=>new Date(b.Date)-new Date(a.Date));
+    if(clientCode){
+      const cpCodes=allProps.filter(p=>p.ClientCode===clientCode).map(p=>p.PropertyCode);
+      txs=txs.filter(tx=>cpCodes.includes(tx.PropertyCode));
+    }
+    if(propCode) txs=txs.filter(tx=>tx.PropertyCode===propCode);
     const bal=txs.reduce((s,t)=>s+Number(t.Amount),0);
-    return `<div class="table-card"><div class="table-card-header"><h5>All Transactions (${txs.length})</h5><span>Total Balance: <strong style="color:${bal>=0?'#2d9b59':'#d62828'}">${fmtMoney(bal)}</strong></span></div>
+    const wrap=document.getElementById('tx-table-wrap');
+    if(!wrap) return;
+    wrap.innerHTML=`<div style="padding:8px 16px 4px;font-size:.85rem">Total Balance: <strong style="color:${bal>=0?'#2d9b59':'#d62828'}">${fmtMoney(bal)}</strong> &nbsp;(${txs.length} records)</div>
     <div class="table-responsive"><table class="data-table">
       <thead><tr><th>Date</th><th>Tenant</th><th>Property</th><th>Description</th><th>Amount</th><th>Ref</th><th>Auth</th><th>Actions</th></tr></thead>
       <tbody>${txs.map(tx=>{
         const ten=DB.findOne('tenants',{TenantID:tx.TenantID})||{};
         const p=DB.findOne('properties',{PropertyCode:tx.PropertyCode})||{};
         const credit=Number(tx.Amount)>=0;
-        const hasDetail = (tx.TransactionNote||tx.TransactionDocument);
+        const hasDetail=(tx.TransactionNote||tx.TransactionDocument);
         return`<tr>
           <td>${fmtDate(tx.Date)}</td>
           <td>${ten.FirstName||''} ${ten.LastName||''}</td>
@@ -476,7 +536,7 @@
           </td>
         </tr>`;
       }).join('')||'<tr><td colspan="8" style="text-align:center;padding:40px;color:#aaa">No transactions.</td></tr>'}</tbody>
-    </table></div></div>`;
+    </table></div>`;
   }
 
   function toggleAuth(ref) {
