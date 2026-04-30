@@ -1271,7 +1271,7 @@
     const pc = document.getElementById('at-prop').value;
     const units = DB.find('propunits', {PropertyCode: pc}).filter(u => u.UnitStatus === 'Vacant');
     document.getElementById('at-unit').innerHTML = units.map(u =>
-      `<option value="${u.UnitCode}" data-rent="${u.RentAmount}" data-dep="${u.DepositAmount}">Unit ${u.UnitNumber}</option>`
+      `<option value="${u.UnitCode}" data-rent="${u.RentAmount}" data-dep="${u.DepositAmount}">${u.UnitNumber}</option>`
     ).join('') || '<option value="">— No vacant units —</option>';
     fillRentDeposit();
   }
