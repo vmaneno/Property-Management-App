@@ -11,8 +11,8 @@
 
     body {
       font-family: 'Inter', sans-serif;
-      background: #f0f0f0;
-      color: #1a1a2e;
+      background: #e8f5e9;
+      color: #1a2e1a;
     }
 
     /* ── PAGE SHELL ── */
@@ -21,314 +21,321 @@
       min-height: 297mm;
       margin: 24px auto;
       background: #fff;
-      box-shadow: 0 4px 40px rgba(0,0,0,.18);
+      box-shadow: 0 6px 48px rgba(22,101,52,.15);
       position: relative;
       overflow: hidden;
       page-break-after: always;
+      display: flex;
+      flex-direction: column;
     }
     .page:last-child { page-break-after: auto; }
 
-    /* ── PRINT BUTTON ── */
+    /* ── PRINT BAR ── */
     .print-bar {
       position: fixed; top: 0; left: 0; right: 0; z-index: 999;
-      background: #1a1a2e; color: #fff;
+      background: #14532d; color: #fff;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 28px;
-      font-size: .85rem;
+      padding: 10px 28px; font-size: .85rem;
     }
     .print-bar strong { font-size: 1rem; letter-spacing: .02em; }
     .btn-print {
-      background: #9b0000; color: #fff; border: none; border-radius: 8px;
+      background: #16a34a; color: #fff; border: none; border-radius: 8px;
       padding: 9px 24px; font-size: .9rem; font-weight: 600; cursor: pointer;
-      display: flex; align-items: center; gap: 8px;
-      transition: background .2s;
+      display: flex; align-items: center; gap: 8px; transition: background .2s;
     }
-    .btn-print:hover { background: #c00; }
-
+    .btn-print:hover { background: #15803d; }
     @media screen { body { padding-top: 60px; } }
 
-    /* ═══════════════════════════════
-       PAGE 1 — COVER
-    ═══════════════════════════════ */
-    .cover {
-      display: flex;
-      flex-direction: column;
-      min-height: 297mm;
+    /* ── SHARED ── */
+    .page-header {
+      background: linear-gradient(100deg, #14532d 0%, #166534 60%, #15803d 100%);
+      padding: 26px 48px; color: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .page-header h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: -.01em; }
+    .page-header .ph-sub { font-size: .8rem; opacity: .7; margin-top: 3px; }
+    .page-num { font-size: .72rem; opacity: .55; font-weight: 500; white-space: nowrap; }
+
+    .page-body { padding: 32px 48px; flex: 1; }
+
+    .section-label {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .12em; color: #166534; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 6px;
     }
 
-    .cover-hero {
-      background: linear-gradient(145deg, #1a1a2e 0%, #9b0000 100%);
-      color: #fff;
-      padding: 54px 52px 48px;
-      flex: 1;
-      position: relative;
+    .divider {
+      height: 1px; background: linear-gradient(90deg,#16a34a,transparent);
+      margin: 22px 0; opacity: .2;
     }
-    .cover-hero::after {
-      content: '';
-      position: absolute; bottom: 0; right: 0;
-      width: 260px; height: 260px;
-      background: rgba(255,255,255,.04);
-      border-radius: 50%;
-      transform: translate(60px, 60px);
+
+    .page-footer {
+      padding: 11px 48px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      border-top: 1px solid #e8f5e9; font-size: .7rem; color: #aaa;
+    }
+
+    /* ══════════════════════════════
+       PAGE 1 — COVER
+    ══════════════════════════════ */
+    .cover-hero {
+      background: linear-gradient(150deg, #052e16 0%, #14532d 45%, #166534 75%, #15803d 100%);
+      color: #fff; padding: 52px 52px 44px; flex: 1;
+      position: relative; overflow: hidden;
     }
     .cover-hero::before {
-      content: '';
-      position: absolute; top: -60px; right: 80px;
-      width: 180px; height: 180px;
-      background: rgba(255,255,255,.03);
-      border-radius: 50%;
+      content: ''; position: absolute;
+      top: -80px; right: -40px;
+      width: 320px; height: 320px;
+      background: rgba(255,255,255,.04); border-radius: 50%;
+    }
+    .cover-hero::after {
+      content: ''; position: absolute;
+      bottom: -60px; right: 80px;
+      width: 200px; height: 200px;
+      background: rgba(74,222,128,.06); border-radius: 50%;
+    }
+    .cover-leaf {
+      position: absolute; top: 36px; right: 52px;
+      font-size: 7rem; opacity: .06; transform: rotate(-20deg);
     }
 
     .cover-badge {
       display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.2);
-      padding: 6px 16px; border-radius: 20px;
-      font-size: .75rem; font-weight: 600; letter-spacing: .08em;
-      text-transform: uppercase; color: rgba(255,255,255,.9);
-      margin-bottom: 40px;
+      background: rgba(74,222,128,.15); border: 1px solid rgba(74,222,128,.3);
+      padding: 6px 18px; border-radius: 20px;
+      font-size: .72rem; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: #86efac; margin-bottom: 36px;
     }
 
-    .cover-icon {
-      font-size: 3.2rem; margin-bottom: 20px; opacity: .9;
+    .cover-logo-wrap {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 28px;
     }
+    .cover-logo-icon {
+      width: 70px; height: 70px; border-radius: 18px;
+      background: linear-gradient(135deg, rgba(255,255,255,.15), rgba(255,255,255,.05));
+      border: 1.5px solid rgba(255,255,255,.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+    }
+    .cover-logo-text { font-size: .8rem; opacity: .6; letter-spacing: .04em; text-transform: uppercase; }
 
     .cover-title {
-      font-size: 3.2rem; font-weight: 900; line-height: 1.1;
-      margin-bottom: 12px;
-      letter-spacing: -.02em;
+      font-size: 3.4rem; font-weight: 900; line-height: 1.05;
+      letter-spacing: -.03em; margin-bottom: 16px;
     }
-    .cover-title span { color: #ffb3b3; }
+    .cover-title .accent { color: #4ade80; }
 
     .cover-tagline {
-      font-size: 1.1rem; font-weight: 300; opacity: .8;
-      max-width: 480px; line-height: 1.6; margin-bottom: 48px;
+      font-size: 1rem; font-weight: 300; opacity: .8;
+      max-width: 460px; line-height: 1.7; margin-bottom: 40px;
     }
-
-    .cover-stats {
-      display: flex; gap: 32px; margin-top: auto;
-    }
-    .cstat {
-      border-left: 3px solid rgba(255,255,255,.3);
-      padding-left: 16px;
-    }
-    .cstat-num { font-size: 2rem; font-weight: 800; line-height: 1; }
-    .cstat-lbl { font-size: .72rem; opacity: .65; text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
-
-    .cover-bottom {
-      background: #fff;
-      padding: 36px 52px;
-      display: flex; align-items: center; justify-content: space-between;
-      border-top: 4px solid #9b0000;
-    }
-
-    .cover-prepared {
-      font-size: .8rem; color: #888;
-    }
-    .cover-prepared strong { display: block; font-size: 1rem; color: #1a1a2e; font-weight: 700; margin-bottom: 2px; }
-
-    .cover-date {
-      text-align: right; font-size: .8rem; color: #888;
-    }
-    .cover-date strong { display: block; font-size: 1rem; color: #1a1a2e; font-weight: 700; }
 
     .cover-roles {
-      display: flex; gap: 10px; flex-wrap: wrap; margin-top: 48px;
+      display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 48px;
     }
     .role-pill {
-      background: rgba(255,255,255,.15);
-      border: 1px solid rgba(255,255,255,.25);
-      color: #fff; font-size: .78rem; font-weight: 600;
-      padding: 6px 14px; border-radius: 20px;
-      display: flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+      color: #fff; font-size: .76rem; font-weight: 600;
+      padding: 6px 15px; border-radius: 20px;
+      display: flex; align-items: center; gap: 7px;
     }
+    .role-pill i { color: #86efac; }
 
-    /* ═══════════════════════════════
-       PAGE 2 — FEATURES
-    ═══════════════════════════════ */
-    .page-header {
-      background: linear-gradient(90deg, #1a1a2e, #9b0000);
-      padding: 28px 48px;
-      color: #fff;
+    .cover-stats {
+      display: flex; gap: 0; border-top: 1px solid rgba(255,255,255,.12);
+      padding-top: 32px; margin-top: auto;
+    }
+    .cstat {
+      flex: 1; padding: 0 24px 0 0; margin-right: 24px;
+      border-right: 1px solid rgba(255,255,255,.12);
+    }
+    .cstat:last-child { border-right: none; margin-right: 0; }
+    .cstat-num { font-size: 2.2rem; font-weight: 900; color: #4ade80; line-height: 1; }
+    .cstat-lbl { font-size: .68rem; opacity: .6; text-transform: uppercase; letter-spacing: .07em; margin-top: 5px; }
+
+    .cover-bottom {
+      background: #fff; padding: 28px 52px;
       display: flex; align-items: center; justify-content: space-between;
+      border-top: 4px solid #16a34a; flex-shrink: 0;
     }
-    .page-header h2 {
-      font-size: 1.55rem; font-weight: 800; letter-spacing: -.01em;
-    }
-    .page-header .ph-sub {
-      font-size: .8rem; opacity: .65; margin-top: 3px;
-    }
-    .page-num {
-      font-size: .75rem; opacity: .5; font-weight: 500;
-    }
+    .cover-prepared { font-size: .78rem; color: #888; }
+    .cover-prepared strong { display: block; font-size: .95rem; color: #14532d; font-weight: 700; margin-bottom: 2px; }
+    .cover-date { text-align: right; font-size: .78rem; color: #888; }
+    .cover-date strong { display: block; font-size: .95rem; color: #14532d; font-weight: 700; }
+    .cover-url { font-size: .76rem; color: #aaa; text-align: center; }
+    .cover-url i { color: #16a34a; }
 
-    .page-body { padding: 36px 48px; }
-
-    .section-label {
-      font-size: .68rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .12em; color: #9b0000; margin-bottom: 18px;
-    }
-
-    /* Portal cards */
+    /* ══════════════════════════════
+       PAGE 2 — PORTALS
+    ══════════════════════════════ */
     .portals-grid {
       display: grid; grid-template-columns: 1fr 1fr;
-      gap: 16px; margin-bottom: 36px;
+      gap: 18px; margin-bottom: 0;
     }
     .portal-card {
-      border-radius: 12px; padding: 20px;
-      border: 1.5px solid #f0f0f0;
+      border-radius: 14px; padding: 24px;
+      border: 1.5px solid #e8f5e9;
       position: relative; overflow: hidden;
-      transition: box-shadow .2s;
+      background: #fafffe;
     }
     .portal-card::before {
       content: ''; position: absolute;
-      top: 0; left: 0; right: 0; height: 4px;
+      top: 0; left: 0; right: 0; height: 5px;
     }
-    .pc-master::before { background: linear-gradient(90deg,#9b0000,#d62828); }
-    .pc-agency::before { background: linear-gradient(90deg,#480088,#7c3aed); }
-    .pc-client::before { background: linear-gradient(90deg,#1a4b8c,#4361ee); }
-    .pc-tenant::before { background: linear-gradient(90deg,#1a6b3c,#2d9b59); }
+    .pc-master::before { background: linear-gradient(90deg,#052e16,#166534); }
+    .pc-agency::before { background: linear-gradient(90deg,#14532d,#16a34a); }
+    .pc-client::before { background: linear-gradient(90deg,#166534,#4ade80); }
+    .pc-tenant::before { background: linear-gradient(90deg,#15803d,#86efac); }
+
+    .portal-card .bg-icon {
+      position: absolute; bottom: 12px; right: 16px;
+      font-size: 3.5rem; opacity: .04; color: #14532d;
+    }
 
     .pc-icon {
-      width: 40px; height: 40px; border-radius: 10px;
+      width: 46px; height: 46px; border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1rem; margin-bottom: 12px;
+      font-size: 1.1rem; margin-bottom: 14px; flex-shrink: 0;
     }
-    .pc-master .pc-icon { background: #ffe5e5; color: #9b0000; }
-    .pc-agency .pc-icon { background: #f3e8ff; color: #480088; }
-    .pc-client .pc-icon { background: #e8eeff; color: #1a4b8c; }
-    .pc-tenant .pc-icon { background: #e8f5ee; color: #1a6b3c; }
+    .pc-master .pc-icon { background: #dcfce7; color: #14532d; }
+    .pc-agency .pc-icon { background: #d1fae5; color: #166534; }
+    .pc-client .pc-icon { background: #bbf7d0; color: #15803d; }
+    .pc-tenant .pc-icon { background: #a7f3d0; color: #047857; }
 
-    .pc-title { font-size: .95rem; font-weight: 700; margin-bottom: 6px; }
-    .pc-desc  { font-size: .78rem; color: #666; line-height: 1.5; }
+    .pc-title { font-size: 1rem; font-weight: 800; color: #14532d; margin-bottom: 8px; }
+    .pc-desc  { font-size: .78rem; color: #555; line-height: 1.6; }
 
-    /* Feature rows */
+    .pc-features { margin-top: 12px; display: flex; flex-direction: column; gap: 5px; }
+    .pc-feat {
+      display: flex; align-items: center; gap: 7px;
+      font-size: .74rem; color: #444;
+    }
+    .pc-feat i { color: #16a34a; font-size: .65rem; flex-shrink: 0; }
+
+    /* ══════════════════════════════
+       PAGE 3 — FEATURES & REPORTING
+    ══════════════════════════════ */
     .features-grid {
       display: grid; grid-template-columns: 1fr 1fr 1fr;
-      gap: 14px; margin-bottom: 28px;
+      gap: 16px; margin-bottom: 24px;
     }
-    .feat-item {
-      display: flex; align-items: flex-start; gap: 10px;
+    .feat-card {
+      background: #f0fdf4; border: 1.5px solid #d1fae5;
+      border-radius: 12px; padding: 16px;
     }
     .feat-icon {
-      width: 34px; height: 34px; border-radius: 8px;
-      background: #fff5f5; color: #9b0000;
+      width: 36px; height: 36px; border-radius: 9px;
+      background: #dcfce7; color: #166534;
       display: flex; align-items: center; justify-content: center;
-      font-size: .85rem; flex-shrink: 0; border: 1px solid #fdd;
+      font-size: .9rem; margin-bottom: 10px;
     }
-    .feat-text strong { display: block; font-size: .82rem; font-weight: 700; color: #1a1a2e; }
-    .feat-text span   { font-size: .74rem; color: #888; line-height: 1.4; }
+    .feat-card strong { display: block; font-size: .83rem; font-weight: 700; color: #14532d; margin-bottom: 4px; }
+    .feat-card span   { font-size: .74rem; color: #666; line-height: 1.45; }
 
-    /* Divider */
-    .divider {
-      height: 1px; background: linear-gradient(90deg,#9b0000,transparent);
-      margin: 24px 0; opacity: .25;
-    }
-
-    /* Reports section */
-    .reports-row {
-      display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;
-    }
+    .reports-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
     .report-tag {
       display: flex; align-items: center; gap: 6px;
-      background: #f9f9f9; border: 1px solid #eee;
+      background: #f0fdf4; border: 1px solid #bbf7d0;
       padding: 7px 14px; border-radius: 8px;
-      font-size: .78rem; font-weight: 600; color: #444;
+      font-size: .77rem; font-weight: 600; color: #14532d;
     }
-    .report-tag i { color: #9b0000; font-size: .8rem; }
+    .report-tag i { color: #16a34a; }
 
-    /* Export badges */
-    .export-row { display: flex; gap: 8px; margin-top: 10px; }
+    .export-row { display: flex; gap: 8px; margin-bottom: 22px; }
     .export-badge {
-      display: flex; align-items: center; gap: 5px;
-      padding: 5px 12px; border-radius: 6px;
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 7px;
       font-size: .75rem; font-weight: 700;
     }
-    .eb-excel { background: #e8f5ee; color: #1a6b3c; }
-    .eb-csv   { background: #f0f0f0; color: #444; }
-    .eb-print { background: #ffe5e5; color: #9b0000; }
+    .eb-excel { background: #dcfce7; color: #14532d; }
+    .eb-csv   { background: #e8f5e9; color: #166534; }
+    .eb-print { background: #bbf7d0; color: #14532d; }
+    .eb-backup { background: #a7f3d0; color: #064e3b; }
 
-    /* Page footer */
-    .page-footer {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      padding: 12px 48px;
-      display: flex; align-items: center; justify-content: space-between;
-      border-top: 1px solid #f0f0f0;
-      font-size: .72rem; color: #bbb;
+    .security-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px;
     }
+    .sec-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: #f0fdf4; border: 1px solid #d1fae5;
+      border-radius: 10px; padding: 13px;
+    }
+    .sec-icon {
+      width: 30px; height: 30px; border-radius: 7px;
+      background: #dcfce7; color: #166534;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .78rem; flex-shrink: 0;
+    }
+    .sec-item strong { display: block; font-size: .8rem; font-weight: 700; color: #14532d; margin-bottom: 3px; }
+    .sec-item span   { font-size: .72rem; color: #666; line-height: 1.4; }
 
-    /* ═══════════════════════════════
-       PAGE 3 — WHY US + CTA
-    ═══════════════════════════════ */
+    /* ══════════════════════════════
+       PAGE 4 — WHY US + CTA
+    ══════════════════════════════ */
+    .highlight-box {
+      background: linear-gradient(120deg, #052e16 0%, #14532d 50%, #166534 100%);
+      border-radius: 16px; padding: 28px 32px; color: #fff;
+      display: flex; gap: 24px; align-items: center; margin-bottom: 26px;
+    }
+    .hl-icon { font-size: 2.8rem; opacity: .6; flex-shrink: 0; color: #4ade80; }
+    .hl-quote { font-size: .92rem; font-weight: 300; line-height: 1.75; opacity: .92; }
+    .hl-quote strong { font-weight: 800; font-size: 1rem; color: #86efac; display: block; margin-bottom: 6px; }
+
     .why-grid {
       display: grid; grid-template-columns: 1fr 1fr;
-      gap: 16px; margin-bottom: 30px;
+      gap: 12px; margin-bottom: 24px;
     }
     .why-card {
-      background: #fafafa; border: 1.5px solid #f0f0f0;
-      border-radius: 12px; padding: 20px;
-      display: flex; align-items: flex-start; gap: 14px;
+      background: #f0fdf4; border: 1.5px solid #d1fae5;
+      border-radius: 12px; padding: 16px 18px;
+      display: flex; align-items: flex-start; gap: 13px;
     }
     .why-num {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: #9b0000; color: #fff;
-      font-size: .85rem; font-weight: 800;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, #166534, #15803d);
+      color: #fff; font-size: .82rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .why-card h4 { font-size: .88rem; font-weight: 700; margin-bottom: 5px; }
-    .why-card p  { font-size: .76rem; color: #666; line-height: 1.5; }
+    .why-card h4 { font-size: .84rem; font-weight: 700; color: #14532d; margin-bottom: 4px; }
+    .why-card p  { font-size: .73rem; color: #555; line-height: 1.5; }
 
     .workflow {
-      display: flex; align-items: center; gap: 0;
-      margin-bottom: 30px;
+      display: flex; align-items: center; margin-bottom: 24px; gap: 0;
     }
     .wf-step {
-      flex: 1; text-align: center; padding: 16px 8px;
-      background: #fafafa; border: 1.5px solid #f0f0f0;
-      border-radius: 10px;
+      flex: 1; text-align: center; padding: 14px 6px;
+      background: #f0fdf4; border: 1.5px solid #d1fae5; border-radius: 10px;
     }
-    .wf-step i { font-size: 1.3rem; color: #9b0000; margin-bottom: 8px; display: block; }
-    .wf-step strong { display: block; font-size: .78rem; font-weight: 700; color: #1a1a2e; }
-    .wf-step span   { font-size: .7rem; color: #999; }
-    .wf-arrow { font-size: 1rem; color: #ccc; padding: 0 4px; flex-shrink: 0; }
+    .wf-step i { font-size: 1.2rem; color: #16a34a; margin-bottom: 7px; display: block; }
+    .wf-step strong { display: block; font-size: .76rem; font-weight: 700; color: #14532d; }
+    .wf-step span   { font-size: .68rem; color: #888; }
+    .wf-arrow { font-size: .9rem; color: #bbf7d0; padding: 0 4px; flex-shrink: 0; }
 
-    /* Testimonial / highlight box */
-    .highlight-box {
-      background: linear-gradient(135deg, #1a1a2e, #9b0000);
-      border-radius: 16px; padding: 28px 32px;
-      color: #fff; margin-bottom: 28px;
-      display: flex; gap: 24px; align-items: center;
-    }
-    .hl-icon { font-size: 3rem; opacity: .7; flex-shrink: 0; }
-    .hl-quote { font-size: .95rem; font-weight: 300; line-height: 1.7; opacity: .9; }
-    .hl-quote strong { font-weight: 700; opacity: 1; font-size: 1.05rem; }
-
-    /* CTA section */
     .cta-box {
-      background: #fff8f8; border: 2px solid #9b0000;
-      border-radius: 14px; padding: 28px 32px;
-      text-align: center; margin-bottom: 28px;
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      border: 2px solid #16a34a; border-radius: 16px;
+      padding: 26px 32px; text-align: center; margin-bottom: 20px;
     }
-    .cta-box h3 {
-      font-size: 1.3rem; font-weight: 800; color: #9b0000; margin-bottom: 8px;
-    }
-    .cta-box p { font-size: .85rem; color: #555; margin-bottom: 20px; line-height: 1.6; }
+    .cta-box h3 { font-size: 1.2rem; font-weight: 800; color: #14532d; margin-bottom: 8px; }
+    .cta-box p  { font-size: .82rem; color: #444; margin-bottom: 18px; line-height: 1.6; }
     .cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
     .cta-btn {
-      padding: 11px 28px; border-radius: 8px;
-      font-size: .88rem; font-weight: 700;
+      padding: 11px 26px; border-radius: 9px;
+      font-size: .86rem; font-weight: 700;
       text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
     }
-    .cta-primary { background: #9b0000; color: #fff; }
-    .cta-secondary { background: #f0f0f0; color: #333; }
+    .cta-primary   { background: linear-gradient(135deg,#166534,#15803d); color: #fff; }
+    .cta-secondary { background: #fff; color: #166534; border: 1.5px solid #16a34a; }
 
     .contact-row {
-      display: flex; gap: 16px; justify-content: center;
-      font-size: .8rem; color: #888;
+      display: flex; gap: 20px; justify-content: center;
+      font-size: .78rem; color: #888; flex-wrap: wrap;
     }
     .contact-row span { display: flex; align-items: center; gap: 6px; }
-    .contact-row i { color: #9b0000; }
+    .contact-row i { color: #16a34a; }
 
     /* ── PRINT ── */
     @media print {
@@ -340,188 +347,241 @@
         page-break-after: always;
       }
       .page:last-child { page-break-after: auto; }
-      .page-footer { position: static; margin-top: 24px; }
     }
   </style>
 </head>
 <body>
 
-<!-- Print bar (screen only) -->
+<!-- Print bar -->
 <div class="print-bar">
-  <strong><i class="fa-solid fa-building" style="color:#9b0000;margin-right:8px"></i>Property Management App &mdash; Proposal</strong>
+  <strong><i class="fa-solid fa-building" style="color:#4ade80;margin-right:8px"></i>Property Management App &mdash; Business Proposal</strong>
   <button class="btn-print" onclick="window.print()">
     <i class="fa-solid fa-print"></i> Print / Save as PDF
   </button>
 </div>
 
 
-<!-- ═══════════════════ PAGE 1 — COVER ═══════════════════ -->
+<!-- ══════════════════════ PAGE 1 — COVER ══════════════════════ -->
 <div class="page">
-  <div class="cover">
-    <div class="cover-hero">
+  <div class="cover-hero">
+    <div class="cover-leaf"><i class="fa-solid fa-leaf"></i></div>
 
-      <div class="cover-badge">
-        <i class="fa-solid fa-circle-check"></i> Business Proposal &mdash; Confidential
-      </div>
+    <div class="cover-badge">
+      <i class="fa-solid fa-circle-check"></i> Business Proposal &mdash; Confidential
+    </div>
 
-      <div class="cover-icon">
-        <i class="fa-solid fa-building"></i>
-      </div>
-
-      <div class="cover-title">
-        Property<br><span>Management</span><br>App
-      </div>
-
-      <div class="cover-tagline">
-        A complete, web-based platform for property agencies, landlords,
-        and tenants — built to streamline every aspect of property management
-        from a single dashboard.
-      </div>
-
-      <div class="cover-roles">
-        <div class="role-pill"><i class="fa-solid fa-shield-halved"></i> Master Admin</div>
-        <div class="role-pill"><i class="fa-solid fa-landmark"></i> Agency Portal</div>
-        <div class="role-pill"><i class="fa-solid fa-user-tie"></i> Client Portal</div>
-        <div class="role-pill"><i class="fa-solid fa-person-shelter"></i> Tenant Portal</div>
-      </div>
-
-      <div class="cover-stats" style="margin-top:48px">
-        <div class="cstat">
-          <div class="cstat-num">4</div>
-          <div class="cstat-lbl">User Roles</div>
-        </div>
-        <div class="cstat">
-          <div class="cstat-num">5+</div>
-          <div class="cstat-lbl">Report Types</div>
-        </div>
-        <div class="cstat">
-          <div class="cstat-num">100%</div>
-          <div class="cstat-lbl">Web-Based</div>
-        </div>
-        <div class="cstat">
-          <div class="cstat-num">0</div>
-          <div class="cstat-lbl">Installations Needed</div>
-        </div>
+    <div class="cover-logo-wrap">
+      <div class="cover-logo-icon"><i class="fa-solid fa-building" style="color:#4ade80"></i></div>
+      <div>
+        <div style="font-size:1.1rem;font-weight:800;letter-spacing:-.01em">Property Management</div>
+        <div class="cover-logo-text">Smart. Secure. Always Online.</div>
       </div>
     </div>
 
-    <div class="cover-bottom">
-      <div class="cover-prepared">
-        <strong>Prepared For</strong>
-        Prospective Client / Partner
+    <div class="cover-title">
+      The Smarter Way<br>to Manage<br><span class="accent">Property.</span>
+    </div>
+
+    <div class="cover-tagline">
+      A complete, cloud-based property management platform connecting agencies,
+      landlords and tenants — streamlining operations, finances and reporting
+      from one powerful dashboard.
+    </div>
+
+    <div class="cover-roles">
+      <div class="role-pill"><i class="fa-solid fa-shield-halved"></i> Master Admin</div>
+      <div class="role-pill"><i class="fa-solid fa-landmark"></i> Agency Portal</div>
+      <div class="role-pill"><i class="fa-solid fa-user-tie"></i> Client Portal</div>
+      <div class="role-pill"><i class="fa-solid fa-person-shelter"></i> Tenant Portal</div>
+    </div>
+
+    <div class="cover-stats">
+      <div class="cstat">
+        <div class="cstat-num">4</div>
+        <div class="cstat-lbl">User Roles</div>
       </div>
-      <div style="text-align:center;font-size:.78rem;color:#bbb;line-height:2">
-        <i class="fa-solid fa-globe" style="color:#9b0000"></i>&nbsp;
-        property-management-app-one.vercel.app
+      <div class="cstat">
+        <div class="cstat-num">5+</div>
+        <div class="cstat-lbl">Report Types</div>
       </div>
-      <div class="cover-date">
-        <strong>April 2026</strong>
-        Proposal Reference: PMA-2026-001
+      <div class="cstat">
+        <div class="cstat-num">100%</div>
+        <div class="cstat-lbl">Web-Based</div>
       </div>
+      <div class="cstat">
+        <div class="cstat-num">0</div>
+        <div class="cstat-lbl">Installs Needed</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-bottom">
+    <div class="cover-prepared">
+      <strong>Prepared For</strong>
+      Prospective Client / Partner
+    </div>
+    <div class="cover-url">
+      <i class="fa-solid fa-globe"></i>&nbsp; property-management-app-one.vercel.app
+    </div>
+    <div class="cover-date">
+      <strong>April 2026</strong>
+      Ref: PMA-2026-001
     </div>
   </div>
 </div>
 
 
-<!-- ═══════════════════ PAGE 2 — FEATURES ═══════════════════ -->
+<!-- ══════════════════════ PAGE 2 — PORTALS ══════════════════════ -->
 <div class="page">
   <div class="page-header">
     <div>
-      <h2><i class="fa-solid fa-star" style="margin-right:10px;opacity:.8"></i>Platform Features</h2>
-      <div class="ph-sub">Everything your property business needs, in one place</div>
+      <h2><i class="fa-solid fa-users" style="margin-right:10px;opacity:.85"></i>Four Dedicated Portals</h2>
+      <div class="ph-sub">Every stakeholder gets their own purpose-built experience</div>
     </div>
-    <div class="page-num">Page 2 of 3</div>
+    <div class="page-num">Page 2 of 4</div>
+  </div>
+
+  <div class="page-body">
+    <div class="portals-grid">
+
+      <div class="portal-card pc-master">
+        <i class="bg-icon fa-solid fa-shield-halved"></i>
+        <div class="pc-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="pc-title">Master Admin Portal</div>
+        <div class="pc-desc">
+          The control centre of the entire platform. The master administrator has complete,
+          unrestricted visibility across all agencies, clients, properties, units, tenants
+          and transactions. Bulk data imports, system-wide reports and full audit trails are
+          all at your fingertips.
+        </div>
+        <div class="pc-features">
+          <div class="pc-feat"><i class="fa-solid fa-check"></i> Manage all agencies &amp; clients</div>
+          <div class="pc-feat"><i class="fa-solid fa-check"></i> Full data backup &amp; restore</div>
+          <div class="pc-feat"><i class="fa-solid fa-check"></i> Cross-portfolio financial reports</div>
+          <div class="pc-feat"><i class="fa-solid fa-check"></i> Bulk Excel import for units &amp; tenants</div>
+        </div>
+      </div>
+
+      <div class="portal-card pc-agency">
+        <i class="bg-icon fa-solid fa-landmark"></i>
+        <div class="pc-icon"><i class="fa-solid fa-landmark"></i></div>
+        <div class="pc-title">Agency Portal</div>
+        <div class="pc-desc">
+          Agencies manage the day-to-day operations of their assigned client portfolios.
+          Post transactions on behalf of tenants, monitor occupancy across properties,
+          generate tenant statements and handle lease administration — all within a
+          dedicated, role-restricted workspace.
+        </div>
+        <div class="pc-features">
+          <div class="pc-feat"><i class="fa-solid fa-check"></i> Manage assigned client properties</div>
+          <div class="pc-feat"><i class="fa-solid fa-check"></i> Post &amp; verify transactions</div>
+          <div class="pc-feat"><i class="fa-solid fa-check"></i> Generate statements &amp; reports</div>
+          <div class="pc-feat"><i class="fa-solid fa-check"></i> Onboard new tenants</div>
+        </div>
+      </div>
+
+      <div class="portal-card pc-client">
+        <i class="bg-icon fa-solid fa-user-tie"></i>
+        <div class="pc-icon"><i class="fa-solid fa-user-tie"></i></div>
+        <div class="pc-title">Client (Landlord) Portal</div>
+        <div class="pc-desc">
+          Property owners have a clear, real-time window into their entire portfolio.
+          View occupied and vacant units, track tenant payment histories, access
+          financial transaction reports and monitor property performance — all scoped
+          exclusively to their own assets.
+        </div>
+        <div class="pc-features">
+          <div class="pc-feat"><i class="fa-solid fa-check"></i> View all owned properties &amp; units</div>
+          <div class="pc-feat"><i class="fa-solid fa-check"></i> Track occupancy &amp; income</div>
+          <div class="pc-feat"><i class="fa-solid fa-check"></i> Access full transaction history</div>
+          <div class="pc-feat"><i class="fa-solid fa-check"></i> Print &amp; export financial reports</div>
+        </div>
+      </div>
+
+      <div class="portal-card pc-tenant">
+        <i class="bg-icon fa-solid fa-person-shelter"></i>
+        <div class="pc-icon"><i class="fa-solid fa-person-shelter"></i></div>
+        <div class="pc-title">Tenant Portal</div>
+        <div class="pc-desc">
+          Tenants enjoy a self-service experience — log in to view lease details,
+          post rent payments, browse complete transaction history and print account
+          statements. Reduces administrative workload for agencies while keeping
+          tenants informed and in control.
+        </div>
+        <div class="pc-features">
+          <div class="pc-feat"><i class="fa-solid fa-check"></i> View lease &amp; unit details</div>
+          <div class="pc-feat"><i class="fa-solid fa-check"></i> Post rent payments</div>
+          <div class="pc-feat"><i class="fa-solid fa-check"></i> View full transaction history</div>
+          <div class="pc-feat"><i class="fa-solid fa-check"></i> Print account statements</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span>Property Management App &mdash; Confidential Business Proposal</span>
+    <span>property-management-app-one.vercel.app</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════ PAGE 3 — FEATURES & REPORTING ══════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h2><i class="fa-solid fa-gears" style="margin-right:10px;opacity:.85"></i>Features &amp; Capabilities</h2>
+      <div class="ph-sub">Everything you need to run a professional property management business</div>
+    </div>
+    <div class="page-num">Page 3 of 4</div>
   </div>
 
   <div class="page-body">
 
-    <div class="section-label"><i class="fa-solid fa-users" style="margin-right:6px"></i>Four Dedicated Portals</div>
-    <div class="portals-grid">
-
-      <div class="portal-card pc-master">
-        <div class="pc-icon"><i class="fa-solid fa-shield-halved"></i></div>
-        <div class="pc-title">Master Admin Portal</div>
-        <div class="pc-desc">Full system visibility — manage all agencies, clients, properties, units, tenants and transactions from a single control centre. Bulk-import data via Excel and generate cross-portfolio reports.</div>
-      </div>
-
-      <div class="portal-card pc-agency">
-        <div class="pc-icon"><i class="fa-solid fa-landmark"></i></div>
-        <div class="pc-title">Agency Portal</div>
-        <div class="pc-desc">Agencies manage their assigned clients and portfolios, post transactions on behalf of tenants, generate statements and handle day-to-day property operations under master oversight.</div>
-      </div>
-
-      <div class="portal-card pc-client">
-        <div class="pc-icon"><i class="fa-solid fa-user-tie"></i></div>
-        <div class="pc-title">Client (Landlord) Portal</div>
-        <div class="pc-desc">Property owners log in to view their full portfolio — occupied and vacant units, tenant details, transaction history and financial reports — all filtered to their own properties.</div>
-      </div>
-
-      <div class="portal-card pc-tenant">
-        <div class="pc-icon"><i class="fa-solid fa-person-shelter"></i></div>
-        <div class="pc-title">Tenant Portal</div>
-        <div class="pc-desc">Tenants access their personal dashboard, view lease details, post rent payments, browse full transaction history and print account statements — securely and independently.</div>
-      </div>
-
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="section-label"><i class="fa-solid fa-gears" style="margin-right:6px"></i>Core Management Capabilities</div>
+    <div class="section-label"><i class="fa-solid fa-star"></i>Core Management Tools</div>
     <div class="features-grid">
 
-      <div class="feat-item">
+      <div class="feat-card">
         <div class="feat-icon"><i class="fa-solid fa-building"></i></div>
-        <div class="feat-text">
-          <strong>Property Management</strong>
-          <span>Add, edit and track properties with full client linkage and status monitoring.</span>
-        </div>
+        <strong>Property Management</strong>
+        <span>Register and track multiple properties with client linkage, manager details, utilities and status — with collapsible group views.</span>
       </div>
 
-      <div class="feat-item">
+      <div class="feat-card">
         <div class="feat-icon"><i class="fa-solid fa-door-open"></i></div>
-        <div class="feat-text">
-          <strong>Unit Management</strong>
-          <span>Track every unit's rent, deposit, occupancy status and tenant assignment.</span>
-        </div>
+        <strong>Unit Management</strong>
+        <span>Track every unit's rent, deposit, occupancy and tenant assignment. Filter by status, search by property or unit number.</span>
       </div>
 
-      <div class="feat-item">
+      <div class="feat-card">
         <div class="feat-icon"><i class="fa-solid fa-users"></i></div>
-        <div class="feat-text">
-          <strong>Tenant Management</strong>
-          <span>Full tenant records including ID, contact info, lease dates and rental history.</span>
-        </div>
+        <strong>Tenant Management</strong>
+        <span>Complete tenant profiles — ID, contacts, lease dates, rent, deposit and payment history. Grouped and searchable by property.</span>
       </div>
 
-      <div class="feat-item">
+      <div class="feat-card">
         <div class="feat-icon"><i class="fa-solid fa-money-bill-transfer"></i></div>
-        <div class="feat-text">
-          <strong>Transaction Ledger</strong>
-          <span>Post credits and debits with running balance, references and verification status.</span>
-        </div>
+        <strong>Transaction Ledger</strong>
+        <span>Post credits and debits with running balances, references, verification status and optional document attachments.</span>
       </div>
 
-      <div class="feat-item">
+      <div class="feat-card">
         <div class="feat-icon"><i class="fa-solid fa-file-import"></i></div>
-        <div class="feat-text">
-          <strong>Bulk Excel Import</strong>
-          <span>Upload units and tenants in bulk using downloadable Excel templates with built-in validation.</span>
-        </div>
+        <strong>Bulk Excel Import</strong>
+        <span>Upload units and tenants in bulk using downloadable Excel templates with built-in row-level validation and error reporting.</span>
       </div>
 
-      <div class="feat-item">
+      <div class="feat-card">
         <div class="feat-icon"><i class="fa-solid fa-gauge-high"></i></div>
-        <div class="feat-text">
-          <strong>Live Dashboard</strong>
-          <span>At-a-glance KPIs — portfolio size, occupancy rate, revenue and recent activity.</span>
-        </div>
+        <strong>Live Dashboard</strong>
+        <span>At-a-glance KPIs — total portfolio size, occupancy rates, revenue summaries and recent transaction activity.</span>
       </div>
 
     </div>
 
     <div class="divider"></div>
 
-    <div class="section-label"><i class="fa-solid fa-print" style="margin-right:6px"></i>Reporting &amp; Data Export</div>
+    <div class="section-label"><i class="fa-solid fa-print"></i>Reporting &amp; Data Export</div>
     <div class="reports-row">
       <div class="report-tag"><i class="fa-solid fa-file-invoice-dollar"></i> Client Transactions</div>
       <div class="report-tag"><i class="fa-solid fa-building"></i> Property Transactions</div>
@@ -532,7 +592,42 @@
     <div class="export-row">
       <div class="export-badge eb-excel"><i class="fa-solid fa-file-excel"></i> Export to Excel</div>
       <div class="export-badge eb-csv"><i class="fa-solid fa-file-csv"></i> Export to CSV</div>
-      <div class="export-badge eb-print"><i class="fa-solid fa-print"></i> Print-Ready Output</div>
+      <div class="export-badge eb-print"><i class="fa-solid fa-print"></i> Print-Ready</div>
+      <div class="export-badge eb-backup"><i class="fa-solid fa-database"></i> Full Data Backup</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-label"><i class="fa-solid fa-lock"></i>Security &amp; Access Control</div>
+    <div class="security-grid">
+      <div class="sec-item">
+        <div class="sec-icon"><i class="fa-solid fa-key"></i></div>
+        <div>
+          <strong>JWT Authentication</strong>
+          <span>Every session is secured with a signed JSON Web Token — no session data stored in the browser.</span>
+        </div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon"><i class="fa-solid fa-user-shield"></i></div>
+        <div>
+          <strong>Role-Based Access</strong>
+          <span>Master, agency, client and tenant users each see only the data relevant to their role — nothing more.</span>
+        </div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon"><i class="fa-solid fa-rotate-left"></i></div>
+        <div>
+          <strong>Password Reset</strong>
+          <span>Secure email-based password reset flow for all user roles with time-limited reset tokens.</span>
+        </div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon"><i class="fa-solid fa-cloud"></i></div>
+        <div>
+          <strong>Cloud Database</strong>
+          <span>All data stored in Supabase (PostgreSQL) — reliable, scalable and accessible from anywhere.</span>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -544,14 +639,14 @@
 </div>
 
 
-<!-- ═══════════════════ PAGE 3 — WHY US + CTA ═══════════════════ -->
+<!-- ══════════════════════ PAGE 4 — WHY US + CTA ══════════════════════ -->
 <div class="page">
   <div class="page-header">
     <div>
-      <h2><i class="fa-solid fa-trophy" style="margin-right:10px;opacity:.8"></i>Why Choose This Platform</h2>
+      <h2><i class="fa-solid fa-trophy" style="margin-right:10px;opacity:.85"></i>Why Choose This Platform</h2>
       <div class="ph-sub">Built for modern property businesses — fast, secure and always accessible</div>
     </div>
-    <div class="page-num">Page 3 of 3</div>
+    <div class="page-num">Page 4 of 4</div>
   </div>
 
   <div class="page-body">
@@ -559,125 +654,122 @@
     <div class="highlight-box">
       <div class="hl-icon"><i class="fa-solid fa-quote-left"></i></div>
       <div class="hl-quote">
-        <strong>One platform. Every stakeholder. Zero friction.</strong><br>
-        From the master administrator overseeing an entire agency network down to a tenant checking
-        their balance — every user gets a purpose-built experience that shows exactly what they need,
-        exactly when they need it.
+        <strong>One platform. Every stakeholder. Zero friction.</strong>
+        From the master administrator overseeing an entire agency network down to a tenant
+        checking their balance — every user gets a purpose-built experience that shows exactly
+        what they need, when they need it. No spreadsheets. No paperwork. No confusion.
       </div>
     </div>
 
-    <div class="section-label" style="margin-bottom:16px"><i class="fa-solid fa-check-double" style="margin-right:6px"></i>Eight Reasons to Get Started Today</div>
+    <div class="section-label" style="margin-bottom:14px"><i class="fa-solid fa-check-double"></i>Eight Reasons to Get Started Today</div>
     <div class="why-grid">
 
       <div class="why-card">
         <div class="why-num">1</div>
         <div>
           <h4>No Installation Required</h4>
-          <p>Fully browser-based and live on the web. Access it from any device — laptop, tablet or phone — with nothing to download or install.</p>
+          <p>100% browser-based and live on the web. Access from any device — laptop, tablet or phone — with nothing to download.</p>
         </div>
       </div>
 
       <div class="why-card">
         <div class="why-num">2</div>
         <div>
-          <h4>Role-Based Security</h4>
-          <p>Each user sees only the data relevant to their role. Master, agency, client and tenant access are strictly separated with secure login and password reset.</p>
+          <h4>Multi-Agency Support</h4>
+          <p>One master account oversees multiple agencies and all their client portfolios — perfect for growing property management firms.</p>
         </div>
       </div>
 
       <div class="why-card">
         <div class="why-num">3</div>
         <div>
-          <h4>Multi-Agency Support</h4>
-          <p>One master account can oversee multiple agencies and their respective client portfolios — perfect for growing property management firms.</p>
+          <h4>Complete Financial Audit Trail</h4>
+          <p>Every transaction is logged with date, reference, amount and verification status — a clear, tamper-evident financial record.</p>
         </div>
       </div>
 
       <div class="why-card">
         <div class="why-num">4</div>
         <div>
-          <h4>Complete Financial Audit Trail</h4>
-          <p>Every transaction is recorded with date, reference, amount and verification status — giving you a clear, tamper-evident financial ledger.</p>
+          <h4>Instant Reports &amp; Exports</h4>
+          <p>Generate reports in seconds and export to Excel or CSV — ready for your accountant, client or board presentation.</p>
         </div>
       </div>
 
       <div class="why-card">
         <div class="why-num">5</div>
         <div>
-          <h4>Instant Reports &amp; Exports</h4>
-          <p>Generate client, property and tenant reports in seconds. Print directly or export to Excel and CSV for your own analysis and accounting.</p>
+          <h4>Scalable Bulk Data Entry</h4>
+          <p>Upload hundreds of units or tenants in minutes using Excel templates with built-in validation — no manual entry bottlenecks.</p>
         </div>
       </div>
 
       <div class="why-card">
         <div class="why-num">6</div>
         <div>
-          <h4>Scalable Bulk Data Entry</h4>
-          <p>No need to add units or tenants one by one. Download our Excel templates, fill in your data and upload hundreds of records in minutes with built-in validation.</p>
+          <h4>Tenant Self-Service</h4>
+          <p>Tenants post payments, view statements and update profiles independently — freeing your team from routine admin.</p>
         </div>
       </div>
 
       <div class="why-card">
         <div class="why-num">7</div>
         <div>
-          <h4>Light &amp; Dark Mode</h4>
-          <p>A polished, modern interface with light and dark theme support — comfortable for use in any environment, any time of day.</p>
+          <h4>Data Backup &amp; Restore</h4>
+          <p>Download a full JSON or Excel backup of all data at any time. Restore missing records with a single file upload.</p>
         </div>
       </div>
 
       <div class="why-card">
         <div class="why-num">8</div>
         <div>
-          <h4>Tenant Self-Service</h4>
-          <p>Tenants can post their own payments, view statements and manage their profile — reducing administrative workload for your team.</p>
+          <h4>Light &amp; Dark Mode</h4>
+          <p>A polished interface with both light and dark themes — professional, comfortable and easy on the eyes any time of day.</p>
         </div>
       </div>
 
     </div>
 
-    <div class="divider"></div>
-
-    <div class="section-label" style="margin-bottom:14px"><i class="fa-solid fa-rocket" style="margin-right:6px"></i>How It Works — Getting Started in 4 Steps</div>
+    <div class="section-label" style="margin-bottom:12px"><i class="fa-solid fa-rocket"></i>Up &amp; Running in 4 Simple Steps</div>
     <div class="workflow">
       <div class="wf-step">
         <i class="fa-solid fa-user-plus"></i>
-        <strong>1. Set Up Agency</strong>
-        <span>Create your master &amp; agency accounts</span>
+        <strong>1. Create Account</strong>
+        <span>Set up master &amp; agency</span>
       </div>
       <div class="wf-arrow"><i class="fa-solid fa-chevron-right"></i></div>
       <div class="wf-step">
         <i class="fa-solid fa-building"></i>
-        <strong>2. Add Properties</strong>
-        <span>Register clients, properties &amp; units</span>
+        <strong>2. Add Portfolio</strong>
+        <span>Register properties &amp; units</span>
       </div>
       <div class="wf-arrow"><i class="fa-solid fa-chevron-right"></i></div>
       <div class="wf-step">
         <i class="fa-solid fa-users"></i>
         <strong>3. Onboard Tenants</strong>
-        <span>Import or add tenants to units</span>
+        <span>Import or add individually</span>
       </div>
       <div class="wf-arrow"><i class="fa-solid fa-chevron-right"></i></div>
       <div class="wf-step">
         <i class="fa-solid fa-chart-line"></i>
         <strong>4. Go Live</strong>
-        <span>Start tracking, reporting &amp; growing</span>
+        <span>Track, report &amp; grow</span>
       </div>
     </div>
 
     <div class="cta-box">
       <h3><i class="fa-solid fa-handshake" style="margin-right:8px"></i>Ready to Modernise Your Property Operations?</h3>
       <p>
-        Join forward-thinking property managers who have replaced spreadsheets and paperwork
-        with a streamlined, professional platform. We offer a guided onboarding session to get
-        your agency fully set up and running — at no extra cost.
+        Join forward-thinking property managers who have left behind spreadsheets and manual paperwork.
+        Get a guided onboarding session — we'll have your agency fully set up and running at no extra cost.
       </p>
       <div class="cta-actions">
         <a href="https://property-management-app-one.vercel.app/" class="cta-btn cta-primary">
           <i class="fa-solid fa-arrow-right"></i> Visit the App
         </a>
-        <span class="cta-btn cta-secondary">
+        <a href="mailto:vmaneno@gmail.com" class="cta-btn cta-secondary">
           <i class="fa-solid fa-envelope"></i> Request a Demo
-        </span>
+        </a>
       </div>
     </div>
 
@@ -691,7 +783,7 @@
 
   <div class="page-footer">
     <span>Property Management App &mdash; Confidential Business Proposal &mdash; April 2026</span>
-    <span>Page 3 of 3</span>
+    <span>Page 4 of 4</span>
   </div>
 </div>
 
