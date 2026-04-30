@@ -2111,6 +2111,13 @@
       tenants = tenants.filter(t=>pCodes.includes(t.PropertyCode));
     }
     if (status) tenants = tenants.filter(t=>t.Active===status);
+    tenants = tenants.slice().sort((a,b)=>{
+      const pa=DB.findOne('properties',{PropertyCode:a.PropertyCode})||{};
+      const pb=DB.findOne('properties',{PropertyCode:b.PropertyCode})||{};
+      const ua=DB.findOne('propunits',{UnitCode:a.UnitCode})||{};
+      const ub=DB.findOne('propunits',{UnitCode:b.UnitCode})||{};
+      return (pa.PropertyName||'').localeCompare(pb.PropertyName||'') || (ua.UnitNumber||'').localeCompare(ub.UnitNumber||'', undefined, { numeric: true, sensitivity: 'base' });
+    });
     const prop = propCode ? (DB.findOne('properties',{PropertyCode:propCode})||{PropertyName:propCode}) : {PropertyName:'All Properties'};
     document.getElementById('r-tl-out').innerHTML = `
       <div style="margin-bottom:10px;font-weight:600">${prop.PropertyName} &mdash; ${tenants.length} tenant(s)</div>
@@ -2155,7 +2162,7 @@
     units = units.slice().sort((a,b)=>{
       const pa=DB.findOne('properties',{PropertyCode:a.PropertyCode})||{};
       const pb=DB.findOne('properties',{PropertyCode:b.PropertyCode})||{};
-      return (pa.PropertyName||'').localeCompare(pb.PropertyName||'') || (a.UnitNumber||'').localeCompare(b.UnitNumber||'');
+      return (pa.PropertyName||'').localeCompare(pb.PropertyName||'') || (a.UnitNumber||'').localeCompare(b.UnitNumber||'', undefined, { numeric: true, sensitivity: 'base' });
     });
     const cl   = clientCode ? (DB.findOne('clients',{ClientCode:clientCode})||{ClientName:clientCode}) : {ClientName:'All Clients'};
     const prop = propCode   ? (DB.findOne('properties',{PropertyCode:propCode})||{PropertyName:propCode}) : {PropertyName:'All Properties'};
