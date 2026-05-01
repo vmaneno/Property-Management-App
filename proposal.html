@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Property Management App — Proposal</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -357,10 +358,28 @@
     .contact-row span { display: flex; align-items: center; gap: 6px; }
     .contact-row i { color: #0d9488; }
 
+    /* ── AGENCY BRAND ── */
+    .page::before {
+      content: 'Ematon Agencies Ltd';
+      position: absolute;
+      top: 15px;
+      right: 42px;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-style: italic;
+      font-weight: 700;
+      font-size: 1.08rem;
+      color: #f97316;
+      letter-spacing: .04em;
+      text-shadow: 0 1px 10px rgba(249,115,22,.45), 0 0 28px rgba(249,115,22,.18);
+      z-index: 50;
+      pointer-events: none;
+    }
+
     /* ── PRINT ── */
     @media print {
       body { background: #fff; padding-top: 0; }
       .print-bar { display: none !important; }
+      .page::before { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .page {
         margin: 0; box-shadow: none;
         width: 100%; min-height: 0;
