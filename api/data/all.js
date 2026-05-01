@@ -55,24 +55,27 @@ module.exports = async (req, res) => {
       }
 
     } else if (role === 'client') {
-      const [cl, p] = await Promise.all([
-        pool.query('SELECT data FROM clients    WHERE client_code=$1', [id]),
-        pool.query('SELECT data FROM properties WHERE client_code=$1', [id]),
-      ]);
-      clients    = cl.rows.map(r => r.data);
-      properties = p.rows.map(r => r.data);
-      const pCodes = properties.map(x => x.PropertyCode);
-      if (pCodes.length) {
-        const [u, t] = await Promise.all([
-          pool.query('SELECT data FROM prop_units WHERE property_code=ANY($1)', [pCodes]),
-          pool.query('SELECT data FROM tenants   WHERE property_code=ANY($1)', [pCodes]),
-        ]);
-        propunits = u.rows.map(r => r.data);
-        tenants   = t.rows.map(r => r.data);
-        const tIds = tenants.map(x => x.TenantID);
-        if (tIds.length) {
-          const tx = await pool.query('SELECT data FROM transactions WHERE tenant_id=ANY($1)', [tIds]);
-          transactions = tx.rows.map(r => r.data);
+      const clResult = await pool.query(
+        'SELECT data, agency_code FROM clients WHERE client_code=$1', [id]
+      );
+      clients = clResult.rows.map(r => r.data);
+      const agencyCode = clResult.rows.length ? clResult.rows[0].agency_code : null;
+      if (agencyCode) {
+        const p = await pool.query('SELECT data FROM properties WHERE agency_code=$1', [agencyCode]);
+        properties = p.rows.map(r => r.data);
+        const pCodes = properties.map(x => x.PropertyCode);
+        if (pCodes.length) {
+          const [u, t] = await Promise.all([
+            pool.query('SELECT data FROM prop_units WHERE property_code=ANY($1)', [pCodes]),
+            pool.query('SELECT data FROM tenants   WHERE property_code=ANY($1)', [pCodes]),
+          ]);
+          propunits = u.rows.map(r => r.data);
+          tenants   = t.rows.map(r => r.data);
+          const tIds = tenants.map(x => x.TenantID);
+          if (tIds.length) {
+            const tx = await pool.query('SELECT data FROM transactions WHERE tenant_id=ANY($1)', [tIds]);
+            transactions = tx.rows.map(r => r.data);
+          }
         }
       }
 
