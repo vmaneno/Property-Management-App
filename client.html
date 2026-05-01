@@ -15,6 +15,19 @@
       .table-card { box-shadow:none !important; border:1px solid #ccc; }
       .data-table th,.data-table td { font-size:.8rem; }
     }
+    .filter-bar { display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f0f0f0; }
+    .filter-bar input { max-width:280px;padding:5px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85rem; }
+    .filter-bar input:focus { outline:none;border-color:#2d9b59; }
+    .unit-status-btn { padding:5px 14px;border:1px solid #ddd;border-radius:16px;cursor:pointer;font-size:.8rem;background:#f9f9f9;font-weight:600;color:#666;transition:all .15s; }
+    .unit-status-btn:hover { border-color:#2d9b59;color:#2d9b59; }
+    .unit-status-btn.uf-active { background:#2d9b59;color:#fff;border-color:#2d9b59; }
+    .unit-group { border-bottom:1px solid #f0f0f0; }
+    .unit-group:last-child { border-bottom:none; }
+    .unit-group-hdr { display:flex;align-items:center;justify-content:space-between;padding:13px 20px;cursor:pointer;background:#fafafa;border-bottom:1px solid #f0f0f0;transition:background .15s;gap:12px;flex-wrap:wrap; }
+    .unit-group-hdr:hover { background:#f0faf4; }
+    .unit-count-pill { background:#d4edda;color:#1a6b3c;border-radius:10px;padding:2px 9px;font-size:.72rem;font-weight:700; }
+    .unit-grp-body .table-responsive { margin:0; }
+    .unit-grp-body .data-table { border-radius:0; }
   </style>
 </head>
 <body>
@@ -134,7 +147,7 @@
     const c = document.getElementById('view-container');
     if (view === 'dashboard')    { c.innerHTML = renderDashboard(); }
     else if (view === 'properties') { c.innerHTML = renderProperties(); ta.innerHTML = `<button class="btn-primary-custom bg-client" onclick="openAddProperty()"><i class="fa-solid fa-plus"></i> Add Property</button>`; }
-    else if (view === 'units')      { c.innerHTML = renderUnits();  ta.innerHTML = `<button class="btn-primary-custom bg-client" onclick="openAddUnit()"><i class="fa-solid fa-plus"></i> Add Unit</button> <button class="btn-primary-custom bg-client" onclick="openUnitsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Units Upload</button>`; }
+    else if (view === 'units')      { c.innerHTML = renderUnits(); buildUnitGroups(); ta.innerHTML = `<button class="btn-primary-custom bg-client" onclick="openAddUnit()"><i class="fa-solid fa-plus"></i> Add Unit</button> <button class="btn-primary-custom bg-client" onclick="openUnitsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Units Upload</button>`; }
     else if (view === 'tenants')    { c.innerHTML = renderTenants(); ta.innerHTML = `<button class="btn-primary-custom bg-client" onclick="openAddTenant()"><i class="fa-solid fa-plus"></i> Add Tenant</button> <button class="btn-primary-custom bg-client" onclick="openTenantsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Tenants Upload</button>`; }
     else if (view === 'transactions') { c.innerHTML = renderTransactions(); ta.innerHTML = `<button class="btn-primary-custom bg-client" onclick="openPostTx()"><i class="fa-solid fa-plus"></i> Post Transaction</button> <button class="btn-primary-custom bg-client" onclick="openBulkPostTx()" style="margin-left:8px"><i class="fa-solid fa-layer-group"></i> Bulk Posting</button>`; }
     else if (view === 'profile')      { c.innerHTML = renderProfile(); }
@@ -229,39 +242,155 @@
   }
 
   function renderUnits() {
-    const units = myUnits();
-    return `<div class="table-card"><div class="table-card-header"><h5>Property Units (${units.length})</h5></div>
-    <div class="table-responsive"><table class="data-table">
-      <thead><tr><th>Unit Code</th><th>Property</th><th>Unit#</th><th>Bed/Bath</th><th>Rent</th><th>Deposit</th><th>Status</th><th>Actions</th></tr></thead>
-      <tbody>${units.map(u=>{
-        const p=DB.findOne('properties',{PropertyCode:u.PropertyCode})||{};
-        const unitTenants=DB.getAll('tenants').filter(t=>t.UnitCode===u.UnitCode);
-        const hasActiveTenant=unitTenants.some(t=>t.Active==='Y');
-        const hasTxs=DB.getAll('transactions').some(tx=>unitTenants.map(t=>t.TenantID).includes(tx.TenantID));
-        const canDelete=!hasActiveTenant&&!hasTxs;
-        const delTitle=hasActiveTenant?'Has active tenant':hasTxs?'Has transactions':'Delete unit';
+    window._uSearch = '';
+    window._uStatus = '';
+    return `<div class="table-card">
+      <div class="table-card-header"><h5 id="units-hdr-title">All Units</h5></div>
+      <div class="filter-bar" style="gap:10px;flex-wrap:wrap;align-items:center;">
+        <i class="fa-solid fa-magnifying-glass" style="color:#aaa;flex-shrink:0"></i>
+        <input id="filter-units-search" placeholder="Search by property or unit..."
+               style="flex:1;min-width:180px"
+               oninput="window._uSearch=this.value.toLowerCase();buildUnitGroups()">
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button id="uf-btn-all"      class="unit-status-btn uf-active" onclick="setUnitStatus('')">All</button>
+          <button id="uf-btn-occupied" class="unit-status-btn"            onclick="setUnitStatus('Occupied')">Occupied</button>
+          <button id="uf-btn-vacant"   class="unit-status-btn"            onclick="setUnitStatus('Vacant')">Vacant</button>
+        </div>
+      </div>
+      <div id="unit-groups"></div>
+    </div>`;
+  }
+
+  function setUnitStatus(s) {
+    window._uStatus = s;
+    ['all','occupied','vacant'].forEach(k => {
+      const el = document.getElementById('uf-btn-' + k);
+      if (el) el.classList.remove('uf-active');
+    });
+    const btn = document.getElementById('uf-btn-' + (s ? s.toLowerCase() : 'all'));
+    if (btn) btn.classList.add('uf-active');
+    buildUnitGroups();
+  }
+
+  function toggleUnitGroup(propCode) {
+    window._uCollapsed = window._uCollapsed || {};
+    window._uCollapsed[propCode] = !window._uCollapsed[propCode];
+    buildUnitGroups();
+  }
+
+  function buildUnitGroups() {
+    window._uCollapsed = window._uCollapsed || {};
+    const search = window._uSearch || '';
+    const status = window._uStatus || '';
+
+    let units = myUnits().slice().sort((a,b) => {
+      const pa = DB.findOne('properties',{PropertyCode:a.PropertyCode})||{};
+      const pb = DB.findOne('properties',{PropertyCode:b.PropertyCode})||{};
+      const pCmp = (pa.PropertyName||'').localeCompare(pb.PropertyName||'');
+      if (pCmp !== 0) return pCmp;
+      return (a.UnitNumber||'').localeCompare(b.UnitNumber||'',undefined,{numeric:true});
+    });
+
+    if (status) units = units.filter(u => u.UnitStatus === status);
+    if (search) {
+      units = units.filter(u => {
+        const p = DB.findOne('properties',{PropertyCode:u.PropertyCode})||{};
+        return (p.PropertyName||'').toLowerCase().includes(search)
+            || (u.UnitNumber||'').toLowerCase().includes(search)
+            || (u.UnitCode||'').toLowerCase().includes(search);
+      });
+    }
+
+    const titleEl = document.getElementById('units-hdr-title');
+    if (titleEl) titleEl.textContent = 'All Units (' + units.length + ')';
+
+    const groups = {};
+    const order  = [];
+    units.forEach(u => {
+      const p = DB.findOne('properties',{PropertyCode:u.PropertyCode})||{};
+      if (!groups[u.PropertyCode]) {
+        groups[u.PropertyCode] = {propName: p.PropertyName||u.PropertyCode, units:[]};
+        order.push(u.PropertyCode);
+      }
+      groups[u.PropertyCode].units.push(u);
+    });
+
+    const container = document.getElementById('unit-groups');
+    if (!container) return;
+
+    if (!order.length) {
+      container.innerHTML = '<div style="padding:24px;text-align:center;color:#aaa;font-size:.9rem">No units match the current filter.</div>';
+      return;
+    }
+
+    container.innerHTML = order.map(propCode => {
+      const grp       = groups[propCode];
+      const collapsed = window._uCollapsed[propCode];
+      const totalRent = grp.units.reduce((s,u) => s + Number(u.RentAmount||0), 0);
+      const totalDep  = grp.units.reduce((s,u) => s + Number(u.DepositAmount||0), 0);
+      const rows = grp.units.map(u => {
+        const unitTenants = DB.getAll('tenants').filter(t => t.UnitCode === u.UnitCode);
+        const hasActiveTenant = unitTenants.some(t => t.Active === 'Y');
+        const hasTxs = DB.getAll('transactions').some(tx => unitTenants.map(t=>t.TenantID).includes(tx.TenantID));
+        const canDelete = !hasActiveTenant && !hasTxs;
+        const delTitle = hasActiveTenant ? 'Has active tenant' : hasTxs ? 'Has transactions' : 'Delete unit';
         return `<tr>
-          <td style="font-family:monospace">${u.UnitCode}</td><td>${p.PropertyName||u.PropertyCode}</td>
-          <td><strong>${u.UnitNumber}</strong> (Floor ${u.Floor})</td>
-          <td>${u.Bedrooms}BR / ${u.Bathrooms}BA</td>
-          <td>$${Number(u.RentAmount).toLocaleString()}</td><td>$${Number(u.DepositAmount).toLocaleString()}</td>
+          <td style="font-family:monospace">${u.UnitCode}</td>
+          <td><strong>${u.UnitNumber}</strong></td>
+          <td>$${Number(u.RentAmount).toLocaleString()}</td>
+          <td>$${Number(u.DepositAmount).toLocaleString()}</td>
           <td><span class="${u.UnitStatus==='Occupied'?'badge-occupied':'badge-vacant'}">${u.UnitStatus}</span></td>
+          <td><span class="badge-${u.Active==='Y'?'active':'inactive'}">${u.Active==='Y'?'Yes':'No'}</span></td>
           <td>
             <button class="btn-edit" onclick="openEditUnit('${u.UnitCode}')"><i class="fa-solid fa-pen"></i></button>
             ${canDelete
-              ? `<button class="btn-del" onclick="deleteUnit('${u.UnitCode}')"><i class="fa-solid fa-trash"></i></button>`
+              ? `<button class="btn-del" onclick="deleteUnit('${u.UnitCode}','${u.UnitNumber}')"><i class="fa-solid fa-trash"></i></button>`
               : `<button class="btn-del" disabled title="${delTitle}" style="opacity:.35;cursor:not-allowed"><i class="fa-solid fa-trash"></i></button>`}
           </td>
         </tr>`;
-      }).join('')||'<tr><td colspan="8" style="text-align:center;padding:40px;color:#aaa">No units found.</td></tr>'}</tbody>
-    </table></div></div>`;
+      }).join('');
+
+      return `<div class="unit-group">
+        <div class="unit-group-hdr" onclick="toggleUnitGroup('${propCode}')">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <i class="fa-solid fa-building" style="color:#2d9b59"></i>
+            <strong style="font-size:.93rem">${grp.propName}</strong>
+            <span class="unit-count-pill">${grp.units.length} unit${grp.units.length!==1?'s':''}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+            <span style="font-size:.78rem;text-align:right">
+              <span style="color:#aaa;font-size:.7rem;display:block">Total Rent</span>
+              <strong>$${totalRent.toLocaleString()}</strong>
+            </span>
+            <span style="font-size:.78rem;text-align:right">
+              <span style="color:#aaa;font-size:.7rem;display:block">Total Deposit</span>
+              <strong>$${totalDep.toLocaleString()}</strong>
+            </span>
+            <i class="fa-solid fa-chevron-${collapsed?'right':'down'}" style="color:#2d9b59;font-size:.8rem"></i>
+          </div>
+        </div>
+        <div class="unit-grp-body" style="display:${collapsed?'none':'block'}">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead><tr><th>Code</th><th>Unit#</th><th>Rent</th><th>Deposit</th><th>Status</th><th>Active</th><th>Actions</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
   }
 
-  function deleteUnit(code) {
-    if (!confirm('Delete unit '+code+'? This cannot be undone.')) return;
-    DB.remove('propunits','UnitCode',code);
+  function deleteUnit(code, unitNum) {
+    const unit = DB.findOne('propunits', {UnitCode: code});
+    if (unit && unit.UnitStatus === 'Occupied') {
+      toast('Cannot delete Unit ' + unitNum + ' — it is currently occupied.', 'error');
+      return;
+    }
+    if (!confirm('Delete "Unit ' + unitNum + '"? This cannot be undone.')) return;
+    DB.remove('propunits', 'UnitCode', code);
     showView('units', document.querySelector('[data-view="units"]'));
-    toast('Unit '+code+' deleted.','success');
+    toast('Unit ' + unitNum + ' deleted.', 'info');
   }
 
   function renderTenants() {
