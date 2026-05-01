@@ -108,7 +108,7 @@
 
   function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
 
-  function myProps()    { return DB.find('properties',   { ClientCode: client.ClientCode }); }
+  function myProps()    { return DB.find('properties',   { AgencyCode: client.AgencyCode }); }
   function myCodes()    { return myProps().map(p => p.PropertyCode); }
   function myUnits()    { const codes = myCodes(); return DB.getAll('propunits').filter(u => codes.includes(u.PropertyCode)); }
   function myTenants()  { const codes = myCodes(); return DB.getAll('tenants').filter(t => codes.includes(t.PropertyCode)); }
