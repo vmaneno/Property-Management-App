@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tenant Portal — User Manual</title>
+<style>
+  :root { --green:#2d9b59; --dark:#1a3c2e; --light:#f4f9f6; --border:#d4e8dc; --text:#222; --muted:#666; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Segoe UI',Arial,sans-serif; font-size:10.5pt; color:var(--text); background:#fff; line-height:1.6; }
+
+  /* ── COVER ── */
+  .cover { min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; background:linear-gradient(160deg,var(--dark) 0%,var(--green) 100%); color:#fff; text-align:center; padding:60px 40px; page-break-after:always; }
+  .cover-icon { font-size:72px; margin-bottom:24px; }
+  .cover h1 { font-size:36pt; font-weight:700; letter-spacing:1px; }
+  .cover h2 { font-size:18pt; font-weight:400; margin-top:10px; opacity:.85; }
+  .cover-divider { width:80px; height:3px; background:rgba(255,255,255,.5); margin:28px auto; border-radius:2px; }
+  .cover-meta { font-size:10pt; opacity:.7; margin-top:12px; }
+  .cover-badge { display:inline-block; margin-top:32px; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); border-radius:24px; padding:8px 28px; font-size:11pt; letter-spacing:.5px; }
+
+  /* ── TOC ── */
+  .toc-page { padding:60px 80px; page-break-after:always; }
+  .toc-page h2 { font-size:18pt; color:var(--dark); border-bottom:3px solid var(--green); padding-bottom:10px; margin-bottom:28px; }
+  .toc-entry { display:flex; justify-content:space-between; align-items:baseline; padding:6px 0; border-bottom:1px dotted #ccc; font-size:10.5pt; }
+  .toc-entry .toc-title { color:var(--text); }
+  .toc-entry .toc-pg { color:var(--muted); font-size:9.5pt; }
+  .toc-section { font-weight:700; color:var(--dark); margin-top:18px; margin-bottom:4px; font-size:11pt; }
+
+  /* ── CONTENT ── */
+  .page { padding:50px 70px; page-break-before:always; }
+  .page:first-of-type { page-break-before:auto; }
+
+  .section-banner { background:linear-gradient(90deg,var(--dark),var(--green)); color:#fff; border-radius:10px; padding:18px 28px; margin-bottom:30px; display:flex; align-items:center; gap:16px; }
+  .section-banner .s-icon { font-size:28px; }
+  .section-banner h2 { font-size:16pt; font-weight:700; }
+  .section-banner p { font-size:9.5pt; opacity:.85; margin-top:3px; }
+
+  h3 { font-size:12pt; color:var(--dark); margin:26px 0 10px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  h3::before { content:''; display:inline-block; width:4px; height:18px; background:var(--green); border-radius:2px; }
+
+  .steps { margin:0; padding:0; list-style:none; counter-reset:step; }
+  .steps li { counter-increment:step; display:flex; gap:14px; margin-bottom:12px; align-items:flex-start; }
+  .steps li::before { content:counter(step); background:var(--green); color:#fff; font-weight:700; font-size:9pt; min-width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
+  .steps li p { margin:0; }
+
+  .note { background:#f0faf4; border-left:4px solid var(--green); border-radius:0 8px 8px 0; padding:11px 16px; margin:14px 0; font-size:9.5pt; color:#1a5c35; }
+  .note strong { color:var(--dark); }
+  .warn { background:#fff8e1; border-left:4px solid #f59e0b; border-radius:0 8px 8px 0; padding:11px 16px; margin:14px 0; font-size:9.5pt; color:#7a5000; }
+  .warn strong { color:#5a3800; }
+
+  .field-table { width:100%; border-collapse:collapse; margin:12px 0 20px; font-size:9.5pt; }
+  .field-table th { background:var(--dark); color:#fff; text-align:left; padding:8px 12px; font-weight:600; }
+  .field-table td { padding:7px 12px; border-bottom:1px solid #e0eed6; vertical-align:top; }
+  .field-table tr:nth-child(even) td { background:var(--light); }
+  .field-table .req { color:var(--green); font-weight:700; }
+
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:14px 0; }
+  .info-card { background:var(--light); border:1px solid var(--border); border-radius:10px; padding:16px; }
+  .info-card h4 { color:var(--dark); font-size:10pt; margin-bottom:8px; }
+  .info-card ul { padding-left:16px; font-size:9.5pt; }
+  .info-card ul li { margin-bottom:4px; }
+
+  .badge { display:inline-block; padding:2px 10px; border-radius:12px; font-size:8.5pt; font-weight:700; }
+  .badge-green { background:#d4edda; color:#1a6b3c; }
+  .badge-red { background:#fde8e8; color:#b91c1c; }
+  .badge-grey { background:#e9e9e9; color:#555; }
+
+  /* ── FOOTER / HEADER ── */
+  @media screen {
+    .page-header { display:none; }
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    .cover { min-height:100vh; }
+    .page { padding:30px 50px; }
+    .toc-page { padding:40px 60px; }
+    body { font-size:10pt; }
+    .two-col { grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-icon">🏠</div>
+  <h1>Property Management App</h1>
+  <h2>Tenant Portal — User Manual</h2>
+  <div class="cover-divider"></div>
+  <p style="font-size:11pt;opacity:.8;max-width:440px">A step-by-step guide to managing your tenancy, posting payments, and viewing your account statements.</p>
+  <div class="cover-badge">Tenant Portal</div>
+  <div class="cover-meta" style="margin-top:40px">Version 1.0 &nbsp;·&nbsp; Property Management App</div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc-page">
+  <h2>Table of Contents</h2>
+  <div class="toc-section">Getting Started</div>
+  <div class="toc-entry"><span class="toc-title">1. Accessing the App</span><span class="toc-pg">Section 1</span></div>
+  <div class="toc-entry"><span class="toc-title">2. First-Time Setup (Creating Your Login)</span><span class="toc-pg">Section 2</span></div>
+  <div class="toc-entry"><span class="toc-title">3. Logging In</span><span class="toc-pg">Section 3</span></div>
+  <div class="toc-entry"><span class="toc-title">4. Resetting a Forgotten Password</span><span class="toc-pg">Section 4</span></div>
+
+  <div class="toc-section">Using the Portal</div>
+  <div class="toc-entry"><span class="toc-title">5. Dashboard Overview</span><span class="toc-pg">Section 5</span></div>
+  <div class="toc-entry"><span class="toc-title">6. Updating Your Profile</span><span class="toc-pg">Section 6</span></div>
+  <div class="toc-entry"><span class="toc-title">7. Posting a Transaction (Making a Payment)</span><span class="toc-pg">Section 7</span></div>
+  <div class="toc-entry"><span class="toc-title">8. Viewing Your Transactions</span><span class="toc-pg">Section 8</span></div>
+  <div class="toc-entry"><span class="toc-title">9. Printing Your Account Statement</span><span class="toc-pg">Section 9</span></div>
+
+  <div class="toc-section">General</div>
+  <div class="toc-entry"><span class="toc-title">10. Switching Dark / Light Mode</span><span class="toc-pg">Section 10</span></div>
+  <div class="toc-entry"><span class="toc-title">11. Signing Out</span><span class="toc-pg">Section 10</span></div>
+  <div class="toc-entry"><span class="toc-title">12. Frequently Asked Questions</span><span class="toc-pg">Section 11</span></div>
+</div>
+
+<!-- SECTION 1 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">🔑</div>
+    <div>
+      <h2>Section 1 — Accessing the App</h2>
+      <p>Open the Property Management App in your web browser</p>
+    </div>
+  </div>
+
+  <h3>Opening the Login Page</h3>
+  <ol class="steps">
+    <li><p>Open your preferred web browser (Chrome, Edge, Firefox, or Safari).</p></li>
+    <li><p>Type the web address provided by your property manager into the address bar and press <strong>Enter</strong>.</p></li>
+    <li><p>You will see the <strong>Property Management</strong> landing page with four portal cards: Tenant, Client, Agency, and Master Admin.</p></li>
+    <li><p>Click the <strong>Tenant Portal</strong> card — it will flip to reveal the login form.</p></li>
+  </ol>
+
+  <div class="note"><strong>Tip:</strong> Bookmark the app URL in your browser so you can return to it quickly each time.</div>
+</div>
+
+<!-- SECTION 2 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">📝</div>
+    <div>
+      <h2>Section 2 — First-Time Setup</h2>
+      <p>Creating your username and password for the first time</p>
+    </div>
+  </div>
+
+  <div class="note"><strong>Before you begin:</strong> You will need your <strong>Property Code</strong> and <strong>Tenant Code</strong>, and the telephone number registered with your property manager. Contact your manager if you do not have these.</div>
+
+  <h3>Creating Your Login Credentials</h3>
+  <ol class="steps">
+    <li><p>On the Tenant login card, click <strong>"First Time Setup →"</strong> below the Sign In button.</p></li>
+    <li><p>Fill in all the required fields:</p></li>
+  </ol>
+
+  <table class="field-table">
+    <thead><tr><th>Field</th><th>What to Enter</th><th>Required</th></tr></thead>
+    <tbody>
+      <tr><td>Property Code</td><td>The code for your property (e.g. PR001) — provided by your manager</td><td class="req">Yes</td></tr>
+      <tr><td>Tenant Code</td><td>Your tenant reference code (e.g. TN-2026-001) — provided by your manager</td><td class="req">Yes</td></tr>
+      <tr><td>Telephone</td><td>The phone number registered with your property manager</td><td class="req">Yes</td></tr>
+      <tr><td>New Username</td><td>Choose a username you will use to log in (e.g. john.doe)</td><td class="req">Yes</td></tr>
+      <tr><td>New Password</td><td>Choose a secure password — minimum 6 characters</td><td class="req">Yes</td></tr>
+      <tr><td>Confirm Password</td><td>Re-type your chosen password exactly</td><td class="req">Yes</td></tr>
+    </tbody>
+  </table>
+
+  <ol class="steps" style="counter-reset:step 2">
+    <li><p>Click <strong>"Set Credentials"</strong>. A green success message will appear confirming your credentials have been saved.</p></li>
+    <li><p>Click <strong>"← Back to Login"</strong> and proceed to sign in with your new username and password.</p></li>
+  </ol>
+
+  <div class="warn"><strong>Important:</strong> Remember your username and password. Store them in a safe place. If you forget, use the "Forgot Password?" option on the login card.</div>
+</div>
+
+<!-- SECTION 3 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">🚪</div>
+    <div>
+      <h2>Section 3 — Logging In</h2>
+      <p>Signing into your tenant account</p>
+    </div>
+  </div>
+
+  <h3>Steps to Sign In</h3>
+  <ol class="steps">
+    <li><p>On the Tenant Portal card, enter your <strong>Property Code</strong> (e.g. PR001).</p></li>
+    <li><p>Enter your <strong>Username</strong>.</p></li>
+    <li><p>Enter your <strong>Password</strong>. Click the <strong>eye icon</strong> (👁) on the right of the password field to reveal your password if needed.</p></li>
+    <li><p>Click <strong>"Sign In"</strong>. You will be taken directly to your Tenant Dashboard.</p></li>
+  </ol>
+
+  <div class="note"><strong>Note:</strong> You can also press the <strong>Enter</strong> key instead of clicking Sign In.</div>
+
+  <div class="warn"><strong>Login failed?</strong> Check that your Property Code, Username, and Password are all correct. Ensure Caps Lock is off. If you still cannot log in, use "Forgot Password?" or contact your property manager.</div>
+</div>
+
+<!-- SECTION 4 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">🔓</div>
+    <div>
+      <h2>Section 4 — Resetting a Forgotten Password</h2>
+      <p>Recovering access when you have forgotten your password</p>
+    </div>
+  </div>
+
+  <h3>Step 1 — Request a Reset Code</h3>
+  <ol class="steps">
+    <li><p>On the Tenant login card, click <strong>"Forgot Password? →"</strong>.</p></li>
+    <li><p>Enter your <strong>Property Code</strong> and <strong>Username</strong>.</p></li>
+    <li><p>Click <strong>"Send Code"</strong>. Your email application will open with a pre-filled message containing a 6-digit reset code.</p></li>
+    <li><p>Send the email. A confirmation message will appear — the form will automatically advance to Step 2 after a moment.</p></li>
+  </ol>
+
+  <h3>Step 2 — Set Your New Password</h3>
+  <ol class="steps">
+    <li><p>Enter the <strong>6-digit code</strong> from the email you received.</p></li>
+    <li><p>Enter your <strong>New Password</strong> (minimum 6 characters) and <strong>Confirm Password</strong>.</p></li>
+    <li><p>Click <strong>"Reset Password"</strong>. A success message will appear and you will be returned to the login screen.</p></li>
+    <li><p>Log in with your new password.</p></li>
+  </ol>
+
+  <div class="warn"><strong>Important:</strong> The reset code expires in <strong>15 minutes</strong>. If it expires, click "← Back" and request a new code.</div>
+</div>
+
+<!-- SECTION 5 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">📊</div>
+    <div>
+      <h2>Section 5 — Dashboard Overview</h2>
+      <p>Understanding your account at a glance</p>
+    </div>
+  </div>
+
+  <p>After logging in, you land on your <strong>Dashboard</strong>. This is the home screen of your tenant portal.</p>
+
+  <h3>What You Can See on the Dashboard</h3>
+
+  <div class="two-col">
+    <div class="info-card">
+      <h4>🏢 Property & Unit Details</h4>
+      <ul>
+        <li>Your property name and code</li>
+        <li>Your unit number, bedrooms, bathrooms, and floor</li>
+        <li>Your move-in date</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h4>💰 Account Balance</h4>
+      <ul>
+        <li>Your current account balance shown in large text</li>
+        <li>Green balance = credit (you have paid more than owed)</li>
+        <li>Red balance = amount outstanding</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h4>📋 Rent Information</h4>
+      <ul>
+        <li>Your monthly rent amount</li>
+        <li>Deposit amount paid</li>
+        <li>Payment frequency</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h4>🗓 Recent Transactions</h4>
+      <ul>
+        <li>Last 5 transactions on your account</li>
+        <li>Date, description, amount, and status</li>
+        <li>Click "View All" to see all transactions</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Navigating the Portal</h3>
+  <ol class="steps">
+    <li><p>Use the <strong>sidebar</strong> (left panel) to move between sections. On mobile, tap the <strong>☰ menu icon</strong> at the top left to open the sidebar.</p></li>
+    <li><p>The current section is highlighted in green in the sidebar.</p></li>
+    <li><p>Click <strong>"Sign Out"</strong> in the sidebar to log out when you are done.</p></li>
+  </ol>
+</div>
+
+<!-- SECTION 6 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">👤</div>
+    <div>
+      <h2>Section 6 — Updating Your Profile</h2>
+      <p>Keeping your contact details and password up to date</p>
+    </div>
+  </div>
+
+  <h3>Updating Your Personal Details</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"My Profile"</strong> in the sidebar.</p></li>
+    <li><p>Your profile card shows your name, tenant number, property, unit, and account status.</p></li>
+    <li><p>Update any of the following fields as needed:</p></li>
+  </ol>
+
+  <table class="field-table">
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>First Name</td><td>Your first name</td></tr>
+      <tr><td>Last Name</td><td>Your last name</td></tr>
+      <tr><td>Telephone</td><td>Your current phone number</td></tr>
+      <tr><td>Email</td><td>Your email address</td></tr>
+      <tr><td>Address</td><td>Your current home/mailing address</td></tr>
+    </tbody>
+  </table>
+
+  <ol class="steps" style="counter-reset:step 3">
+    <li><p>Click <strong>"Save Changes"</strong> to save your updated information. A green success toast will confirm.</p></li>
+  </ol>
+
+  <h3>Changing Your Password</h3>
+  <ol class="steps">
+    <li><p>Scroll down to the <strong>"Change Password"</strong> section on the My Profile page.</p></li>
+    <li><p>Enter your <strong>New Password</strong> (minimum 6 characters).</p></li>
+    <li><p>Re-enter it in the <strong>Confirm New Password</strong> field.</p></li>
+    <li><p>Click <strong>"Save Changes"</strong>. Your password will be updated immediately.</p></li>
+  </ol>
+
+  <div class="note"><strong>Tip:</strong> You only need to fill in the password fields if you want to change your password. Leave them blank to update only your contact details.</div>
+</div>
+
+<!-- SECTION 7 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">💸</div>
+    <div>
+      <h2>Section 7 — Posting a Transaction</h2>
+      <p>Recording a rent payment or other transaction on your account</p>
+    </div>
+  </div>
+
+  <div class="note"><strong>What is a transaction?</strong> A transaction is any payment or charge on your account — such as rent paid, a deposit, or a fee. Every transaction must include a supporting document (e.g. a bank receipt or payment confirmation).</div>
+
+  <h3>How to Post a Transaction</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"Post Transaction"</strong> in the sidebar.</p></li>
+    <li><p>Fill in the form:</p></li>
+  </ol>
+
+  <table class="field-table">
+    <thead><tr><th>Field</th><th>What to Enter</th><th>Required</th></tr></thead>
+    <tbody>
+      <tr><td>Date</td><td>The date the payment was made (defaults to today)</td><td class="req">Yes</td></tr>
+      <tr><td>Currency</td><td>Auto-filled based on your property — cannot be changed</td><td>—</td></tr>
+      <tr><td>Description</td><td>Brief description, e.g. "Rent Payment — May 2026"</td><td class="req">Yes</td></tr>
+      <tr><td>Amount</td><td>The payment amount. <strong>Enter a positive number for payments you make</strong>. Use a negative number only for a debit/charge.</td><td class="req">Yes</td></tr>
+      <tr><td>Note</td><td>Any additional information (e.g. bank reference number)</td><td>Optional</td></tr>
+      <tr><td>Document</td><td>Upload your payment receipt or proof (PDF, JPG, PNG, DOC, DOCX)</td><td class="req">Yes</td></tr>
+    </tbody>
+  </table>
+
+  <ol class="steps" style="counter-reset:step 2">
+    <li><p>Click the <strong>"Document"</strong> field and select your payment proof file from your device.</p></li>
+    <li><p>Click <strong>"Submit Transaction"</strong>. A success message will confirm the transaction was recorded.</p></li>
+    <li><p>Your transaction will appear with status <span class="badge badge-grey">Pending</span> until verified by your property manager.</p></li>
+  </ol>
+
+  <div class="note"><strong>Tip:</strong> After paying your rent, take a clear photo or screenshot of your bank/M-PESA confirmation and upload it as your document. This speeds up verification.</div>
+  <div class="warn"><strong>Note:</strong> Transactions show as <strong>Pending</strong> until your property manager or agency reviews and verifies them. You will see them change to <span class="badge badge-green">Verified</span> once approved.</div>
+</div>
+
+<!-- SECTION 8 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">📋</div>
+    <div>
+      <h2>Section 8 — Viewing Your Transactions</h2>
+      <p>Reviewing all payments and charges on your account</p>
+    </div>
+  </div>
+
+  <h3>Viewing the Transactions List</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"My Transactions"</strong> in the sidebar.</p></li>
+    <li><p>Your full transaction history is displayed in a table showing:</p></li>
+  </ol>
+
+  <table class="field-table">
+    <thead><tr><th>Column</th><th>What It Shows</th></tr></thead>
+    <tbody>
+      <tr><td>Date</td><td>The date the transaction was posted</td></tr>
+      <tr><td>Description</td><td>What the transaction is for</td></tr>
+      <tr><td>Amount</td><td>The transaction amount (green = credit, red = debit)</td></tr>
+      <tr><td>Status</td><td><span class="badge badge-green">Verified</span> or <span class="badge badge-grey">Pending</span></td></tr>
+    </tbody>
+  </table>
+
+  <ol class="steps" style="counter-reset:step 2">
+    <li><p>Your current <strong>account balance</strong> is shown at the top of the page.</p></li>
+    <li><p>To view the details of a transaction, click on the <strong>amount</strong> — a detail panel will open showing the reference number, note, and any attached document.</p></li>
+  </ol>
+
+  <div class="note"><strong>Tip:</strong> If you see a transaction you do not recognise, contact your property manager with the transaction reference number.</div>
+</div>
+
+<!-- SECTION 9 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">🖨️</div>
+    <div>
+      <h2>Section 9 — Printing Your Account Statement</h2>
+      <p>Generating a printable record of all your transactions</p>
+    </div>
+  </div>
+
+  <h3>Generating and Printing a Statement</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"Print Statement"</strong> in the sidebar.</p></li>
+    <li><p>Your full account statement is displayed automatically. It includes:</p></li>
+  </ol>
+
+  <div class="two-col">
+    <div class="info-card">
+      <h4>📄 Statement Header</h4>
+      <ul>
+        <li>Your full name and tenant number</li>
+        <li>Property name and unit number</li>
+        <li>Monthly rent amount</li>
+        <li>Statement date (today)</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h4>📊 Transaction Table</h4>
+      <ul>
+        <li>Date, Description, Reference</li>
+        <li>Debit column (amounts charged to you)</li>
+        <li>Credit column (payments you made)</li>
+        <li>Running balance after each transaction</li>
+        <li>Closing balance at the bottom</li>
+      </ul>
+    </div>
+  </div>
+
+  <ol class="steps" style="counter-reset:step 2">
+    <li><p>Review the statement on screen.</p></li>
+    <li><p>When ready, click the <strong>"Print"</strong> button. Your browser's print dialog will open.</p></li>
+    <li><p>Select your printer or choose <strong>"Save as PDF"</strong> to save a digital copy.</p></li>
+    <li><p>Click <strong>Print</strong> to complete.</p></li>
+  </ol>
+
+  <div class="note"><strong>Tip:</strong> To save paper, choose "Save as PDF" and email the PDF statement to your property manager or keep it for your records.</div>
+</div>
+
+<!-- SECTION 10 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">⚙️</div>
+    <div>
+      <h2>Section 10 — General Settings & Sign Out</h2>
+      <p>Theme settings and logging out of your account</p>
+    </div>
+  </div>
+
+  <h3>Switching Between Dark and Light Mode</h3>
+  <ol class="steps">
+    <li><p>Click the <strong>moon icon (🌙)</strong> at the top-right of any page to switch to dark mode.</p></li>
+    <li><p>Click the <strong>sun icon (☀️)</strong> to switch back to light mode.</p></li>
+    <li><p>Your preference is saved automatically and remembered the next time you visit.</p></li>
+  </ol>
+
+  <h3>Signing Out</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"Sign Out"</strong> at the bottom of the sidebar (or hamburger menu on mobile).</p></li>
+    <li><p>You will be taken back to the main login page immediately.</p></li>
+  </ol>
+
+  <div class="warn"><strong>Security tip:</strong> Always sign out when using a shared or public computer to protect your account.</div>
+</div>
+
+<!-- SECTION 11 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">❓</div>
+    <div>
+      <h2>Section 11 — Frequently Asked Questions</h2>
+      <p>Answers to common tenant questions</p>
+    </div>
+  </div>
+
+  <h3>Q: I cannot log in — what should I do?</h3>
+  <p>Ensure you are entering the correct Property Code, Username, and Password. Check that Caps Lock is off. If you are still unable to log in, use "Forgot Password?" on the login card or contact your property manager.</p>
+
+  <h3>Q: My transaction shows "Pending" — is that normal?</h3>
+  <p>Yes. All transactions you post start as <span class="badge badge-grey">Pending</span> and must be reviewed and verified by your property manager or agency. This typically takes 1–2 business days.</p>
+
+  <h3>Q: Can I edit or delete a transaction I posted?</h3>
+  <p>No. Once posted, tenants cannot edit or delete transactions. If you made an error, contact your property manager with the transaction reference number to have it corrected.</p>
+
+  <h3>Q: I forgot to attach a document — what do I do?</h3>
+  <p>A document is required to post a transaction. If you cannot upload one immediately, gather your payment receipt and post the transaction again. Contact your manager to explain the situation.</p>
+
+  <h3>Q: My account balance looks wrong — who do I contact?</h3>
+  <p>Print your account statement (Section 9) and compare it against your own records. Contact your property manager with your tenant number and any discrepancies you find.</p>
+
+  <h3>Q: Can I change my username?</h3>
+  <p>Usernames cannot be changed after initial setup. If you need a new username, contact your property manager.</p>
+
+  <div class="note" style="margin-top:32px"><strong>Need further help?</strong> Contact your property manager or agency for any issues not covered in this manual. Have your Tenant Number ready when you call or email.</div>
+</div>
+
+</body>
+</html>

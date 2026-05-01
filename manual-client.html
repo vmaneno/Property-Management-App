@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Client Portal — User Manual</title>
+<style>
+  :root { --blue:#2563eb; --dark:#1e3a5f; --light:#f0f6ff; --border:#bfd3f5; --text:#222; --muted:#666; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Segoe UI',Arial,sans-serif; font-size:10.5pt; color:var(--text); background:#fff; line-height:1.6; }
+
+  .cover { min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; background:linear-gradient(160deg,var(--dark) 0%,var(--blue) 100%); color:#fff; text-align:center; padding:60px 40px; page-break-after:always; }
+  .cover-icon { font-size:72px; margin-bottom:24px; }
+  .cover h1 { font-size:36pt; font-weight:700; letter-spacing:1px; }
+  .cover h2 { font-size:18pt; font-weight:400; margin-top:10px; opacity:.85; }
+  .cover-divider { width:80px; height:3px; background:rgba(255,255,255,.5); margin:28px auto; border-radius:2px; }
+  .cover-meta { font-size:10pt; opacity:.7; margin-top:12px; }
+  .cover-badge { display:inline-block; margin-top:32px; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); border-radius:24px; padding:8px 28px; font-size:11pt; letter-spacing:.5px; }
+
+  .toc-page { padding:60px 80px; page-break-after:always; }
+  .toc-page h2 { font-size:18pt; color:var(--dark); border-bottom:3px solid var(--blue); padding-bottom:10px; margin-bottom:28px; }
+  .toc-entry { display:flex; justify-content:space-between; align-items:baseline; padding:6px 0; border-bottom:1px dotted #ccc; font-size:10.5pt; }
+  .toc-section { font-weight:700; color:var(--dark); margin-top:18px; margin-bottom:4px; font-size:11pt; }
+
+  .page { padding:50px 70px; page-break-before:always; }
+
+  .section-banner { background:linear-gradient(90deg,var(--dark),var(--blue)); color:#fff; border-radius:10px; padding:18px 28px; margin-bottom:30px; display:flex; align-items:center; gap:16px; }
+  .section-banner .s-icon { font-size:28px; }
+  .section-banner h2 { font-size:16pt; font-weight:700; }
+  .section-banner p { font-size:9.5pt; opacity:.85; margin-top:3px; }
+
+  h3 { font-size:12pt; color:var(--dark); margin:26px 0 10px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  h3::before { content:''; display:inline-block; width:4px; height:18px; background:var(--blue); border-radius:2px; }
+
+  .steps { margin:0; padding:0; list-style:none; counter-reset:step; }
+  .steps li { counter-increment:step; display:flex; gap:14px; margin-bottom:12px; align-items:flex-start; }
+  .steps li::before { content:counter(step); background:var(--blue); color:#fff; font-weight:700; font-size:9pt; min-width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
+  .steps li p { margin:0; }
+
+  .note { background:#eff6ff; border-left:4px solid var(--blue); border-radius:0 8px 8px 0; padding:11px 16px; margin:14px 0; font-size:9.5pt; color:#1e40af; }
+  .note strong { color:var(--dark); }
+  .warn { background:#fff8e1; border-left:4px solid #f59e0b; border-radius:0 8px 8px 0; padding:11px 16px; margin:14px 0; font-size:9.5pt; color:#7a5000; }
+  .warn strong { color:#5a3800; }
+
+  .field-table { width:100%; border-collapse:collapse; margin:12px 0 20px; font-size:9.5pt; }
+  .field-table th { background:var(--dark); color:#fff; text-align:left; padding:8px 12px; font-weight:600; }
+  .field-table td { padding:7px 12px; border-bottom:1px solid #dbeafe; vertical-align:top; }
+  .field-table tr:nth-child(even) td { background:var(--light); }
+  .field-table .req { color:var(--blue); font-weight:700; }
+
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:14px 0; }
+  .three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin:14px 0; }
+  .info-card { background:var(--light); border:1px solid var(--border); border-radius:10px; padding:16px; }
+  .info-card h4 { color:var(--dark); font-size:10pt; margin-bottom:8px; }
+  .info-card ul { padding-left:16px; font-size:9.5pt; }
+  .info-card ul li { margin-bottom:4px; }
+
+  .badge { display:inline-block; padding:2px 10px; border-radius:12px; font-size:8.5pt; font-weight:700; }
+  .badge-blue { background:#dbeafe; color:#1d4ed8; }
+  .badge-green { background:#d4edda; color:#1a6b3c; }
+  .badge-grey { background:#e9e9e9; color:#555; }
+
+  @media print {
+    .cover { min-height:100vh; }
+    .page { padding:30px 50px; }
+    .toc-page { padding:40px 60px; }
+    body { font-size:10pt; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-icon">🏢</div>
+  <h1>Property Management App</h1>
+  <h2>Client Portal — User Manual</h2>
+  <div class="cover-divider"></div>
+  <p style="font-size:11pt;opacity:.8;max-width:480px">A complete step-by-step guide to managing your properties, units, tenants, transactions, and reports.</p>
+  <div class="cover-badge">Client Portal</div>
+  <div class="cover-meta" style="margin-top:40px">Version 1.0 &nbsp;·&nbsp; Property Management App</div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc-page">
+  <h2>Table of Contents</h2>
+  <div class="toc-section">Getting Started</div>
+  <div class="toc-entry"><span>1. Accessing the App &amp; Logging In</span><span style="color:#888">Section 1</span></div>
+  <div class="toc-entry"><span>2. First-Time Setup</span><span style="color:#888">Section 2</span></div>
+  <div class="toc-entry"><span>3. Resetting a Forgotten Password</span><span style="color:#888">Section 3</span></div>
+
+  <div class="toc-section">Dashboard</div>
+  <div class="toc-entry"><span>4. Dashboard Overview</span><span style="color:#888">Section 4</span></div>
+
+  <div class="toc-section">Properties</div>
+  <div class="toc-entry"><span>5. Viewing Your Properties</span><span style="color:#888">Section 5</span></div>
+  <div class="toc-entry"><span>6. Adding a New Property</span><span style="color:#888">Section 5</span></div>
+  <div class="toc-entry"><span>7. Editing a Property</span><span style="color:#888">Section 5</span></div>
+  <div class="toc-entry"><span>8. Deleting a Property</span><span style="color:#888">Section 5</span></div>
+
+  <div class="toc-section">Units</div>
+  <div class="toc-entry"><span>9. Viewing Property Units</span><span style="color:#888">Section 6</span></div>
+  <div class="toc-entry"><span>10. Adding a Single Unit</span><span style="color:#888">Section 6</span></div>
+  <div class="toc-entry"><span>11. Bulk Uploading Units (Excel/CSV)</span><span style="color:#888">Section 6</span></div>
+  <div class="toc-entry"><span>12. Editing &amp; Deleting a Unit</span><span style="color:#888">Section 6</span></div>
+
+  <div class="toc-section">Tenants</div>
+  <div class="toc-entry"><span>13. Viewing Tenants</span><span style="color:#888">Section 7</span></div>
+  <div class="toc-entry"><span>14. Adding a Tenant</span><span style="color:#888">Section 7</span></div>
+  <div class="toc-entry"><span>15. Bulk Uploading Tenants (Excel/CSV)</span><span style="color:#888">Section 7</span></div>
+  <div class="toc-entry"><span>16. Editing &amp; Deleting a Tenant</span><span style="color:#888">Section 7</span></div>
+
+  <div class="toc-section">Transactions</div>
+  <div class="toc-entry"><span>17. Viewing Transactions</span><span style="color:#888">Section 8</span></div>
+  <div class="toc-entry"><span>18. Posting a Single Transaction</span><span style="color:#888">Section 8</span></div>
+  <div class="toc-entry"><span>19. Bulk Posting Transactions</span><span style="color:#888">Section 8</span></div>
+  <div class="toc-entry"><span>20. Editing &amp; Deleting a Transaction</span><span style="color:#888">Section 8</span></div>
+
+  <div class="toc-section">Reports</div>
+  <div class="toc-entry"><span>21. Property Transactions Report</span><span style="color:#888">Section 9</span></div>
+  <div class="toc-entry"><span>22. Tenant Statements Report</span><span style="color:#888">Section 9</span></div>
+  <div class="toc-entry"><span>23. List of Tenants Report</span><span style="color:#888">Section 9</span></div>
+  <div class="toc-entry"><span>24. Units List Report</span><span style="color:#888">Section 9</span></div>
+
+  <div class="toc-section">Profile &amp; Settings</div>
+  <div class="toc-entry"><span>25. My Profile &amp; Password Change</span><span style="color:#888">Section 10</span></div>
+  <div class="toc-entry"><span>26. Signing Out &amp; Theme Toggle</span><span style="color:#888">Section 10</span></div>
+</div>
+
+<!-- SECTION 1 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">🔑</div>
+    <div><h2>Section 1 — Accessing &amp; Logging In</h2><p>Opening the portal and signing into your client account</p></div>
+  </div>
+
+  <h3>Opening the App</h3>
+  <ol class="steps">
+    <li><p>Open your web browser and navigate to the Property Management App URL.</p></li>
+    <li><p>On the landing page, click the <strong>Client Portal</strong> card — it flips to reveal the login form.</p></li>
+    <li><p>Enter your <strong>Username</strong> and <strong>Password</strong>. Use the eye icon (👁) to reveal the password if needed.</p></li>
+    <li><p>Click <strong>"Sign In"</strong> (or press Enter). You will land on your Client Dashboard.</p></li>
+  </ol>
+</div>
+
+<!-- SECTION 2 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">📝</div>
+    <div><h2>Section 2 — First-Time Setup</h2><p>Creating your login credentials for the first time</p></div>
+  </div>
+
+  <div class="note"><strong>Before you begin:</strong> You need your <strong>Client Code</strong> (e.g. CL001) and the telephone number registered with your agency.</div>
+
+  <ol class="steps">
+    <li><p>On the Client login card, click <strong>"First Time Setup →"</strong>.</p></li>
+    <li><p>Fill in all fields:</p></li>
+  </ol>
+
+  <table class="field-table">
+    <thead><tr><th>Field</th><th>What to Enter</th><th>Required</th></tr></thead>
+    <tbody>
+      <tr><td>Client Code</td><td>Your client reference code (e.g. CL001) from your agency</td><td class="req">Yes</td></tr>
+      <tr><td>Telephone</td><td>Telephone number registered with your agency</td><td class="req">Yes</td></tr>
+      <tr><td>New Username</td><td>Choose a username for logging in</td><td class="req">Yes</td></tr>
+      <tr><td>New Password</td><td>Choose a secure password (minimum 6 characters)</td><td class="req">Yes</td></tr>
+      <tr><td>Confirm Password</td><td>Re-enter your chosen password</td><td class="req">Yes</td></tr>
+    </tbody>
+  </table>
+
+  <ol class="steps" style="counter-reset:step 2">
+    <li><p>Click <strong>"Set Credentials"</strong>. A success message confirms your credentials are saved.</p></li>
+    <li><p>Click <strong>"← Back to Login"</strong> and sign in with your new details.</p></li>
+  </ol>
+</div>
+
+<!-- SECTION 3 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">🔓</div>
+    <div><h2>Section 3 — Resetting a Forgotten Password</h2><p>Recovering your account access</p></div>
+  </div>
+
+  <ol class="steps">
+    <li><p>On the Client login card, click <strong>"Forgot Password? →"</strong>.</p></li>
+    <li><p>Enter your <strong>Username</strong> and click <strong>"Send Code"</strong>. Your email app opens with a reset code.</p></li>
+    <li><p>Send the email. The form advances to Phase 2 automatically.</p></li>
+    <li><p>Enter the <strong>6-digit reset code</strong>, your <strong>New Password</strong>, and <strong>Confirm Password</strong>.</p></li>
+    <li><p>Click <strong>"Reset Password"</strong>. You will be returned to the login screen.</p></li>
+  </ol>
+
+  <div class="warn"><strong>Important:</strong> The reset code expires in <strong>15 minutes</strong>.</div>
+</div>
+
+<!-- SECTION 4 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">📊</div>
+    <div><h2>Section 4 — Dashboard Overview</h2><p>Your portfolio at a glance</p></div>
+  </div>
+
+  <div class="three-col">
+    <div class="info-card"><h4>🏢 Properties</h4><ul><li>Count of your registered properties</li></ul></div>
+    <div class="info-card"><h4>🚪 Total Units</h4><ul><li>All units across all properties</li></ul></div>
+    <div class="info-card"><h4>👤 Active Tenants</h4><ul><li>Currently active tenants</li></ul></div>
+    <div class="info-card"><h4>✅ Occupied Units</h4><ul><li>Occupied vs total units ratio</li></ul></div>
+    <div class="info-card"><h4>💰 Balance</h4><ul><li>Total account balance across all properties</li></ul></div>
+    <div class="info-card"><h4>📋 Recent Transactions</h4><ul><li>Last 10 transactions with property filter</li></ul></div>
+  </div>
+
+  <div class="note"><strong>Tip:</strong> Use the <strong>Property filter</strong> dropdown in the Recent Transactions section to see the balance and transactions for a specific property.</div>
+</div>
+
+<!-- SECTION 5 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">🏢</div>
+    <div><h2>Section 5 — Managing Properties</h2><p>Add, edit, and manage your property portfolio</p></div>
+  </div>
+
+  <h3>Viewing Properties</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"My Properties"</strong> in the sidebar.</p></li>
+    <li><p>A table lists all your properties with: Code, Name, Location, Type, Manager, Currency, and Active status.</p></li>
+  </ol>
+
+  <h3>Adding a New Property</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"Add Property"</strong> (top right).</p></li>
+    <li><p>Fill in the form:</p></li>
+  </ol>
+
+  <table class="field-table">
+    <thead><tr><th>Field</th><th>Description</th><th>Required</th></tr></thead>
+    <tbody>
+      <tr><td>Property Name</td><td>Full name of the property (e.g. Green View Apartments)</td><td class="req">Yes</td></tr>
+      <tr><td>Type</td><td>Apartment, Villa, Loft, Condo, House, Suite, or Commercial</td><td class="req">Yes</td></tr>
+      <tr><td>Country / City</td><td>Where the property is located</td><td class="req">Yes</td></tr>
+      <tr><td>Address / Location</td><td>Street address or detailed location</td><td>Optional</td></tr>
+      <tr><td>Manager</td><td>Name of the property manager</td><td>Optional</td></tr>
+      <tr><td>Manager Phone</td><td>Manager's contact number</td><td>Optional</td></tr>
+      <tr><td>Currency</td><td>USD, EUR, GBP, CAD, KES, TZS, or UGX</td><td class="req">Yes</td></tr>
+      <tr><td>Active</td><td>Yes (property is currently operational) or No</td><td class="req">Yes</td></tr>
+      <tr><td>Notes</td><td>Any additional information about the property</td><td>Optional</td></tr>
+      <tr><td>Property Picture</td><td>Upload a photo of the property (JPG, PNG, GIF, WEBP)</td><td>Optional</td></tr>
+    </tbody>
+  </table>
+
+  <ol class="steps" style="counter-reset:step 2">
+    <li><p>Click <strong>"Save Property"</strong>. The property is added and a unique property code is generated automatically.</p></li>
+  </ol>
+
+  <h3>Editing a Property</h3>
+  <ol class="steps">
+    <li><p>In the Properties table, click the <strong>pencil icon (✏)</strong> on the property row.</p></li>
+    <li><p>Update any fields (Name, Type, City, Country, Location, Manager, Currency, Active, Notes).</p></li>
+    <li><p>Click <strong>"Save Changes"</strong>.</p></li>
+  </ol>
+
+  <h3>Deleting a Property</h3>
+  <ol class="steps">
+    <li><p>Click the <strong>trash icon (🗑)</strong> on the property row.</p></li>
+    <li><p>Confirm the deletion in the pop-up dialog.</p></li>
+  </ol>
+
+  <div class="warn"><strong>Note:</strong> A property <strong>cannot be deleted</strong> if it has active tenants. First deactivate or move all tenants, then delete the property.</div>
+</div>
+
+<!-- SECTION 6 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">🚪</div>
+    <div><h2>Section 6 — Managing Property Units</h2><p>Add, edit, search, and bulk-upload units</p></div>
+  </div>
+
+  <h3>Viewing Units</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"Property Units"</strong> in the sidebar.</p></li>
+    <li><p>Units are grouped by property. Click a property header to expand or collapse its units.</p></li>
+    <li><p>Use the <strong>search bar</strong> to filter by property name or unit number.</p></li>
+    <li><p>Use the <strong>status buttons</strong> (All / Occupied / Vacant) to filter by unit status.</p></li>
+  </ol>
+
+  <h3>Adding a Single Unit</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"Add Unit"</strong> (top right).</p></li>
+    <li><p>Select the <strong>Property</strong> from the dropdown, then fill in:</p></li>
+  </ol>
+
+  <table class="field-table">
+    <thead><tr><th>Field</th><th>Description</th><th>Required</th></tr></thead>
+    <tbody>
+      <tr><td>Unit Number</td><td>e.g. 101, A2, Ground Floor (auto-uppercased)</td><td class="req">Yes</td></tr>
+      <tr><td>Rent Amount</td><td>Monthly rent in the property's currency</td><td class="req">Yes</td></tr>
+      <tr><td>Deposit Amount</td><td>Security deposit amount</td><td class="req">Yes</td></tr>
+      <tr><td>Bedrooms</td><td>Number of bedrooms (default: 1)</td><td class="req">Yes</td></tr>
+      <tr><td>Bathrooms</td><td>Number of bathrooms (default: 1)</td><td class="req">Yes</td></tr>
+      <tr><td>Floor</td><td>Floor number (default: 1)</td><td class="req">Yes</td></tr>
+      <tr><td>Status</td><td>Vacant (default) or Occupied</td><td class="req">Yes</td></tr>
+      <tr><td>Notes</td><td>Additional details about the unit</td><td>Optional</td></tr>
+    </tbody>
+  </table>
+
+  <ol class="steps" style="counter-reset:step 2">
+    <li><p>Click <strong>"Save Unit"</strong>. A unique unit code is auto-generated.</p></li>
+  </ol>
+
+  <h3>Bulk Uploading Units (Excel / CSV)</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"Units Upload"</strong> (top right).</p></li>
+    <li><p>Click <strong>"Unit Upload Template"</strong> to download the Excel template.</p></li>
+    <li><p>Open the template and fill in one unit per row. Required columns: <strong>PropertyCode, UnitNumber, RentAmount, DepositAmount, Bedrooms, Bathrooms, Floor, UnitStatus</strong>.</p></li>
+    <li><p>Save the file, then click the <strong>file input</strong> in the upload dialog and select your saved file.</p></li>
+    <li><p>A preview table appears showing each row and its validation status (<span class="badge badge-green">OK</span> or error details).</p></li>
+    <li><p>Only valid rows will be imported. Click <strong>"Import X Unit(s)"</strong> to complete the import.</p></li>
+  </ol>
+
+  <div class="warn"><strong>Common errors:</strong> PropertyCode not found (must match exactly), Unit already exists for that property, missing numeric values.</div>
+
+  <h3>Editing a Unit</h3>
+  <p>Click the <strong>✏ pencil icon</strong> on the unit row → update fields → click <strong>"Save"</strong>.</p>
+
+  <h3>Deleting a Unit</h3>
+  <p>Click the <strong>🗑 trash icon</strong>. Units cannot be deleted if they are Occupied or have associated tenants/transactions.</p>
+</div>
+
+<!-- SECTION 7 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">👥</div>
+    <div><h2>Section 7 — Managing Tenants</h2><p>Add, edit, upload, and manage your tenants</p></div>
+  </div>
+
+  <h3>Viewing Tenants</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"Tenants"</strong> in the sidebar. Tenants are grouped by property.</p></li>
+    <li><p>Use the <strong>search bar</strong> to find by name, unit number, or tenant number.</p></li>
+    <li><p>Click a property header to expand or collapse that property's tenant list.</p></li>
+  </ol>
+
+  <h3>Adding a New Tenant</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"Add Tenant"</strong> (top right).</p></li>
+    <li><p>Fill in all required fields:</p></li>
+  </ol>
+
+  <table class="field-table">
+    <thead><tr><th>Field</th><th>Description</th><th>Required</th></tr></thead>
+    <tbody>
+      <tr><td>First Name / Last Name</td><td>Tenant's full name</td><td class="req">Yes</td></tr>
+      <tr><td>ID Number</td><td>National ID or passport number</td><td class="req">Yes</td></tr>
+      <tr><td>Telephone</td><td>Tenant's mobile/phone number</td><td class="req">Yes</td></tr>
+      <tr><td>Email</td><td>Tenant's email address</td><td class="req">Yes</td></tr>
+      <tr><td>Address</td><td>Tenant's home/mailing address</td><td class="req">Yes</td></tr>
+      <tr><td>Property</td><td>Select from your properties</td><td class="req">Yes</td></tr>
+      <tr><td>Unit</td><td>Select from units in the chosen property</td><td class="req">Yes</td></tr>
+      <tr><td>Rent Amount</td><td>Agreed monthly/periodic rent</td><td class="req">Yes</td></tr>
+      <tr><td>Frequency</td><td>Monthly, Quarterly, SemiAnnually, or Annually</td><td class="req">Yes</td></tr>
+      <tr><td>Deposit Amount</td><td>Security deposit collected</td><td class="req">Yes</td></tr>
+      <tr><td>Move-in Date</td><td>Date the tenant moved in</td><td class="req">Yes</td></tr>
+      <tr><td>Photograph</td><td>Tenant photo (JPG, JPEG, PNG)</td><td class="req">Yes</td></tr>
+      <tr><td>ID Copy</td><td>Scan/photo of ID document (PDF, JPG, PNG)</td><td class="req">Yes</td></tr>
+      <tr><td>Rent Agreement</td><td>Signed lease/agreement document (PDF, JPG, DOC, DOCX)</td><td class="req">Yes</td></tr>
+    </tbody>
+  </table>
+
+  <ol class="steps" style="counter-reset:step 2">
+    <li><p>Click <strong>"Save Tenant"</strong>. A unique tenant number is auto-generated (e.g. TN-2026-001).</p></li>
+  </ol>
+
+  <h3>Bulk Uploading Tenants</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"Tenants Upload"</strong> → <strong>"Tenants Upload Template"</strong> to download the template.</p></li>
+    <li><p>Fill in one tenant per row. See the <strong>Field Notes</strong> sheet in the template for allowed values.</p></li>
+    <li><p>Upload the file, review the preview table, then click <strong>"Import X Tenant(s)"</strong>.</p></li>
+    <li><p>After import, attach documents (photo, ID, lease) for each tenant via <strong>Edit Tenant</strong>.</p></li>
+  </ol>
+
+  <h3>Editing a Tenant</h3>
+  <ol class="steps">
+    <li><p>Click the <strong>✏ pencil icon</strong> on the tenant row.</p></li>
+    <li><p>Update contact info, rent amount, move-out date, or active status as needed.</p></li>
+    <li><p>To replace a document (photograph, ID copy, or rent agreement), click the relevant file field and select the new file. Leave blank to keep the existing document.</p></li>
+    <li><p>Click <strong>"Save"</strong>.</p></li>
+  </ol>
+
+  <h3>Deleting a Tenant</h3>
+  <p>Click the <strong>🗑 trash icon</strong>. A tenant cannot be deleted if they are <strong>Active</strong> or have <strong>any transactions</strong> on record. First set Active = No and ensure there are no transactions.</p>
+</div>
+
+<!-- SECTION 8 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">💳</div>
+    <div><h2>Section 8 — Managing Transactions</h2><p>Post, view, edit, and bulk-post tenant transactions</p></div>
+  </div>
+
+  <h3>Viewing Transactions</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"Transactions"</strong> in the sidebar.</p></li>
+    <li><p>All transactions are listed with: Date, Tenant, Property, Description, Amount, Reference, and Status.</p></li>
+    <li><p>The total portfolio balance is shown in the header.</p></li>
+  </ol>
+
+  <h3>Posting a Single Transaction</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"Post Transaction"</strong> (top right).</p></li>
+    <li><p>Select the <strong>Property</strong> — the tenant list will automatically show only active tenants in that property.</p></li>
+    <li><p>Select the <strong>Tenant</strong> from the right dropdown.</p></li>
+    <li><p>Enter the <strong>Amount</strong> (positive for credit/payment received; negative for a debit/charge).</p></li>
+    <li><p>Enter a <strong>Description</strong> (e.g. "Rent Payment — May 2026").</p></li>
+    <li><p>Add an optional <strong>Note</strong> and upload a supporting <strong>Document</strong> (PDF, JPG, PNG, DOC, DOCX — required).</p></li>
+    <li><p>Click <strong>"Post"</strong>. A transaction reference number is generated automatically.</p></li>
+  </ol>
+
+  <h3>Bulk Posting Transactions</h3>
+  <p>Use this to post the same charge (e.g. monthly rent) to multiple tenants at once.</p>
+  <ol class="steps">
+    <li><p>Click <strong>"Bulk Posting"</strong> (top right).</p></li>
+    <li><p>Select a <strong>Date</strong> and <strong>Property</strong>. Active tenants will be listed with checkboxes.</p></li>
+    <li><p>Choose <strong>Charge Type</strong>: "Monthly Rent" (uses each tenant's set rent) or "Custom Charge" (enter a fixed amount).</p></li>
+    <li><p>Enter a <strong>Description</strong> and optional <strong>Note</strong>.</p></li>
+    <li><p>Check/uncheck tenants to include. Use <strong>"Select All"</strong> or <strong>"None"</strong> to manage the selection quickly.</p></li>
+    <li><p>Click <strong>"Bulk Post"</strong>. One transaction is created per selected tenant.</p></li>
+  </ol>
+
+  <h3>Editing a Transaction</h3>
+  <p>Click the <strong>✏ pencil icon</strong> → update Date, Amount, Description, Note, or replace the document → click <strong>"Save Changes"</strong>.</p>
+
+  <h3>Deleting a Transaction</h3>
+  <p>Click the <strong>🗑 trash icon</strong>. Only <span class="badge badge-grey">Pending</span> transactions can be deleted. <span class="badge badge-green">Verified</span> transactions cannot be deleted.</p>
+</div>
+
+<!-- SECTION 9 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">📄</div>
+    <div><h2>Section 9 — Print Reports</h2><p>Generate, print, and export property and tenant reports</p></div>
+  </div>
+
+  <div class="note"><strong>Accessing Reports:</strong> Click <strong>"Print Reports"</strong> in the sidebar. Four report tabs are available at the top.</div>
+
+  <h3>Report 1: Property Transactions</h3>
+  <ol class="steps">
+    <li><p>Click the <strong>"Property Transactions"</strong> tab.</p></li>
+    <li><p>Select a <strong>Property</strong>, enter a <strong>Date From</strong> and <strong>Date To</strong>.</p></li>
+    <li><p>Click <strong>"Generate"</strong>. A full transaction report shows with Debit, Credit, and running Balance columns plus a Closing Balance.</p></li>
+    <li><p>Click <strong>"Print"</strong>, <strong>"Export Excel"</strong>, or <strong>"Export CSV"</strong> as needed.</p></li>
+  </ol>
+
+  <h3>Report 2: Tenant Statements</h3>
+  <ol class="steps">
+    <li><p>Click the <strong>"Tenant Statements"</strong> tab.</p></li>
+    <li><p>Optionally select a <strong>Property</strong> to filter the tenant list to that property only.</p></li>
+    <li><p>A list of tenants appears with checkboxes — all are selected by default.</p></li>
+    <li><p>Tick/untick tenants as needed. Use <strong>"Select All"</strong> or <strong>"None"</strong> to manage quickly.</p></li>
+    <li><p>Click <strong>"Generate"</strong>. One statement per selected tenant is produced, each with a full transaction history, running balance, and closing balance.</p></li>
+    <li><p>Click <strong>"Print"</strong> to print all statements (each on its own page), or export to Excel/CSV.</p></li>
+  </ol>
+
+  <h3>Report 3: List of Tenants</h3>
+  <ol class="steps">
+    <li><p>Click the <strong>"List of Tenants"</strong> tab.</p></li>
+    <li><p>Optionally filter by <strong>Property</strong> and/or <strong>Status</strong> (All, Active, Inactive).</p></li>
+    <li><p>Click <strong>"Generate"</strong>. A table lists Tenant#, Name, ID, Property, Unit, Rent, Move-in, Move-out, and Status.</p></li>
+    <li><p>Print or export as needed.</p></li>
+  </ol>
+
+  <h3>Report 4: Units List</h3>
+  <ol class="steps">
+    <li><p>Click the <strong>"Units List"</strong> tab.</p></li>
+    <li><p>Filter by <strong>Property</strong> and/or <strong>Status</strong> (All, Occupied, Vacant).</p></li>
+    <li><p>Click <strong>"Generate"</strong>. A table lists Unit Code, Unit#, Property, Rent, Deposit, Status, and Active.</p></li>
+    <li><p>Print or export as needed.</p></li>
+  </ol>
+</div>
+
+<!-- SECTION 10 -->
+<div class="page">
+  <div class="section-banner">
+    <div class="s-icon">⚙️</div>
+    <div><h2>Section 10 — Profile, Settings &amp; Sign Out</h2><p>Manage your account details and preferences</p></div>
+  </div>
+
+  <h3>Updating Your Profile</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"My Profile"</strong> in the sidebar.</p></li>
+    <li><p>Update your <strong>Client Name</strong>, <strong>Email</strong>, <strong>Telephone</strong>, or <strong>Address</strong>.</p></li>
+    <li><p>To change your password, enter the <strong>New Password</strong> and <strong>Confirm New Password</strong> in the Change Password section.</p></li>
+    <li><p>Click <strong>"Save Changes"</strong>.</p></li>
+  </ol>
+
+  <h3>Dark / Light Mode</h3>
+  <ol class="steps">
+    <li><p>Click the <strong>🌙 moon icon</strong> at the top right to switch to dark mode.</p></li>
+    <li><p>Click the <strong>☀️ sun icon</strong> to switch back to light mode. Your preference is saved automatically.</p></li>
+  </ol>
+
+  <h3>Signing Out</h3>
+  <ol class="steps">
+    <li><p>Click <strong>"Sign Out"</strong> at the bottom of the sidebar to log out securely.</p></li>
+  </ol>
+
+  <div class="warn"><strong>Security reminder:</strong> Always sign out when using a shared computer. Do not share your login credentials with anyone.</div>
+
+  <div class="note" style="margin-top:40px"><strong>Need help?</strong> Contact your agency administrator with your Client Code for any assistance not covered in this manual.</div>
+</div>
+
+</body>
+</html>
