@@ -623,7 +623,7 @@
       <div class="form-group"><label class="form-label-sm">Address / Location</label><input class="form-control-sm2" id="f-ploc"></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Manager</label><input class="form-control-sm2" id="f-pmgr"></div>
       <div class="form-group"><label class="form-label-sm">Manager Phone</label><input class="form-control-sm2" id="f-pmgrph"></div></div>
-      <div class="form-row"><div class="form-group"><label class="form-label-sm">Currency</label><select class="form-control-sm2" id="f-pcurr"><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="CAD">CAD</option></select></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Currency</label><select class="form-control-sm2" id="f-pcurr"><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="CAD">CAD</option><option value="KES">KES</option><option value="TZS">TZS</option><option value="UGX">UGX</option></select></div>
       <div class="form-group"><label class="form-label-sm">Active</label><select class="form-control-sm2" id="f-pactive"><option value="Y">Yes</option><option value="N">No</option></select></div></div>
       <div class="form-group"><label class="form-label-sm">Notes</label><input class="form-control-sm2" id="f-pnote"></div>
       <div class="form-group"><label class="form-label-sm">Property Picture (optional)</label><input class="form-control-sm2" id="f-ppic" type="file" accept=".jpg,.jpeg,.png,.gif,.webp"></div>`,
@@ -665,7 +665,7 @@
       <div class="form-group"><label class="form-label-sm">Location / Address</label><input class="form-control-sm2" id="ep-loc" value="${p.PropertyLocation}"></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Manager</label><input class="form-control-sm2" id="ep-mgr" value="${p.Manager}"></div>
       <div class="form-group"><label class="form-label-sm">Manager Phone</label><input class="form-control-sm2" id="ep-mgrph" value="${p.ManagerPhone}"></div></div>
-      <div class="form-row"><div class="form-group"><label class="form-label-sm">Currency</label><select class="form-control-sm2" id="ep-curr"><option value="USD" ${p.Currency==='USD'?'selected':''}>USD</option><option value="EUR" ${p.Currency==='EUR'?'selected':''}>EUR</option><option value="GBP" ${p.Currency==='GBP'?'selected':''}>GBP</option></select></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Currency</label><select class="form-control-sm2" id="ep-curr"><option value="USD" ${p.Currency==='USD'?'selected':''}>USD</option><option value="EUR" ${p.Currency==='EUR'?'selected':''}>EUR</option><option value="GBP" ${p.Currency==='GBP'?'selected':''}>GBP</option><option value="CAD" ${p.Currency==='CAD'?'selected':''}>CAD</option><option value="KES" ${p.Currency==='KES'?'selected':''}>KES</option><option value="TZS" ${p.Currency==='TZS'?'selected':''}>TZS</option><option value="UGX" ${p.Currency==='UGX'?'selected':''}>UGX</option></select></div>
       <div class="form-group"><label class="form-label-sm">Active</label><select class="form-control-sm2" id="ep-active"><option value="Y" ${p.Active==='Y'?'selected':''}>Yes</option><option value="N" ${p.Active==='N'?'selected':''}>No</option></select></div></div>
       <div class="form-group"><label class="form-label-sm">Notes</label><input class="form-control-sm2" id="ep-note" value="${p.Note}"></div>`,
       `<button class="btn-primary-custom bg-client" onclick="saveEditProperty('${code}')">Save Changes</button><button class="btn-back" onclick="closeModal()">Cancel</button>`
@@ -961,13 +961,18 @@
       <div class="form-group"><label class="form-label-sm">Address</label><input class="form-control-sm2" id="et-addr" value="${t.Address}"></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Rent Amount</label><input class="form-control-sm2" id="et-rent" type="number" value="${t.RentAmount}"></div>
       <div class="form-group"><label class="form-label-sm">Move-Out Date</label><input class="form-control-sm2" id="et-moveout" type="date" value="${t.MoveOutDate||''}"></div></div>
-      <div class="form-group"><label class="form-label-sm">Active</label><select class="form-control-sm2" id="et-active"><option value="Y" ${t.Active==='Y'?'selected':''}>Yes</option><option value="N" ${t.Active==='N'?'selected':''}>No</option></select></div>`,
+      <div class="form-group"><label class="form-label-sm">Active</label><select class="form-control-sm2" id="et-active"><option value="Y" ${t.Active==='Y'?'selected':''}>Yes</option><option value="N" ${t.Active==='N'?'selected':''}>No</option></select></div>
+      <hr style="margin:14px 0;border-color:#f0f0f0">
+      <div style="font-size:.8rem;color:#888;margin-bottom:8px"><i class="fa-solid fa-circle-info"></i> Leave file fields empty to keep existing documents.</div>
+      <div class="form-group"><label class="form-label-sm">Photograph ${t.Photograph?'<span style="color:#2d9b59;font-size:.75rem"><i class=\'fa-solid fa-circle-check\'></i> attached</span>':''}</label><input class="form-control-sm2" id="et-photo" type="file" accept=".jpg,.jpeg,.png"></div>
+      <div class="form-group"><label class="form-label-sm">ID Copy ${t.IDCopy?'<span style="color:#2d9b59;font-size:.75rem"><i class=\'fa-solid fa-circle-check\'></i> attached</span>':''}</label><input class="form-control-sm2" id="et-idcopy" type="file" accept=".pdf,.jpg,.jpeg,.png"></div>
+      <div class="form-group"><label class="form-label-sm">Rent Agreement ${t.RentAgreement?'<span style="color:#2d9b59;font-size:.75rem"><i class=\'fa-solid fa-circle-check\'></i> attached</span>':''}</label><input class="form-control-sm2" id="et-agreement" type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"></div>`,
       `<button class="btn-primary-custom bg-client" onclick="saveEditTenant('${tenantId}')">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`
     );
   }
 
-  function saveEditTenant(id) {
-    DB.update('tenants','TenantID',id,{
+  async function saveEditTenant(id) {
+    const updates = {
       FirstName:document.getElementById('et-first').value,
       LastName:document.getElementById('et-last').value,
       Telephone:document.getElementById('et-tel').value,
@@ -977,7 +982,17 @@
       MoveOutDate:document.getElementById('et-moveout').value,
       Active:document.getElementById('et-active').value,
       UpdateUser:client.UserName
-    });
+    };
+    function readFile(file) {
+      return new Promise(resolve => { const r=new FileReader(); r.onload=e=>resolve(e.target.result); r.readAsDataURL(file); });
+    }
+    const photoFile  = document.getElementById('et-photo').files[0];
+    const idcopyFile = document.getElementById('et-idcopy').files[0];
+    const agreeFile  = document.getElementById('et-agreement').files[0];
+    if (photoFile)  updates.Photograph   = await readFile(photoFile);
+    if (idcopyFile) updates.IDCopy       = await readFile(idcopyFile);
+    if (agreeFile)  updates.RentAgreement = await readFile(agreeFile);
+    DB.update('tenants','TenantID',id,updates);
     closeModal(); showView('tenants', document.querySelector('[data-view="tenants"]'));
     toast('Tenant updated!','success');
   }
@@ -1275,18 +1290,22 @@
     openModal('Post Transaction', `
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Date *</label><input class="form-control-sm2" id="ptx-date" type="date" value="${today}"></div>
       <div class="form-group"><label class="form-label-sm">Currency</label><input class="form-control-sm2" id="ptx-curr" value="${firstProp.Currency||'USD'}" readonly style="background:#f0f0f0;cursor:not-allowed"></div></div>
-      <div class="form-group"><label class="form-label-sm">Property *</label>
-        <select class="form-control-sm2" id="ptx-prop" onchange="cascadeTxTenants()">
-          ${activeProps.map(p=>`<option value="${p.PropertyCode}">${p.PropertyName} (${p.PropertyCode})</option>`).join('')||'<option value="">No active properties</option>'}
-        </select>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Property *</label>
+          <select class="form-control-sm2" id="ptx-prop" onchange="cascadeTxTenants()">
+            ${activeProps.map(p=>`<option value="${p.PropertyCode}">${p.PropertyName} (${p.PropertyCode})</option>`).join('')||'<option value="">No active properties</option>'}
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label-sm">Tenant *</label>
+          <select class="form-control-sm2" id="ptx-tenant">
+            ${initTenants.map(t=>`<option value="${t.TenantID}">${t.FirstName} ${t.LastName} (${t.TenantNumber})</option>`).join('')||'<option value="">No active tenants</option>'}
+          </select>
+        </div>
       </div>
-      <div class="form-group"><label class="form-label-sm">Tenant *</label>
-        <select class="form-control-sm2" id="ptx-tenant">
-          ${initTenants.map(t=>`<option value="${t.TenantID}">${t.FirstName} ${t.LastName} (${t.TenantNumber})</option>`).join('')||'<option value="">No active tenants</option>'}
-        </select>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Amount * (negative = debit)</label><input class="form-control-sm2" id="ptx-amt" type="number" step="0.01"></div>
+        <div class="form-group"><label class="form-label-sm">Description *</label><input class="form-control-sm2" id="ptx-desc" placeholder="e.g. Rent Payment"></div>
       </div>
-      <div class="form-group"><label class="form-label-sm">Description *</label><input class="form-control-sm2" id="ptx-desc" placeholder="e.g. Rent Payment"></div>
-      <div class="form-group"><label class="form-label-sm">Amount * (negative = debit)</label><input class="form-control-sm2" id="ptx-amt" type="number" step="0.01"></div>
       <div class="form-group"><label class="form-label-sm">Note (optional)</label><textarea class="form-control-sm2" id="ptx-note" rows="2" placeholder="Any additional notes..."></textarea></div>
       <div class="form-group"><label class="form-label-sm">Document *</label><input class="form-control-sm2" id="ptx-doc" type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"></div>`,
       `<button class="btn-primary-custom bg-client" onclick="savePostTx()">Post</button><button class="btn-back" onclick="closeModal()">Cancel</button>`

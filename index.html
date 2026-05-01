@@ -30,6 +30,15 @@
     .login-success { color: #4caf7d; font-size: .8rem; min-height: 18px; margin: 4px 0; }
     .reset-phase { display: none; }
     .reset-phase.active { display: block; }
+    .pw-wrap { position: relative; }
+    .pw-wrap .form-control { padding-right: 2.4rem; }
+    .pw-eye {
+      position: absolute; right: .5rem; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: #999; font-size: .85rem; padding: 0; line-height: 1;
+    }
+    .pw-eye:hover { color: #333; }
+    [data-theme="dark"] .pw-eye { color: rgba(255,255,255,.45); }
+    [data-theme="dark"] .pw-eye:hover { color: rgba(255,255,255,.9); }
   </style>
 </head>
 <body>
@@ -65,7 +74,10 @@
               <label class="form-label">Username</label>
               <input class="form-control" id="t-user" type="text" placeholder="Username">
               <label class="form-label">Password</label>
-              <input class="form-control" id="t-pass" type="password" placeholder="Password">
+              <div class="pw-wrap">
+                <input class="form-control" id="t-pass" type="password" placeholder="Password">
+                <button type="button" class="pw-eye" onclick="togglePw('t-pass')" tabindex="-1"><i class="fa-solid fa-eye" id="t-pass-eye"></i></button>
+              </div>
               <div class="login-error" id="t-err"></div>
               <button class="btn-login" onclick="loginTenant()">Sign In</button>
               <button class="btn-setup-link" onclick="toggleSetup('t')">First Time Setup &rarr;</button>
@@ -89,9 +101,15 @@
                 <label class="form-label">Reset Code</label>
                 <input class="form-control" id="t-r-code" type="text" placeholder="6-digit code" maxlength="6" autocomplete="off">
                 <label class="form-label">New Password</label>
-                <input class="form-control" id="t-r-newpass" type="password" placeholder="New password">
+                <div class="pw-wrap">
+                  <input class="form-control" id="t-r-newpass" type="password" placeholder="New password">
+                  <button type="button" class="pw-eye" onclick="togglePw('t-r-newpass')" tabindex="-1"><i class="fa-solid fa-eye" id="t-r-newpass-eye"></i></button>
+                </div>
                 <label class="form-label">Confirm Password</label>
-                <input class="form-control" id="t-r-newpass2" type="password" placeholder="Confirm password">
+                <div class="pw-wrap">
+                  <input class="form-control" id="t-r-newpass2" type="password" placeholder="Confirm password">
+                  <button type="button" class="pw-eye" onclick="togglePw('t-r-newpass2')" tabindex="-1"><i class="fa-solid fa-eye" id="t-r-newpass2-eye"></i></button>
+                </div>
                 <div class="login-error" id="t-r-p2-err"></div>
                 <div class="login-success" id="t-r-p2-ok"></div>
                 <button class="btn-login" onclick="confirmResetTenant()"><i class="fa-solid fa-lock"></i> Reset Password</button>
@@ -110,9 +128,15 @@
               <label class="form-label">New Username</label>
               <input class="form-control" id="t-s-user" type="text" placeholder="Choose a username">
               <label class="form-label">New Password</label>
-              <input class="form-control" id="t-s-pass" type="password" placeholder="Choose a password">
+              <div class="pw-wrap">
+                <input class="form-control" id="t-s-pass" type="password" placeholder="Choose a password">
+                <button type="button" class="pw-eye" onclick="togglePw('t-s-pass')" tabindex="-1"><i class="fa-solid fa-eye" id="t-s-pass-eye"></i></button>
+              </div>
               <label class="form-label">Confirm Password</label>
-              <input class="form-control" id="t-s-pass2" type="password" placeholder="Confirm password">
+              <div class="pw-wrap">
+                <input class="form-control" id="t-s-pass2" type="password" placeholder="Confirm password">
+                <button type="button" class="pw-eye" onclick="togglePw('t-s-pass2')" tabindex="-1"><i class="fa-solid fa-eye" id="t-s-pass2-eye"></i></button>
+              </div>
               <div class="login-error" id="t-s-err"></div>
               <div class="login-success" id="t-s-ok"></div>
               <button class="btn-login" onclick="setupTenant()">Set Credentials</button>
@@ -142,7 +166,10 @@
               <label class="form-label">Username</label>
               <input class="form-control" id="c-user" type="text" placeholder="Username">
               <label class="form-label">Password</label>
-              <input class="form-control" id="c-pass" type="password" placeholder="Password">
+              <div class="pw-wrap">
+                <input class="form-control" id="c-pass" type="password" placeholder="Password">
+                <button type="button" class="pw-eye" onclick="togglePw('c-pass')" tabindex="-1"><i class="fa-solid fa-eye" id="c-pass-eye"></i></button>
+              </div>
               <div class="login-error" id="c-err"></div>
               <button class="btn-login" onclick="loginClient()">Sign In</button>
               <button class="btn-setup-link" onclick="toggleSetup('c')">First Time Setup &rarr;</button>
@@ -164,9 +191,15 @@
                 <label class="form-label">Reset Code</label>
                 <input class="form-control" id="c-r-code" type="text" placeholder="6-digit code" maxlength="6" autocomplete="off">
                 <label class="form-label">New Password</label>
-                <input class="form-control" id="c-r-newpass" type="password" placeholder="New password">
+                <div class="pw-wrap">
+                  <input class="form-control" id="c-r-newpass" type="password" placeholder="New password">
+                  <button type="button" class="pw-eye" onclick="togglePw('c-r-newpass')" tabindex="-1"><i class="fa-solid fa-eye" id="c-r-newpass-eye"></i></button>
+                </div>
                 <label class="form-label">Confirm Password</label>
-                <input class="form-control" id="c-r-newpass2" type="password" placeholder="Confirm password">
+                <div class="pw-wrap">
+                  <input class="form-control" id="c-r-newpass2" type="password" placeholder="Confirm password">
+                  <button type="button" class="pw-eye" onclick="togglePw('c-r-newpass2')" tabindex="-1"><i class="fa-solid fa-eye" id="c-r-newpass2-eye"></i></button>
+                </div>
                 <div class="login-error" id="c-r-p2-err"></div>
                 <div class="login-success" id="c-r-p2-ok"></div>
                 <button class="btn-login" onclick="confirmResetClient()"><i class="fa-solid fa-lock"></i> Reset Password</button>
@@ -183,9 +216,15 @@
               <label class="form-label">New Username</label>
               <input class="form-control" id="c-s-user" type="text" placeholder="Choose a username">
               <label class="form-label">New Password</label>
-              <input class="form-control" id="c-s-pass" type="password" placeholder="Choose a password">
+              <div class="pw-wrap">
+                <input class="form-control" id="c-s-pass" type="password" placeholder="Choose a password">
+                <button type="button" class="pw-eye" onclick="togglePw('c-s-pass')" tabindex="-1"><i class="fa-solid fa-eye" id="c-s-pass-eye"></i></button>
+              </div>
               <label class="form-label">Confirm Password</label>
-              <input class="form-control" id="c-s-pass2" type="password" placeholder="Confirm password">
+              <div class="pw-wrap">
+                <input class="form-control" id="c-s-pass2" type="password" placeholder="Confirm password">
+                <button type="button" class="pw-eye" onclick="togglePw('c-s-pass2')" tabindex="-1"><i class="fa-solid fa-eye" id="c-s-pass2-eye"></i></button>
+              </div>
               <div class="login-error" id="c-s-err"></div>
               <div class="login-success" id="c-s-ok"></div>
               <button class="btn-login" onclick="setupClient()">Set Credentials</button>
@@ -215,7 +254,10 @@
               <label class="form-label">Username</label>
               <input class="form-control" id="a-user" type="text" placeholder="Username">
               <label class="form-label">Password</label>
-              <input class="form-control" id="a-pass" type="password" placeholder="Password">
+              <div class="pw-wrap">
+                <input class="form-control" id="a-pass" type="password" placeholder="Password">
+                <button type="button" class="pw-eye" onclick="togglePw('a-pass')" tabindex="-1"><i class="fa-solid fa-eye" id="a-pass-eye"></i></button>
+              </div>
               <div class="login-error" id="a-err"></div>
               <button class="btn-login" onclick="loginAgency()">Sign In</button>
               <button class="btn-setup-link" onclick="toggleSetup('a')">First Time Setup &rarr;</button>
@@ -237,9 +279,15 @@
                 <label class="form-label">Reset Code</label>
                 <input class="form-control" id="a-r-code" type="text" placeholder="6-digit code" maxlength="6" autocomplete="off">
                 <label class="form-label">New Password</label>
-                <input class="form-control" id="a-r-newpass" type="password" placeholder="New password">
+                <div class="pw-wrap">
+                  <input class="form-control" id="a-r-newpass" type="password" placeholder="New password">
+                  <button type="button" class="pw-eye" onclick="togglePw('a-r-newpass')" tabindex="-1"><i class="fa-solid fa-eye" id="a-r-newpass-eye"></i></button>
+                </div>
                 <label class="form-label">Confirm Password</label>
-                <input class="form-control" id="a-r-newpass2" type="password" placeholder="Confirm password">
+                <div class="pw-wrap">
+                  <input class="form-control" id="a-r-newpass2" type="password" placeholder="Confirm password">
+                  <button type="button" class="pw-eye" onclick="togglePw('a-r-newpass2')" tabindex="-1"><i class="fa-solid fa-eye" id="a-r-newpass2-eye"></i></button>
+                </div>
                 <div class="login-error" id="a-r-p2-err"></div>
                 <div class="login-success" id="a-r-p2-ok"></div>
                 <button class="btn-login" onclick="confirmResetAgency()"><i class="fa-solid fa-lock"></i> Reset Password</button>
@@ -256,9 +304,15 @@
               <label class="form-label">New Username</label>
               <input class="form-control" id="a-s-user" type="text" placeholder="Choose a username">
               <label class="form-label">New Password</label>
-              <input class="form-control" id="a-s-pass" type="password" placeholder="Choose a password">
+              <div class="pw-wrap">
+                <input class="form-control" id="a-s-pass" type="password" placeholder="Choose a password">
+                <button type="button" class="pw-eye" onclick="togglePw('a-s-pass')" tabindex="-1"><i class="fa-solid fa-eye" id="a-s-pass-eye"></i></button>
+              </div>
               <label class="form-label">Confirm Password</label>
-              <input class="form-control" id="a-s-pass2" type="password" placeholder="Confirm password">
+              <div class="pw-wrap">
+                <input class="form-control" id="a-s-pass2" type="password" placeholder="Confirm password">
+                <button type="button" class="pw-eye" onclick="togglePw('a-s-pass2')" tabindex="-1"><i class="fa-solid fa-eye" id="a-s-pass2-eye"></i></button>
+              </div>
               <div class="login-error" id="a-s-err"></div>
               <div class="login-success" id="a-s-ok"></div>
               <button class="btn-login" onclick="setupAgency()">Set Credentials</button>
@@ -288,7 +342,10 @@
               <label class="form-label">Username</label>
               <input class="form-control" id="m-user" type="text" placeholder="Username">
               <label class="form-label">Password</label>
-              <input class="form-control" id="m-pass" type="password" placeholder="Password">
+              <div class="pw-wrap">
+                <input class="form-control" id="m-pass" type="password" placeholder="Password">
+                <button type="button" class="pw-eye" onclick="togglePw('m-pass')" tabindex="-1"><i class="fa-solid fa-eye" id="m-pass-eye"></i></button>
+              </div>
               <div class="login-error" id="m-err"></div>
               <button class="btn-login" onclick="loginMaster()">Sign In</button>
               <button class="btn-setup-link" onclick="toggleSetup('m')">First Time Setup &rarr;</button>
@@ -310,9 +367,15 @@
                 <label class="form-label">Reset Code</label>
                 <input class="form-control" id="m-r-code" type="text" placeholder="6-digit code" maxlength="6" autocomplete="off">
                 <label class="form-label">New Password</label>
-                <input class="form-control" id="m-r-newpass" type="password" placeholder="New password">
+                <div class="pw-wrap">
+                  <input class="form-control" id="m-r-newpass" type="password" placeholder="New password">
+                  <button type="button" class="pw-eye" onclick="togglePw('m-r-newpass')" tabindex="-1"><i class="fa-solid fa-eye" id="m-r-newpass-eye"></i></button>
+                </div>
                 <label class="form-label">Confirm Password</label>
-                <input class="form-control" id="m-r-newpass2" type="password" placeholder="Confirm password">
+                <div class="pw-wrap">
+                  <input class="form-control" id="m-r-newpass2" type="password" placeholder="Confirm password">
+                  <button type="button" class="pw-eye" onclick="togglePw('m-r-newpass2')" tabindex="-1"><i class="fa-solid fa-eye" id="m-r-newpass2-eye"></i></button>
+                </div>
                 <div class="login-error" id="m-r-p2-err"></div>
                 <div class="login-success" id="m-r-p2-ok"></div>
                 <button class="btn-login" onclick="confirmResetMaster()"><i class="fa-solid fa-lock"></i> Reset Password</button>
@@ -329,9 +392,15 @@
               <label class="form-label">New Username</label>
               <input class="form-control" id="m-s-user" type="text" placeholder="Choose a username">
               <label class="form-label">New Password</label>
-              <input class="form-control" id="m-s-pass" type="password" placeholder="Choose a password">
+              <div class="pw-wrap">
+                <input class="form-control" id="m-s-pass" type="password" placeholder="Choose a password">
+                <button type="button" class="pw-eye" onclick="togglePw('m-s-pass')" tabindex="-1"><i class="fa-solid fa-eye" id="m-s-pass-eye"></i></button>
+              </div>
               <label class="form-label">Confirm Password</label>
-              <input class="form-control" id="m-s-pass2" type="password" placeholder="Confirm password">
+              <div class="pw-wrap">
+                <input class="form-control" id="m-s-pass2" type="password" placeholder="Confirm password">
+                <button type="button" class="pw-eye" onclick="togglePw('m-s-pass2')" tabindex="-1"><i class="fa-solid fa-eye" id="m-s-pass2-eye"></i></button>
+              </div>
               <div class="login-error" id="m-s-err"></div>
               <div class="login-success" id="m-s-ok"></div>
               <button class="btn-login" onclick="setupMaster()">Set Credentials</button>
@@ -745,6 +814,14 @@
         if (!r.ok){document.getElementById('m-r-p2-err').textContent=d.error||'Reset failed.';return;}
         _afterReset('m');
       } catch(e){document.getElementById('m-r-p2-err').textContent='Connection error. Please try again.';}
+    }
+
+    function togglePw(id) {
+      const inp = document.getElementById(id);
+      const eye = document.getElementById(id + '-eye');
+      const show = inp.type === 'password';
+      inp.type = show ? 'text' : 'password';
+      eye.className = show ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
     }
 
     // Allow Enter key on login and setup forms
