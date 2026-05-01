@@ -473,7 +473,9 @@
 
       const rows = grp.tenants.map(t => {
         const u      = DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
-        const canDel = t.Active !== 'Y' && !allTx.some(tx => tx.TenantID === t.TenantID);
+        const hasTx  = allTx.some(tx => tx.TenantID === t.TenantID);
+        const canDel = t.Active !== 'Y' && !hasTx;
+        const delTitle = t.Active === 'Y' ? 'Cannot delete: tenant is active' : hasTx ? 'Cannot delete: tenant has transactions' : 'Delete tenant';
         return `<tr>
           <td style="font-size:.78rem;font-family:monospace">${t.TenantNumber}</td>
           <td><strong>${t.FirstName} ${t.LastName}</strong><br><span class="text-muted-sm">${t.Email}</span></td>
@@ -485,7 +487,9 @@
           <td><span class="badge-${t.Active==='Y'?'active':'inactive'}">${t.Active==='Y'?'Active':'Inactive'}</span></td>
           <td>
             <button class="btn-edit" onclick="openEditTenant('${t.TenantID}')"><i class="fa-solid fa-pen"></i></button>
-            ${canDel?`<button class="btn-del" onclick="deleteTenant('${t.TenantID}','${t.FirstName} ${t.LastName}')"><i class="fa-solid fa-trash"></i></button>`:''}
+            ${canDel
+              ? `<button class="btn-del" onclick="deleteTenant('${t.TenantID}','${t.FirstName} ${t.LastName}')" title="${delTitle}"><i class="fa-solid fa-trash"></i></button>`
+              : `<button class="btn-del" disabled title="${delTitle}" style="opacity:.35;cursor:not-allowed"><i class="fa-solid fa-trash"></i></button>`}
           </td>
         </tr>`;
       }).join('');
@@ -1485,14 +1489,24 @@
       <div class="table-card" style="margin-bottom:16px;">
         <div class="table-card-header rpt-controls-area"><h5><i class="fa-solid fa-file-invoice-dollar"></i> Tenant Statements</h5></div>
         <div class="modal-body-pad rpt-controls-area">
-          <div class="form-group"><label class="form-label-sm">Select Tenants * (hold Ctrl/Cmd for multiple)</label>
-            <select class="form-control-sm2" id="rpt-tstmt-tens" multiple style="height:140px;">${tenOpts||'<option value="">No active tenants</option>'}</select>
+          <div class="form-group"><label class="form-label-sm">Property</label>
+            <select class="form-control-sm2" id="rpt-tstmt-prop" onchange="cascadeStmtTenants()">
+              <option value="">All Properties</option>${propOpts}
+            </select>
           </div>
-          <div style="display:flex;gap:8px;margin-top:4px;margin-bottom:12px;">
-            <button type="button" class="btn-back" style="font-size:.78rem;padding:3px 10px" onclick="document.querySelectorAll('#rpt-tstmt-tens option').forEach(o=>o.selected=true)">Select All</button>
-            <button type="button" class="btn-back" style="font-size:.78rem;padding:3px 10px" onclick="document.querySelectorAll('#rpt-tstmt-tens option').forEach(o=>o.selected=false)">Clear</button>
+          <div style="margin-top:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <label class="form-label-sm" style="margin:0">Select Tenants * &nbsp;<span id="tstmt-count" style="font-size:.78rem;color:#666;font-weight:400">0 selected</span></label>
+              <div style="display:flex;gap:6px">
+                <button type="button" class="btn-back" style="padding:3px 10px;font-size:.78rem" onclick="tstmtSelectAll(true)">Select All</button>
+                <button type="button" class="btn-back" style="padding:3px 10px;font-size:.78rem" onclick="tstmtSelectAll(false)">None</button>
+              </div>
+            </div>
+            <div id="rpt-tstmt-list" style="border:1px solid #dde1ef;border-radius:8px;max-height:200px;overflow-y:auto;padding:4px 0">
+              ${renderStmtTenantCheckboxes(myTenants())}
+            </div>
           </div>
-          <button class="btn-primary-custom bg-client" onclick="genTenantStmtReport()"><i class="fa-solid fa-chart-bar"></i> Generate</button>
+          <button class="btn-primary-custom bg-client" style="margin-top:12px" onclick="genTenantStmtReport()"><i class="fa-solid fa-chart-bar"></i> Generate</button>
         </div>
       </div>
       <div id="rpt-tstmt-out" style="display:none"></div>
@@ -1554,6 +1568,48 @@
       document.getElementById('rpanel-'+t).style.display  = t===tab ? '' : 'none';
       document.getElementById('rtab-'+t).style.opacity    = t===tab ? '1' : '.45';
     });
+    if (tab === 'tstmt') {
+      setTimeout(() => {
+        document.querySelectorAll('.tstmt-cb').forEach(cb => cb.addEventListener('change', updateStmtCount));
+        updateStmtCount();
+      }, 50);
+    }
+  }
+
+  function renderStmtTenantCheckboxes(tenants) {
+    if (!tenants.length) return '<div style="text-align:center;padding:16px;color:#aaa;font-size:.85rem">No tenants found.</div>';
+    return tenants.map(t => {
+      const u = DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
+      const p = DB.findOne('properties',{PropertyCode:t.PropertyCode})||{};
+      return `<label style="display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:.88rem" onmouseover="this.style.background='#f5f7ff'" onmouseout="this.style.background=''">
+        <input type="checkbox" class="tstmt-cb" value="${t.TenantID}" checked style="width:15px;height:15px;cursor:pointer;accent-color:#2d9b59">
+        <span style="flex:1"><strong>${t.FirstName} ${t.LastName}</strong> <span style="color:#888;font-size:.78rem">(${t.TenantNumber})</span></span>
+        <span style="color:#888;font-size:.78rem;text-align:right">${p.PropertyName||'—'} · Unit ${u.UnitNumber||'?'}</span>
+      </label>`;
+    }).join('');
+  }
+
+  function cascadeStmtTenants() {
+    const propCode = document.getElementById('rpt-tstmt-prop').value;
+    let tenants = myTenants();
+    if (propCode) tenants = tenants.filter(t => t.PropertyCode === propCode);
+    const list = document.getElementById('rpt-tstmt-list');
+    if (list) {
+      list.innerHTML = renderStmtTenantCheckboxes(tenants);
+      document.querySelectorAll('.tstmt-cb').forEach(cb => cb.addEventListener('change', updateStmtCount));
+      updateStmtCount();
+    }
+  }
+
+  function updateStmtCount() {
+    const n = document.querySelectorAll('.tstmt-cb:checked').length;
+    const el = document.getElementById('tstmt-count');
+    if (el) el.textContent = n + ' selected';
+  }
+
+  function tstmtSelectAll(checked) {
+    document.querySelectorAll('.tstmt-cb').forEach(cb => cb.checked = checked);
+    updateStmtCount();
   }
 
   function setUlistStatus(s) {
@@ -1670,7 +1726,7 @@
   }
 
   function genTenantStmtReport() {
-    const selected = Array.from(document.querySelectorAll('#rpt-tstmt-tens option:checked')).map(o=>o.value);
+    const selected = Array.from(document.querySelectorAll('.tstmt-cb:checked')).map(cb=>cb.value);
     if (!selected.length) { toast('Select at least one tenant.','error'); return; }
     const out = document.getElementById('rpt-tstmt-out');
     out.style.display = '';
