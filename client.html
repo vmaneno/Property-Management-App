@@ -1436,6 +1436,7 @@
       <button class="btn-primary-custom bg-client" id="rtab-ptx"   onclick="showRptTab('ptx')"   style="opacity:1">Property Transactions</button>
       <button class="btn-primary-custom bg-client" id="rtab-tstmt" onclick="showRptTab('tstmt')" style="opacity:.45">Tenant Statements</button>
       <button class="btn-primary-custom bg-client" id="rtab-tlist" onclick="showRptTab('tlist')" style="opacity:.45">List of Tenants</button>
+      <button class="btn-primary-custom bg-client" id="rtab-ulist" onclick="showRptTab('ulist')" style="opacity:.45">Units List</button>
     </div>
 
     <!-- Report 1: Property Transactions -->
@@ -1499,14 +1500,83 @@
         </div>
       </div>
       <div id="rpt-tlist-out" style="display:none"></div>
+    </div>
+
+    <!-- Report 4: Units List -->
+    <div id="rpanel-ulist" style="display:none">
+      <div class="table-card" style="margin-bottom:16px;">
+        <div class="table-card-header rpt-controls-area"><h5><i class="fa-solid fa-door-open"></i> Units List</h5></div>
+        <div class="modal-body-pad rpt-controls-area">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label-sm">Property</label>
+              <select class="form-control-sm2" id="rpt-ulist-prop">
+                <option value="">All Properties</option>${propOpts}
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label-sm">Status</label>
+              <select class="form-control-sm2" id="rpt-ulist-status">
+                <option value="">All</option><option value="Occupied">Occupied</option><option value="Vacant">Vacant</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-primary-custom bg-client" onclick="genUnitListReport()"><i class="fa-solid fa-chart-bar"></i> Generate</button>
+        </div>
+      </div>
+      <div id="rpt-ulist-out" style="display:none"></div>
     </div>`;
   }
 
   function showRptTab(tab) {
-    ['ptx','tstmt','tlist'].forEach(t => {
+    ['ptx','tstmt','tlist','ulist'].forEach(t => {
       document.getElementById('rpanel-'+t).style.display  = t===tab ? '' : 'none';
       document.getElementById('rtab-'+t).style.opacity    = t===tab ? '1' : '.45';
     });
+  }
+
+  function genUnitListReport() {
+    const propCode = document.getElementById('rpt-ulist-prop').value;
+    const status   = document.getElementById('rpt-ulist-status').value;
+    let units = myUnits();
+    if (propCode) units = units.filter(u => u.PropertyCode === propCode);
+    if (status)   units = units.filter(u => u.UnitStatus === status);
+    units = units.slice().sort((a,b) => {
+      const pa = DB.findOne('properties',{PropertyCode:a.PropertyCode})||{};
+      const pb = DB.findOne('properties',{PropertyCode:b.PropertyCode})||{};
+      return (pa.PropertyName||'').localeCompare(pb.PropertyName||'')
+          || (a.UnitNumber||'').localeCompare(b.UnitNumber||'',undefined,{numeric:true,sensitivity:'base'});
+    });
+    const prop        = propCode ? (DB.findOne('properties',{PropertyCode:propCode})||{PropertyName:propCode}) : {PropertyName:'All Properties'};
+    const statusLabel = status || 'All';
+    const rows = units.map(u => {
+      const p = DB.findOne('properties',{PropertyCode:u.PropertyCode})||{};
+      return `<tr>
+        <td style="font-family:monospace">${u.UnitCode}</td>
+        <td><strong>${u.UnitNumber}</strong></td>
+        <td>${p.PropertyName||'?'}</td>
+        <td>${p.Currency||'$'}${Number(u.RentAmount).toLocaleString()}</td>
+        <td>${p.Currency||'$'}${Number(u.DepositAmount).toLocaleString()}</td>
+        <td><span class="${u.UnitStatus==='Occupied'?'badge-occupied':'badge-vacant'}">${u.UnitStatus}</span></td>
+        <td><span class="badge-${u.Active==='Y'?'active':'inactive'}">${u.Active==='Y'?'Yes':'No'}</span></td>
+      </tr>`;
+    }).join('');
+    const out = document.getElementById('rpt-ulist-out');
+    out.style.display = '';
+    out.innerHTML = `
+    <div class="table-card">
+      <div class="table-card-header">
+        <div>
+          <div style="font-weight:700;font-size:1rem">Units List — ${prop.PropertyName}</div>
+          <div style="font-size:.82rem;color:#888">Printed: ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})} · Status: ${statusLabel} · ${units.length} unit(s)</div>
+        </div>
+        <button class="btn-primary-custom bg-client rpt-print-btn" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table" style="font-size:.82rem">
+          <thead><tr><th>Unit Code</th><th>Unit #</th><th>Property</th><th>Rent</th><th>Deposit</th><th>Status</th><th>Active</th></tr></thead>
+          <tbody>${rows||'<tr><td colspan="7" style="text-align:center;padding:30px;color:#aaa">No units found.</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
   }
 
   function genPropTxReport() {
