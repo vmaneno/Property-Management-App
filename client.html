@@ -28,6 +28,11 @@
     .unit-count-pill { background:#d4edda;color:#1a6b3c;border-radius:10px;padding:2px 9px;font-size:.72rem;font-weight:700; }
     .unit-grp-body .table-responsive { margin:0; }
     .unit-grp-body .data-table { border-radius:0; }
+    .tenant-group-hdr { display:flex;align-items:center;justify-content:space-between;padding:13px 20px;cursor:pointer;background:#fafafa;border-bottom:1px solid #f0f0f0;transition:background .15s;gap:12px;flex-wrap:wrap; }
+    .tenant-group-hdr:hover { background:#f0faf4; }
+    .tenant-count-pill { background:#d4edda;color:#1a6b3c;border-radius:10px;padding:2px 9px;font-size:.72rem;font-weight:700; }
+    .tenant-grp-body .table-responsive { margin:0; }
+    .tenant-grp-body .data-table { border-radius:0; }
   </style>
 </head>
 <body>
@@ -148,7 +153,7 @@
     if (view === 'dashboard')    { c.innerHTML = renderDashboard(); }
     else if (view === 'properties') { c.innerHTML = renderProperties(); ta.innerHTML = `<button class="btn-primary-custom bg-client" onclick="openAddProperty()"><i class="fa-solid fa-plus"></i> Add Property</button>`; }
     else if (view === 'units')      { c.innerHTML = renderUnits(); buildUnitGroups(); ta.innerHTML = `<button class="btn-primary-custom bg-client" onclick="openAddUnit()"><i class="fa-solid fa-plus"></i> Add Unit</button> <button class="btn-primary-custom bg-client" onclick="openUnitsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Units Upload</button>`; }
-    else if (view === 'tenants')    { c.innerHTML = renderTenants(); ta.innerHTML = `<button class="btn-primary-custom bg-client" onclick="openAddTenant()"><i class="fa-solid fa-plus"></i> Add Tenant</button> <button class="btn-primary-custom bg-client" onclick="openTenantsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Tenants Upload</button>`; }
+    else if (view === 'tenants')    { c.innerHTML = renderTenants(); buildTenantGroups(); ta.innerHTML = `<button class="btn-primary-custom bg-client" onclick="openAddTenant()"><i class="fa-solid fa-plus"></i> Add Tenant</button> <button class="btn-primary-custom bg-client" onclick="openTenantsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Tenants Upload</button>`; }
     else if (view === 'transactions') { c.innerHTML = renderTransactions(); ta.innerHTML = `<button class="btn-primary-custom bg-client" onclick="openPostTx()"><i class="fa-solid fa-plus"></i> Post Transaction</button> <button class="btn-primary-custom bg-client" onclick="openBulkPostTx()" style="margin-left:8px"><i class="fa-solid fa-layer-group"></i> Bulk Posting</button>`; }
     else if (view === 'profile')      { c.innerHTML = renderProfile(); }
     else if (view === 'reports')      { c.innerHTML = renderReports(); }
@@ -394,33 +399,126 @@
   }
 
   function renderTenants() {
-    const tenants = myTenants();
-    return `<div class="table-card"><div class="table-card-header"><h5>Tenants (${tenants.length})</h5></div>
-    <div class="table-responsive"><table class="data-table">
-      <thead><tr><th>ID</th><th>Name</th><th>Property / Unit</th><th>Telephone</th><th>Rent</th><th>Move In</th><th>Active</th><th>Actions</th></tr></thead>
-      <tbody>${tenants.map(t=>{
-        const p=DB.findOne('properties',{PropertyCode:t.PropertyCode})||{};
-        const u=DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
-        const hasTxs=DB.getAll('transactions').some(tx=>tx.TenantID===t.TenantID);
-        const canDel=t.Active!=='Y' && !hasTxs;
-        const delTitle=t.Active==='Y'?'Tenant is active':hasTxs?'Tenant has transactions':'Delete tenant';
+    window._tSearch = '';
+    return `<div class="table-card">
+      <div class="table-card-header"><h5 id="tenants-hdr-title">All Tenants</h5></div>
+      <div class="filter-bar" style="gap:10px;flex-wrap:wrap;align-items:center;">
+        <i class="fa-solid fa-magnifying-glass" style="color:#aaa;flex-shrink:0"></i>
+        <input id="filter-tenants-search" placeholder="Search by name, unit# or tenant#..."
+               style="flex:1;min-width:200px"
+               oninput="window._tSearch=this.value.toLowerCase();buildTenantGroups()">
+      </div>
+      <div id="tenant-groups"></div>
+    </div>`;
+  }
+
+  function toggleTenantGroup(propCode) {
+    window._tCollapsed = window._tCollapsed || {};
+    window._tCollapsed[propCode] = !window._tCollapsed[propCode];
+    buildTenantGroups();
+  }
+
+  function buildTenantGroups() {
+    window._tCollapsed = window._tCollapsed || {};
+    const search = window._tSearch || '';
+    const allTx  = DB.getAll('transactions');
+
+    let tenants = myTenants().slice().sort((a,b) => {
+      const pa = DB.findOne('properties',{PropertyCode:a.PropertyCode})||{};
+      const pb = DB.findOne('properties',{PropertyCode:b.PropertyCode})||{};
+      const ua = DB.findOne('propunits',{UnitCode:a.UnitCode})||{};
+      const ub = DB.findOne('propunits',{UnitCode:b.UnitCode})||{};
+      const pCmp = (pa.PropertyName||'').localeCompare(pb.PropertyName||'');
+      if (pCmp !== 0) return pCmp;
+      return (ua.UnitNumber||'').localeCompare(ub.UnitNumber||'',undefined,{numeric:true});
+    });
+
+    if (search) {
+      tenants = tenants.filter(t => {
+        const u = DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
+        return (t.FirstName+' '+t.LastName).toLowerCase().includes(search)
+            || (t.LastName+' '+t.FirstName).toLowerCase().includes(search)
+            || (u.UnitNumber||'').toLowerCase().includes(search)
+            || (t.TenantNumber||'').toLowerCase().includes(search);
+      });
+    }
+
+    const titleEl = document.getElementById('tenants-hdr-title');
+    if (titleEl) titleEl.textContent = 'All Tenants (' + tenants.length + ')';
+
+    const groups = {};
+    const order  = [];
+    tenants.forEach(t => {
+      const p = DB.findOne('properties',{PropertyCode:t.PropertyCode})||{};
+      if (!groups[t.PropertyCode]) {
+        groups[t.PropertyCode] = {propName: p.PropertyName||t.PropertyCode, tenants:[]};
+        order.push(t.PropertyCode);
+      }
+      groups[t.PropertyCode].tenants.push(t);
+    });
+
+    const container = document.getElementById('tenant-groups');
+    if (!container) return;
+
+    if (!order.length) {
+      container.innerHTML = '<div style="padding:24px;text-align:center;color:#aaa;font-size:.9rem">No tenants match the current search.</div>';
+      return;
+    }
+
+    container.innerHTML = order.map(propCode => {
+      const grp       = groups[propCode];
+      const collapsed = window._tCollapsed[propCode];
+      const totalRent = grp.tenants.reduce((s,t) => s + Number(t.RentAmount||0), 0);
+      const totalDep  = grp.tenants.reduce((s,t) => s + Number(t.DepositAmount||0), 0);
+
+      const rows = grp.tenants.map(t => {
+        const u      = DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
+        const canDel = t.Active !== 'Y' && !allTx.some(tx => tx.TenantID === t.TenantID);
         return `<tr>
-          <td style="font-size:.8rem;font-family:monospace">${t.TenantNumber}</td>
+          <td style="font-size:.78rem;font-family:monospace">${t.TenantNumber}</td>
           <td><strong>${t.FirstName} ${t.LastName}</strong><br><span class="text-muted-sm">${t.Email}</span></td>
-          <td>${p.PropertyName||'?'} / Unit ${u.UnitNumber||'?'}</td>
-          <td>${t.Telephone}</td>
+          <td style="font-size:.78rem">${t.IDNumber}</td>
+          <td><strong>${u.UnitNumber||'?'}</strong></td>
           <td>$${Number(t.RentAmount).toLocaleString()} / ${t.RentFrequency}</td>
+          <td>$${Number(t.DepositAmount||0).toLocaleString()}</td>
           <td>${fmtDate(t.MoveInDate)}</td>
           <td><span class="badge-${t.Active==='Y'?'active':'inactive'}">${t.Active==='Y'?'Active':'Inactive'}</span></td>
           <td>
             <button class="btn-edit" onclick="openEditTenant('${t.TenantID}')"><i class="fa-solid fa-pen"></i></button>
-            ${canDel
-              ? `<button class="btn-del" onclick="deleteTenant('${t.TenantID}')"><i class="fa-solid fa-trash"></i></button>`
-              : `<button class="btn-del" disabled title="${delTitle}" style="opacity:.35;cursor:not-allowed"><i class="fa-solid fa-trash"></i></button>`}
+            ${canDel?`<button class="btn-del" onclick="deleteTenant('${t.TenantID}','${t.FirstName} ${t.LastName}')"><i class="fa-solid fa-trash"></i></button>`:''}
           </td>
         </tr>`;
-      }).join('')||'<tr><td colspan="8" style="text-align:center;padding:40px;color:#aaa">No tenants found.</td></tr>'}</tbody>
-    </table></div></div>`;
+      }).join('');
+
+      return `<div class="unit-group">
+        <div class="tenant-group-hdr" onclick="toggleTenantGroup('${propCode}')">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <i class="fa-solid fa-building" style="color:#2d9b59"></i>
+            <strong style="font-size:.93rem">${grp.propName}</strong>
+            <span class="tenant-count-pill">${grp.tenants.length} tenant${grp.tenants.length!==1?'s':''}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+            <span style="font-size:.78rem;text-align:right">
+              <span style="color:#aaa;font-size:.7rem;display:block">Total Rent</span>
+              <strong>$${totalRent.toLocaleString()}</strong>
+            </span>
+            <span style="font-size:.78rem;text-align:right">
+              <span style="color:#aaa;font-size:.7rem;display:block">Total Deposit</span>
+              <strong>$${totalDep.toLocaleString()}</strong>
+            </span>
+            <i class="fa-solid fa-chevron-${collapsed?'right':'down'}" style="color:#2d9b59;font-size:.8rem"></i>
+          </div>
+        </div>
+        <div class="tenant-grp-body" style="display:${collapsed?'none':'block'}">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead><tr><th>Tenant#</th><th>Name</th><th>ID</th><th>Unit#</th><th>Rent</th><th>Deposit</th><th>Move-in</th><th>Active</th><th>Actions</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
   }
 
   function renderTransactions() {
