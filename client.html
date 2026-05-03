@@ -1799,24 +1799,55 @@
           || (ua.UnitNumber||'').localeCompare(ub.UnitNumber||'',undefined,{numeric:true,sensitivity:'base'});
     });
     const prop = propCode ? (DB.findOne('properties',{PropertyCode:propCode})||{PropertyName:propCode}) : {PropertyName:'All Properties'};
-    const rows = tenants.map(t => {
-      const p = DB.findOne('properties',{PropertyCode:t.PropertyCode})||{};
-      const u = DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
-      return `<tr>
-        <td style="font-family:monospace">${t.TenantNumber}</td>
-        <td>${t.FirstName} ${t.LastName}</td>
-        <td>${t.IDNumber}</td>
-        <td>${p.PropertyName||'—'}</td>
-        <td>${u.UnitNumber||'?'}</td>
-        <td>$${Number(t.RentAmount).toLocaleString()} / ${t.RentFrequency}</td>
-        <td>${fmtDate(t.MoveInDate)}</td>
-        <td>${t.MoveOutDate ? fmtDate(t.MoveOutDate) : '—'}</td>
-        <td><span class="badge-${t.Active==='Y'?'active':'inactive'}">${t.Active==='Y'?'Active':'Inactive'}</span></td>
-      </tr>`;
+
+    // Group tenants by property
+    const groups = {};
+    const groupOrder = [];
+    tenants.forEach(t => {
+      if (!groups[t.PropertyCode]) {
+        const p = DB.findOne('properties',{PropertyCode:t.PropertyCode})||{};
+        groups[t.PropertyCode] = { propName: p.PropertyName||t.PropertyCode, tenants: [] };
+        groupOrder.push(t.PropertyCode);
+      }
+      groups[t.PropertyCode].tenants.push(t);
+    });
+
+    const groupsHtml = groupOrder.map(pc => {
+      const g = groups[pc];
+      const rows = g.tenants.map(t => {
+        const u = DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
+        return `<tr>
+          <td style="font-family:monospace">${t.TenantNumber}</td>
+          <td>${t.FirstName} ${t.LastName}</td>
+          <td>${u.UnitNumber||'?'}</td>
+          <td>${Number(t.RentAmount).toLocaleString()} / ${t.RentFrequency}</td>
+          <td>${fmtDate(t.MoveInDate)}</td>
+          <td>${t.MoveOutDate ? fmtDate(t.MoveOutDate) : '—'}</td>
+          <td><span class="badge-${t.Active==='Y'?'active':'inactive'}">${t.Active==='Y'?'Active':'Inactive'}</span></td>
+        </tr>`;
+      }).join('');
+      return `<div class="tlist-grp" style="margin-bottom:10px">
+        <div onclick="this.parentElement.classList.toggle('tlist-collapsed')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 12px;background:#eef2f7;border-radius:6px;font-weight:600;font-size:.88rem;user-select:none">
+          <span class="tlist-arrow" style="display:inline-block;transition:transform .2s;font-size:.7rem">&#9660;</span>
+          ${g.propName}
+          <span style="font-weight:400;font-size:.78rem;color:#666;margin-left:auto">${g.tenants.length} tenant(s)</span>
+        </div>
+        <div class="tlist-body" style="overflow-x:auto">
+          <table class="data-table" style="font-size:.82rem">
+            <thead><tr><th>Tenant#</th><th>Name</th><th>Unit#</th><th>Rent</th><th>Move-in</th><th>Move-out</th><th>Status</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
     }).join('');
+
     const out = document.getElementById('rpt-tlist-out');
     out.style.display = '';
     out.innerHTML = `
+    <style>
+      .tlist-grp.tlist-collapsed .tlist-body{display:none}
+      .tlist-grp.tlist-collapsed .tlist-arrow{transform:rotate(-90deg)}
+    </style>
     <div class="table-card">
       <div class="table-card-header">
         <div>
@@ -1825,10 +1856,7 @@
         </div>
       </div>
       <div class="table-responsive">
-        <table class="data-table" style="font-size:.82rem">
-          <thead><tr><th>Tenant#</th><th>Name</th><th>ID Number</th><th>Property</th><th>Unit#</th><th>Rent</th><th>Move-in</th><th>Move-out</th><th>Status</th></tr></thead>
-          <tbody>${rows||'<tr><td colspan="9" style="text-align:center;padding:30px;color:#aaa">No tenants found.</td></tr>'}</tbody>
-        </table>
+        ${groupsHtml || '<div style="text-align:center;padding:30px;color:#aaa">No tenants found.</div>'}
       </div>
     </div>
     <div class="rpt-print-btn" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">

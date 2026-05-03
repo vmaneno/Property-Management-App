@@ -2119,25 +2119,54 @@
       return (pa.PropertyName||'').localeCompare(pb.PropertyName||'') || (ua.UnitNumber||'').localeCompare(ub.UnitNumber||'', undefined, { numeric: true, sensitivity: 'base' });
     });
     const prop = propCode ? (DB.findOne('properties',{PropertyCode:propCode})||{PropertyName:propCode}) : {PropertyName:'All Properties'};
+
+    // Group by property
+    const groups = {}, groupOrder = [];
+    tenants.forEach(t => {
+      if (!groups[t.PropertyCode]) {
+        const p = DB.findOne('properties',{PropertyCode:t.PropertyCode})||{};
+        groups[t.PropertyCode] = { propName: p.PropertyName||t.PropertyCode, tenants: [] };
+        groupOrder.push(t.PropertyCode);
+      }
+      groups[t.PropertyCode].tenants.push(t);
+    });
+
+    const groupsHtml = groupOrder.map(pc => {
+      const g = groups[pc];
+      const rows = g.tenants.map(t => {
+        const u = DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
+        return `<tr>
+          <td style="font-family:monospace">${t.TenantNumber}</td>
+          <td>${t.FirstName} ${t.LastName}</td>
+          <td>${u.UnitNumber||'?'}</td>
+          <td>${Number(t.RentAmount).toLocaleString()} / ${t.RentFrequency}</td>
+          <td>${fmtDate(t.MoveInDate)}</td>
+          <td>${t.MoveOutDate?fmtDate(t.MoveOutDate):'—'}</td>
+          <td><span class="badge-${t.Active==='Y'?'active':'inactive'}">${t.Active==='Y'?'Active':'Inactive'}</span></td>
+        </tr>`;
+      }).join('');
+      return `<div class="tlist-grp" style="margin-bottom:10px">
+        <div onclick="this.parentElement.classList.toggle('tlist-collapsed')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 12px;background:#eef2f7;border-radius:6px;font-weight:600;font-size:.88rem;user-select:none">
+          <span class="tlist-arrow" style="display:inline-block;transition:transform .2s;font-size:.7rem">&#9660;</span>
+          ${g.propName}
+          <span style="font-weight:400;font-size:.78rem;color:#666;margin-left:auto">${g.tenants.length} tenant(s)</span>
+        </div>
+        <div class="tlist-body" style="overflow-x:auto">
+          <table class="data-table" style="width:100%;font-size:.82rem">
+            <thead><tr><th>Tenant#</th><th>Name</th><th>Unit#</th><th>Rent</th><th>Move-in</th><th>Move-out</th><th>Status</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+    }).join('');
+
     document.getElementById('r-tl-out').innerHTML = `
+      <style>
+        .tlist-grp.tlist-collapsed .tlist-body{display:none}
+        .tlist-grp.tlist-collapsed .tlist-arrow{transform:rotate(-90deg)}
+      </style>
       <div style="margin-bottom:10px;font-weight:600">${prop.PropertyName} &mdash; ${tenants.length} tenant(s)</div>
-      <table class="data-table" style="width:100%;font-size:.82rem">
-        <thead><tr><th>#</th><th>Name</th><th>ID Number</th><th>Unit Number</th><th>Rent</th><th>Move-in</th><th>Move-out</th><th>Status</th></tr></thead>
-        <tbody>${tenants.map(t=>{
-          const p=DB.findOne('properties',{PropertyCode:t.PropertyCode})||{};
-          const u=DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
-          return `<tr>
-            <td style="font-family:monospace">${t.TenantNumber}</td>
-            <td>${t.FirstName} ${t.LastName}</td>
-            <td>${t.IDNumber}</td>
-            <td>${u.UnitNumber||'?'}</td>
-            <td>$${Number(t.RentAmount).toLocaleString()} / ${t.RentFrequency}</td>
-            <td>${fmtDate(t.MoveInDate)}</td>
-            <td>${t.MoveOutDate?fmtDate(t.MoveOutDate):'—'}</td>
-            <td><span class="badge-${t.Active==='Y'?'active':'inactive'}">${t.Active==='Y'?'Active':'Inactive'}</span></td>
-          </tr>`;
-        }).join('')}</tbody>
-      </table>
+      ${groupsHtml || '<div style="text-align:center;padding:30px;color:#aaa">No tenants found.</div>'}
       <div class="rpt-print-btn"><button class="btn-primary-custom bg-master" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button> <button class="btn-primary-custom" style="background:#1a6b3c" onclick="exportRptXLSX('r-tl-out','tenant-list')"><i class="fa-solid fa-file-excel"></i> Export Excel</button> <button class="btn-primary-custom" style="background:#555" onclick="exportRptCSV('r-tl-out','tenant-list')"><i class="fa-solid fa-file-csv"></i> Export CSV</button></div>`;
   }
 
