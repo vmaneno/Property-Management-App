@@ -1634,21 +1634,50 @@
     });
     const prop        = propCode ? (DB.findOne('properties',{PropertyCode:propCode})||{PropertyName:propCode}) : {PropertyName:'All Properties'};
     const statusLabel = status || 'All';
-    const rows = units.map(u => {
-      const p = DB.findOne('properties',{PropertyCode:u.PropertyCode})||{};
-      return `<tr>
+
+    // Group by property
+    const groups = {}, groupOrder = [];
+    units.forEach(u => {
+      if (!groups[u.PropertyCode]) {
+        const p = DB.findOne('properties',{PropertyCode:u.PropertyCode})||{};
+        groups[u.PropertyCode] = { propName: p.PropertyName||u.PropertyCode, currency: p.Currency||'$', units: [] };
+        groupOrder.push(u.PropertyCode);
+      }
+      groups[u.PropertyCode].units.push(u);
+    });
+
+    const groupsHtml = groupOrder.map(pc => {
+      const g = groups[pc];
+      const rows = g.units.map(u => `<tr>
         <td style="font-family:monospace">${u.UnitCode}</td>
         <td><strong>${u.UnitNumber}</strong></td>
-        <td>${p.PropertyName||'?'}</td>
-        <td>${p.Currency||'$'}${Number(u.RentAmount).toLocaleString()}</td>
-        <td>${p.Currency||'$'}${Number(u.DepositAmount).toLocaleString()}</td>
+        <td>${g.currency}${Number(u.RentAmount).toLocaleString()}</td>
+        <td>${g.currency}${Number(u.DepositAmount).toLocaleString()}</td>
         <td><span class="${u.UnitStatus==='Occupied'?'badge-occupied':'badge-vacant'}">${u.UnitStatus}</span></td>
         <td><span class="badge-${u.Active==='Y'?'active':'inactive'}">${u.Active==='Y'?'Yes':'No'}</span></td>
-      </tr>`;
+      </tr>`).join('');
+      return `<div class="ulist-grp" style="margin-bottom:10px">
+        <div onclick="this.parentElement.classList.toggle('ulist-collapsed')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 12px;background:#eef2f7;border-radius:6px;font-weight:600;font-size:.88rem;user-select:none">
+          <span class="ulist-arrow" style="display:inline-block;transition:transform .2s;font-size:.7rem">&#9660;</span>
+          ${g.propName}
+          <span style="font-weight:400;font-size:.78rem;color:#666;margin-left:auto">${g.units.length} unit(s)</span>
+        </div>
+        <div class="ulist-body" style="overflow-x:auto">
+          <table class="data-table" style="font-size:.82rem">
+            <thead><tr><th>Unit Code</th><th>Unit #</th><th>Rent</th><th>Deposit</th><th>Status</th><th>Active</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
     }).join('');
+
     const out = document.getElementById('rpt-ulist-out');
     out.style.display = '';
     out.innerHTML = `
+    <style>
+      .ulist-grp.ulist-collapsed .ulist-body{display:none}
+      .ulist-grp.ulist-collapsed .ulist-arrow{transform:rotate(-90deg)}
+    </style>
     <div class="table-card">
       <div class="table-card-header">
         <div>
@@ -1657,10 +1686,7 @@
         </div>
       </div>
       <div class="table-responsive">
-        <table class="data-table" style="font-size:.82rem">
-          <thead><tr><th>Unit Code</th><th>Unit #</th><th>Property</th><th>Rent</th><th>Deposit</th><th>Status</th><th>Active</th></tr></thead>
-          <tbody>${rows||'<tr><td colspan="7" style="text-align:center;padding:30px;color:#aaa">No units found.</td></tr>'}</tbody>
-        </table>
+        ${groupsHtml || '<div style="text-align:center;padding:30px;color:#aaa">No units found.</div>'}
       </div>
     </div>
     <div class="rpt-print-btn" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
