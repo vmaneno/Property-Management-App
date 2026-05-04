@@ -874,19 +874,19 @@
     openModal('Add New Tenant', `
       <div class="form-row"><div class="form-group"><label class="form-label-sm">First Name *</label><input class="form-control-sm2" id="ft-first"></div>
       <div class="form-group"><label class="form-label-sm">Last Name *</label><input class="form-control-sm2" id="ft-last"></div></div>
-      <div class="form-row"><div class="form-group"><label class="form-label-sm">ID Number *</label><input class="form-control-sm2" id="ft-id"></div>
-      <div class="form-group"><label class="form-label-sm">Telephone *</label><input class="form-control-sm2" id="ft-tel"></div></div>
-      <div class="form-group"><label class="form-label-sm">Email *</label><input class="form-control-sm2" id="ft-email" type="email"></div>
-      <div class="form-group"><label class="form-label-sm">Address *</label><input class="form-control-sm2" id="ft-addr"></div>
-      <div class="form-row"><div class="form-group"><label class="form-label-sm">Property *</label><select class="form-control-sm2" id="ft-prop" onchange="loadUnitsForProp()">${propOptions()}</select></div>
-      <div class="form-group"><label class="form-label-sm">Unit *</label><select class="form-control-sm2" id="ft-unit"></select></div></div>
-      <div class="form-row"><div class="form-group"><label class="form-label-sm">Rent Amount ($) *</label><input class="form-control-sm2" id="ft-rent" type="number"></div>
-      <div class="form-group"><label class="form-label-sm">Frequency *</label><select class="form-control-sm2" id="ft-freq"><option>Monthly</option><option>Quarterly</option><option>SemiAnnually</option><option>Annually</option></select></div></div>
-      <div class="form-row"><div class="form-group"><label class="form-label-sm">Deposit Amount ($) *</label><input class="form-control-sm2" id="ft-dep" type="number"></div>
-      <div class="form-group"><label class="form-label-sm">Move-in Date *</label><input class="form-control-sm2" id="ft-movein" type="date" value="${today}"></div></div>
-      <div class="form-group"><label class="form-label-sm">Photograph *</label><input class="form-control-sm2" id="ft-photo" type="file" accept=".jpg,.jpeg,.png"></div>
-      <div class="form-group"><label class="form-label-sm">ID Copy *</label><input class="form-control-sm2" id="ft-idcopy" type="file" accept=".pdf,.jpg,.jpeg,.png"></div>
-      <div class="form-group"><label class="form-label-sm">Rent Agreement *</label><input class="form-control-sm2" id="ft-agreement" type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"></div>`,
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">ID Number</label><input class="form-control-sm2" id="ft-id"></div>
+      <div class="form-group"><label class="form-label-sm">Telephone</label><input class="form-control-sm2" id="ft-tel"></div></div>
+      <div class="form-group"><label class="form-label-sm">Email</label><input class="form-control-sm2" id="ft-email" type="email"></div>
+      <div class="form-group"><label class="form-label-sm">Address</label><input class="form-control-sm2" id="ft-addr"></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Property</label><select class="form-control-sm2" id="ft-prop" onchange="loadUnitsForProp()">${propOptions()}</select></div>
+      <div class="form-group"><label class="form-label-sm">Unit</label><select class="form-control-sm2" id="ft-unit"></select></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Rent Amount ($)</label><input class="form-control-sm2" id="ft-rent" type="number"></div>
+      <div class="form-group"><label class="form-label-sm">Frequency</label><select class="form-control-sm2" id="ft-freq"><option>Monthly</option><option>Quarterly</option><option>SemiAnnually</option><option>Annually</option></select></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Deposit Amount ($)</label><input class="form-control-sm2" id="ft-dep" type="number"></div>
+      <div class="form-group"><label class="form-label-sm">Move-in Date</label><input class="form-control-sm2" id="ft-movein" type="date" value="${today}"></div></div>
+      <div class="form-group"><label class="form-label-sm">Photograph</label><input class="form-control-sm2" id="ft-photo" type="file" accept=".jpg,.jpeg,.png"></div>
+      <div class="form-group"><label class="form-label-sm">ID Copy</label><input class="form-control-sm2" id="ft-idcopy" type="file" accept=".pdf,.jpg,.jpeg,.png"></div>
+      <div class="form-group"><label class="form-label-sm">Rent Agreement</label><input class="form-control-sm2" id="ft-agreement" type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"></div>`,
       `<button class="btn-primary-custom bg-client" onclick="saveAddTenant()">Save Tenant</button><button class="btn-back" onclick="closeModal()">Cancel</button>`
     );
     setTimeout(() => loadUnitsForProp(), 100);
@@ -894,8 +894,8 @@
 
   function loadUnitsForProp() {
     const propCode = document.getElementById('ft-prop').value;
-    const units = DB.find('propunits',{PropertyCode:propCode});
-    document.getElementById('ft-unit').innerHTML = units.map(u=>`<option value="${u.UnitCode}">Unit ${u.UnitNumber} (${u.UnitStatus})</option>`).join('') || '<option value="">No units</option>';
+    const units = DB.find('propunits',{PropertyCode:propCode}).filter(u => u.UnitStatus === 'Vacant');
+    document.getElementById('ft-unit').innerHTML = units.map(u=>`<option value="${u.UnitCode}">Unit ${u.UnitNumber}</option>`).join('') || '<option value="">No vacant units</option>';
   }
 
   function saveAddTenant() {
@@ -915,17 +915,6 @@
     const agreeInput  = document.getElementById('ft-agreement');
     if (!first)       { toast('First name is required.','error'); return; }
     if (!last)        { toast('Last name is required.','error'); return; }
-    if (!idnum)       { toast('ID Number is required.','error'); return; }
-    if (!tel)         { toast('Telephone is required.','error'); return; }
-    if (!email)       { toast('Email is required.','error'); return; }
-    if (!addr)        { toast('Address is required.','error'); return; }
-    if (!unit)        { toast('Unit selection is required.','error'); return; }
-    if (!rent)        { toast('Rent amount is required.','error'); return; }
-    if (!dep)         { toast('Deposit amount is required.','error'); return; }
-    if (!movein)      { toast('Move-in date is required.','error'); return; }
-    if (!photoInput.files[0])  { toast('Photograph is required.','error'); return; }
-    if (!idcopyInput.files[0]) { toast('ID Copy is required.','error'); return; }
-    if (!agreeInput.files[0])  { toast('Rent Agreement is required.','error'); return; }
     function readFile(file) {
       return new Promise(resolve => {
         const r = new FileReader();
@@ -949,6 +938,7 @@
           MoveInDate:movein, MoveOutDate:'', Active:'Y',
           UserName:'', Password:'', UpdateUser:client.UserName
         });
+        if (unit) DB.update('propunits','UnitCode',unit,{UnitStatus:'Occupied'});
         closeModal(); showView('tenants', document.querySelector('[data-view="tenants"]'));
         toast('Tenant '+id+' added!','success');
       });
