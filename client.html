@@ -231,9 +231,11 @@
         <td><span class="badge-${p.Active==='Y'?'active':'inactive'}">${p.Active==='Y'?'Active':'Inactive'}</span></td>
         <td>
           <button class="btn-edit" onclick="openEditProperty('${p.PropertyCode}')"><i class="fa-solid fa-pen"></i></button>
-          ${hasActiveTenants
-            ? `<button class="btn-del" disabled title="Cannot delete: has active tenants" style="opacity:.35;cursor:not-allowed"><i class="fa-solid fa-trash"></i></button>`
-            : `<button class="btn-del" onclick="deleteProperty('${p.PropertyCode}')"><i class="fa-solid fa-trash"></i></button>`}
+          ${!client.ViewDelete||client.ViewDelete!=='Y'
+            ? `<button class="btn-del" disabled title="Delete not permitted for your account" style="opacity:.35;cursor:not-allowed"><i class="fa-solid fa-trash"></i></button>`
+            : hasActiveTenants
+              ? `<button class="btn-del" disabled title="Cannot delete: has active tenants" style="opacity:.35;cursor:not-allowed"><i class="fa-solid fa-trash"></i></button>`
+              : `<button class="btn-del" onclick="deleteProperty('${p.PropertyCode}')"><i class="fa-solid fa-trash"></i></button>`}
         </td>
       </tr>`;}).join('')||'<tr><td colspan="8" style="text-align:center;padding:40px;color:#aaa">No properties found.</td></tr>'}</tbody>
     </table></div></div>`;
@@ -337,8 +339,8 @@
         const unitTenants = DB.getAll('tenants').filter(t => t.UnitCode === u.UnitCode);
         const hasActiveTenant = unitTenants.some(t => t.Active === 'Y');
         const hasTxs = DB.getAll('transactions').some(tx => unitTenants.map(t=>t.TenantID).includes(tx.TenantID));
-        const canDelete = !hasActiveTenant && !hasTxs;
-        const delTitle = hasActiveTenant ? 'Has active tenant' : hasTxs ? 'Has transactions' : 'Delete unit';
+        const canDelete = !hasActiveTenant && !hasTxs && client.ViewDelete==='Y';
+        const delTitle = client.ViewDelete!=='Y' ? 'Delete not permitted for your account' : hasActiveTenant ? 'Has active tenant' : hasTxs ? 'Has transactions' : 'Delete unit';
         return `<tr>
           <td style="font-family:monospace">${u.UnitCode}</td>
           <td><strong>${u.UnitNumber}</strong></td>
@@ -474,8 +476,8 @@
       const rows = grp.tenants.map(t => {
         const u      = DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
         const hasTx  = allTx.some(tx => tx.TenantID === t.TenantID);
-        const canDel = t.Active !== 'Y' && !hasTx;
-        const delTitle = t.Active === 'Y' ? 'Cannot delete: tenant is active' : hasTx ? 'Cannot delete: tenant has transactions' : 'Delete tenant';
+        const canDel = t.Active !== 'Y' && !hasTx && client.ViewDelete==='Y';
+        const delTitle = client.ViewDelete!=='Y' ? 'Delete not permitted for your account' : t.Active === 'Y' ? 'Cannot delete: tenant is active' : hasTx ? 'Cannot delete: tenant has transactions' : 'Delete tenant';
         return `<tr>
           <td style="font-size:.78rem;font-family:monospace">${t.TenantNumber}</td>
           <td><strong>${t.FirstName} ${t.LastName}</strong><br><span class="text-muted-sm">${t.Email}</span></td>
@@ -540,7 +542,7 @@
     function renderTxRow(tx) {
       const ten = DB.findOne('tenants',{TenantID:tx.TenantID})||{};
       const isVerified = tx.Authenticated==='Y';
-      const canDel = !isVerified;
+      const canDel = !isVerified && client.ViewDelete==='Y';
       const amt = Number(tx.Amount);
       const amtColor = amt>=0?'#2d9b59':'#d62828';
       const amtFormatted = (amt>=0?'+':'')+fmtMoney(tx.Amount);
@@ -559,7 +561,7 @@
           <button class="btn-edit" onclick="toggleVerifyTx('${tx.transactionRef}')" title="${isVerified?'Mark as Pending':'Verify'}" style="background:${isVerified?'#888':'#2d9b59'}"><i class="fa-solid fa-${isVerified?'rotate-left':'circle-check'}"></i></button>
           ${canDel
             ? `<button class="btn-del" onclick="deleteTx('${tx.transactionRef}')" title="Delete"><i class="fa-solid fa-trash"></i></button>`
-            : `<button class="btn-del" disabled title="Verified transactions cannot be deleted" style="opacity:.35;cursor:not-allowed"><i class="fa-solid fa-trash"></i></button>`}
+            : `<button class="btn-del" disabled title="${client.ViewDelete!=='Y'?'Delete not permitted for your account':'Verified transactions cannot be deleted'}" style="opacity:.35;cursor:not-allowed"><i class="fa-solid fa-trash"></i></button>`}
         </td>
       </tr>`;
     }
@@ -1458,6 +1460,10 @@
           <div>
             <div style="font-size:1.15rem;font-weight:600;">${cl.ClientName || '—'}</div>
             <div style="font-size:.85rem;color:var(--text-muted,#888);">${cl.ClientCode}</div>
+            <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
+              <span class="badge-${cl.Employee==='Y'?'active':'inactive'}" style="font-size:.75rem"><i class="fa-solid fa-user-tie" style="margin-right:4px"></i>${cl.Employee==='Y'?'Employee':'Non-Employee'}</span>
+              <span class="badge-${cl.ViewDelete==='Y'?'active':'inactive'}" style="font-size:.75rem"><i class="fa-solid fa-${cl.ViewDelete==='Y'?'unlock':'lock'}" style="margin-right:4px"></i>${cl.ViewDelete==='Y'?'Can Delete':'No Delete'}</span>
+            </div>
           </div>
         </div>
 

@@ -318,7 +318,7 @@
     <div class="table-card-header"><h5>All Clients (${C().length})</h5></div>
     <div class="filter-bar"><i class="fa-solid fa-magnifying-glass" style="color:#aaa"></i><input id="filter-clients" placeholder="Search clients..." oninput="filterTable('filter-clients','tbl-clients')"></div>
     <div class="table-responsive"><table class="data-table" id="tbl-clients">
-      <thead><tr><th>Code</th><th>Name</th><th>Agency</th><th>Phone</th><th>Email</th><th>Since</th><th>Active</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Code</th><th>Name</th><th>Agency</th><th>Phone</th><th>Email</th><th>Since</th><th>Employee</th><th>Can Delete</th><th>Active</th><th>Actions</th></tr></thead>
       <tbody>${C().map(c=>{
         const ag=DB.findOne('agencies',{AgencyCode:c.AgencyCode})||{};
         return`<tr>
@@ -327,6 +327,8 @@
           <td>${ag.AgencyName||c.AgencyCode}</td>
           <td>${c.Telephone}</td><td>${c.Email}</td>
           <td>${fmtDate(c.Date)}</td>
+          <td><span class="badge-${c.Employee==='Y'?'active':'inactive'}">${c.Employee==='Y'?'Yes':'No'}</span></td>
+          <td><span class="badge-${c.ViewDelete==='Y'?'active':'inactive'}">${c.ViewDelete==='Y'?'Yes':'No'}</span></td>
           <td><span class="badge-${c.Active==='Y'?'active':'inactive'}">${c.Active==='Y'?'Active':'Inactive'}</span></td>
           <td>
             <button class="btn-edit" onclick="openEditClient('${c.ClientCode}')"><i class="fa-solid fa-pen"></i></button>
@@ -895,7 +897,11 @@
         <div class="form-group"><label class="form-label-sm">Telephone <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="ac-tel"></div>
       </div>
       <div class="form-group"><label class="form-label-sm">Email <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="ac-email" type="email"></div>
-      <div class="form-group"><label class="form-label-sm">Address <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="ac-addr"></div>`,
+      <div class="form-group"><label class="form-label-sm">Address <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="ac-addr"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Employee</label><select class="form-control-sm2" id="ac-employee"><option value="N" selected>No</option><option value="Y">Yes</option></select></div>
+        <div class="form-group"><label class="form-label-sm">Can Delete Records</label><select class="form-control-sm2" id="ac-viewdelete"><option value="N" selected>No</option><option value="Y">Yes</option></select></div>
+      </div>`,
       `<button class="btn-primary-custom bg-master" onclick="saveAddClient()">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`
     );
   }
@@ -918,7 +924,9 @@
       ClientName: name, Address: addr,
       Telephone: tel, Email: email,
       Date: new Date().toISOString().split('T')[0],
-      Active: 'Y', UserName: '', Password: ''
+      Active: 'Y', UserName: '', Password: '',
+      Employee: document.getElementById('ac-employee').value,
+      ViewDelete: document.getElementById('ac-viewdelete').value
     });
     closeModal(); showView('clients', document.querySelector('[data-view="clients"]'));
     toast('Client ' + code + ' added!', 'success');
@@ -932,7 +940,11 @@
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Telephone</label><input class="form-control-sm2" id="ec-tel" value="${c.Telephone}"></div>
       <div class="form-group"><label class="form-label-sm">Email</label><input class="form-control-sm2" id="ec-email" value="${c.Email}"></div></div>
       <div class="form-group"><label class="form-label-sm">Address</label><input class="form-control-sm2" id="ec-addr" value="${c.Address}"></div>
-      <div class="form-group"><label class="form-label-sm">Active</label><select class="form-control-sm2" id="ec-active"><option value="Y" ${c.Active==='Y'?'selected':''}>Yes</option><option value="N" ${c.Active==='N'?'selected':''}>No</option></select></div>`,
+      <div class="form-group"><label class="form-label-sm">Active</label><select class="form-control-sm2" id="ec-active"><option value="Y" ${c.Active==='Y'?'selected':''}>Yes</option><option value="N" ${c.Active==='N'?'selected':''}>No</option></select></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Employee</label><select class="form-control-sm2" id="ec-employee"><option value="N" ${(c.Employee||'N')!=='Y'?'selected':''}>No</option><option value="Y" ${c.Employee==='Y'?'selected':''}>Yes</option></select></div>
+        <div class="form-group"><label class="form-label-sm">Can Delete Records</label><select class="form-control-sm2" id="ec-viewdelete"><option value="N" ${(c.ViewDelete||'N')!=='Y'?'selected':''}>No</option><option value="Y" ${c.ViewDelete==='Y'?'selected':''}>Yes</option></select></div>
+      </div>`,
       `<button class="btn-primary-custom bg-master" onclick="saveEditClient('${code}')">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`
     );
   }
@@ -944,7 +956,9 @@
       Telephone:document.getElementById('ec-tel').value,
       Email:document.getElementById('ec-email').value,
       Address:document.getElementById('ec-addr').value,
-      Active:document.getElementById('ec-active').value
+      Active:document.getElementById('ec-active').value,
+      Employee:document.getElementById('ec-employee').value,
+      ViewDelete:document.getElementById('ec-viewdelete').value
     });
     closeModal(); showView('clients', document.querySelector('[data-view="clients"]'));
     toast('Client updated!','success');
