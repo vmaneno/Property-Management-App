@@ -526,30 +526,90 @@
   }
 
   function renderTransactions() {
-    const txs = myTxs();
+    const fromDate = window._txFrom || '';
+    const toDate   = window._txTo   || '';
+    let txs = myTxs();
+    if (fromDate) txs = txs.filter(t => t.Date >= fromDate);
+    if (toDate)   txs = txs.filter(t => t.Date <= toDate);
     const bal = txs.reduce((s,t)=>s+Number(t.Amount),0);
-    return `<div class="table-card"><div class="table-card-header"><h5>All Transactions</h5><span>Balance: <strong style="color:${bal>=0?'#2d9b59':'#d62828'}">${fmtMoney(bal)}</strong></span></div>
-    <div class="table-responsive"><table class="data-table">
-      <thead><tr><th>Date</th><th>Tenant</th><th>Property</th><th>Description</th><th>Amount</th><th>Ref</th><th>Status</th><th>Actions</th></tr></thead>
-      <tbody>${txs.map(tx=>{
-        const ten=DB.findOne('tenants',{TenantID:tx.TenantID})||{};
-        const p=DB.findOne('properties',{PropertyCode:tx.PropertyCode})||{};
-        const canDel = tx.Authenticated!=='Y';
-        return `<tr>
-          <td>${fmtDate(tx.Date)}</td><td>${ten.FirstName||''} ${ten.LastName||''}</td><td>${p.PropertyName||tx.PropertyCode}</td>
-          <td>${tx.Description}</td>
-          <td style="font-weight:600;color:${Number(tx.Amount)>=0?'#2d9b59':'#d62828'}">${Number(tx.Amount)>=0?'+':''}${fmtMoney(tx.Amount)}</td>
-          <td style="font-size:.78rem;font-family:monospace">${tx.transactionRef}</td>
-          <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td>
-          <td>
-            <button class="btn-edit" onclick="openEditTx('${tx.transactionRef}')"><i class="fa-solid fa-pen"></i></button>
-            ${canDel
-              ? `<button class="btn-del" onclick="deleteTx('${tx.transactionRef}')"><i class="fa-solid fa-trash"></i></button>`
-              : `<button class="btn-del" disabled title="Verified transactions cannot be deleted" style="opacity:.35;cursor:not-allowed"><i class="fa-solid fa-trash"></i></button>`}
-          </td>
-        </tr>`;
-      }).join('')||'<tr><td colspan="8" style="text-align:center;padding:40px;color:#aaa">No transactions.</td></tr>'}</tbody>
-    </table></div></div>`;
+
+    // Group by property
+    const byProp = {};
+    txs.forEach(tx => { if (!byProp[tx.PropertyCode]) byProp[tx.PropertyCode]=[]; byProp[tx.PropertyCode].push(tx); });
+
+    function renderTxRow(tx) {
+      const ten = DB.findOne('tenants',{TenantID:tx.TenantID})||{};
+      const isVerified = tx.Authenticated==='Y';
+      const canDel = !isVerified;
+      const amt = Number(tx.Amount);
+      const amtColor = amt>=0?'#2d9b59':'#d62828';
+      const amtFormatted = (amt>=0?'+':'')+fmtMoney(tx.Amount);
+      const amtHtml = tx.TransactionDocument
+        ? `<a href="#" onclick="viewTxDoc('${tx.transactionRef}');return false;" style="font-weight:600;color:${amtColor};text-decoration:underline dotted;cursor:pointer" title="View attached document">${amtFormatted}</a>`
+        : `<span style="font-weight:600;color:${amtColor}">${amtFormatted}</span>`;
+      return `<tr>
+        <td>${fmtDate(tx.Date)}</td>
+        <td>${ten.FirstName||''} ${ten.LastName||''}</td>
+        <td>${tx.Description}</td>
+        <td>${amtHtml}</td>
+        <td style="font-size:.78rem;font-family:monospace">${tx.transactionRef}</td>
+        <td><span class="badge-${isVerified?'active':'inactive'}">${isVerified?'Verified':'Pending'}</span></td>
+        <td>
+          <button class="btn-edit" onclick="openEditTx('${tx.transactionRef}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn-edit" onclick="toggleVerifyTx('${tx.transactionRef}')" title="${isVerified?'Mark as Pending':'Verify'}" style="background:${isVerified?'#888':'#2d9b59'}"><i class="fa-solid fa-${isVerified?'rotate-left':'circle-check'}"></i></button>
+          ${canDel
+            ? `<button class="btn-del" onclick="deleteTx('${tx.transactionRef}')" title="Delete"><i class="fa-solid fa-trash"></i></button>`
+            : `<button class="btn-del" disabled title="Verified transactions cannot be deleted" style="opacity:.35;cursor:not-allowed"><i class="fa-solid fa-trash"></i></button>`}
+        </td>
+      </tr>`;
+    }
+
+    function renderStatusGroup(label, groupTxs) {
+      if (!groupTxs.length) return '';
+      return `<div style="margin-bottom:10px">
+        <div style="font-weight:600;font-size:.82rem;color:#555;padding:3px 10px;background:#f0f0f0;border-radius:4px;margin-bottom:5px">${label} (${groupTxs.length})</div>
+        <div class="table-responsive"><table class="data-table">
+          <thead><tr><th>Date</th><th>Tenant</th><th>Description</th><th>Amount</th><th>Ref</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>${groupTxs.map(renderTxRow).join('')}</tbody>
+        </table></div>
+      </div>`;
+    }
+
+    const codes = Object.keys(byProp).sort();
+    let sectionsHtml = codes.map(code => {
+      const prop = DB.findOne('properties',{PropertyCode:code})||{};
+      const propName = prop.PropertyName || code;
+      const propTxs = byProp[code];
+      const propBal = propTxs.reduce((s,t)=>s+Number(t.Amount),0);
+      const pending  = propTxs.filter(t=>t.Authenticated!=='Y');
+      const verified = propTxs.filter(t=>t.Authenticated==='Y');
+      const sid = 'prop-tx-'+code.replace(/[^a-z0-9]/gi,'_');
+      return `<div class="table-card" style="margin-bottom:14px">
+        <div class="table-card-header" style="cursor:pointer;user-select:none" onclick="toggleTxSection('${sid}')">
+          <h5><i class="fa-solid fa-building" style="margin-right:7px;color:#2d9b59"></i>${propName}</h5>
+          <span>Balance:&nbsp;<strong style="color:${propBal>=0?'#2d9b59':'#d62828'}">${fmtMoney(propBal)}</strong>
+            &nbsp;<i class="fa-solid fa-chevron-down" id="${sid}-icon" style="font-size:.8rem;color:#aaa;transition:transform .25s"></i></span>
+        </div>
+        <div id="${sid}">
+          ${renderStatusGroup('Pending', pending)}
+          ${renderStatusGroup('Verified', verified)}
+          ${!pending.length&&!verified.length?'<p style="text-align:center;padding:20px;color:#aaa">No transactions.</p>':''}
+        </div>
+      </div>`;
+    }).join('');
+
+    if (!codes.length) sectionsHtml = `<div class="table-card"><p style="text-align:center;padding:40px;color:#aaa">No transactions found for the selected range.</p></div>`;
+
+    return `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:10px 16px;background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+      <label style="font-size:.85rem;font-weight:600;color:#444;margin:0">Date Range:</label>
+      <input type="date" id="tx-from" value="${fromDate}" class="form-control-sm2" style="width:155px">
+      <span style="color:#888;font-size:.9rem">to</span>
+      <input type="date" id="tx-to" value="${toDate}" class="form-control-sm2" style="width:155px">
+      <button class="btn-primary-custom bg-client" onclick="applyTxFilter()" style="padding:5px 14px"><i class="fa-solid fa-filter"></i> Filter</button>
+      <button class="btn-back" onclick="clearTxFilter()" style="padding:5px 14px">Clear</button>
+      <span style="margin-left:auto;font-size:.9rem">Total:&nbsp;<strong style="color:${bal>=0?'#2d9b59':'#d62828'}">${fmtMoney(bal)}</strong></span>
+    </div>
+    ${sectionsHtml}`;
   }
 
   function openEditTx(ref) {
@@ -596,8 +656,55 @@
     if (!tx || tx.Authenticated==='Y') { toast('Verified transactions cannot be deleted.','error'); return; }
     if (!confirm('Delete transaction '+ref+'? This cannot be undone.')) return;
     DB.remove('transactions','transactionRef',ref);
-    showView('transactions', document.querySelector('[data-view="transactions"]'));
+    document.getElementById('view-container').innerHTML = renderTransactions();
     toast('Transaction '+ref+' deleted.','success');
+  }
+
+  function toggleVerifyTx(ref) {
+    const tx = DB.getAll('transactions').find(t=>t.transactionRef===ref);
+    if (!tx) return;
+    const newVal = tx.Authenticated==='Y' ? '' : 'Y';
+    DB.update('transactions','transactionRef',ref,{Authenticated:newVal});
+    document.getElementById('view-container').innerHTML = renderTransactions();
+    toast(newVal==='Y' ? 'Transaction verified!' : 'Transaction marked as Pending.','success');
+  }
+
+  function applyTxFilter() {
+    window._txFrom = document.getElementById('tx-from').value;
+    window._txTo   = document.getElementById('tx-to').value;
+    document.getElementById('view-container').innerHTML = renderTransactions();
+  }
+
+  function clearTxFilter() {
+    window._txFrom = '';
+    window._txTo   = '';
+    document.getElementById('view-container').innerHTML = renderTransactions();
+  }
+
+  function toggleTxSection(sid) {
+    const el   = document.getElementById(sid);
+    const icon = document.getElementById(sid+'-icon');
+    if (!el) return;
+    const collapsed = el.style.display === 'none';
+    el.style.display = collapsed ? '' : 'none';
+    if (icon) icon.style.transform = collapsed ? '' : 'rotate(-90deg)';
+  }
+
+  function viewTxDoc(ref) {
+    const tx = DB.getAll('transactions').find(t=>t.transactionRef===ref);
+    if (!tx || !tx.TransactionDocument) { toast('No document attached to this transaction.','error'); return; }
+    const doc = tx.TransactionDocument;
+    const previewHtml = doc.startsWith('data:image')
+      ? `<img src="${doc}" style="max-width:100%;max-height:68vh;display:block;margin:0 auto;border-radius:6px">`
+      : doc.startsWith('data:application/pdf')
+        ? `<iframe src="${doc}" style="width:100%;height:65vh;border:none;border-radius:6px"></iframe>`
+        : `<p style="color:#888;margin-top:20px;text-align:center">Preview not available — use the download button.</p>`;
+    openModal('Document — '+ref,
+      `<div style="text-align:center;margin-bottom:10px">
+        <a href="${doc}" download="tx-${ref}" class="btn-primary-custom bg-client" style="display:inline-block;padding:6px 18px"><i class="fa-solid fa-download"></i> Download</a>
+       </div>${previewHtml}`,
+      `<button class="btn-back" onclick="closeModal()">Close</button>`
+    );
   }
 
   // ── MODALS ─────────────────────────────────────────────
