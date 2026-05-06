@@ -1150,8 +1150,6 @@
       <div class="form-group"><label class="form-label-sm">Unit Number <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="au-num" oninput="this.value=this.value.toUpperCase()"></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Rent ($) <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="au-rent" type="number" min="0"></div>
       <div class="form-group"><label class="form-label-sm">Deposit ($) <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="au-dep" type="number" min="0"></div></div>
-      <div class="form-row"><div class="form-group"><label class="form-label-sm">Bedrooms <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="au-bed" type="number" value="1" min="0"></div>
-      <div class="form-group"><label class="form-label-sm">Bathrooms <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="au-bath" type="number" value="1" min="0"></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Floor <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="au-floor" type="number" value="1" min="0"></div>
       <div class="form-group"><label class="form-label-sm">Status <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="au-status"><option value="Vacant">Vacant</option><option value="Occupied">Occupied</option></select></div></div>
       <div class="form-group"><label class="form-label-sm">Notes</label><input class="form-control-sm2" id="au-note"></div>`,
@@ -1163,10 +1161,8 @@
     const unitNum = document.getElementById('au-num').value.trim().toUpperCase();
     const rent    = document.getElementById('au-rent').value.trim();
     const dep     = document.getElementById('au-dep').value.trim();
-    const bed     = document.getElementById('au-bed').value.trim();
-    const bath    = document.getElementById('au-bath').value.trim();
     const floor   = document.getElementById('au-floor').value.trim();
-    if (!unitNum||rent===''||dep===''||bed===''||bath===''||floor==='') {
+    if (!unitNum||rent===''||dep===''||floor==='') {
       toast('All required fields must be filled.','error'); return;
     }
     const code=DB.nextCode('propunits','UnitCode','UN');
@@ -1178,8 +1174,7 @@
       UnitStatus:document.getElementById('au-status').value,
       Date:new Date().toISOString().split('T')[0],
       Note:document.getElementById('au-note').value,
-      Bedrooms:parseInt(bed)||1,
-      Bathrooms:parseInt(bath)||1,
+      Bedrooms:0, Bathrooms:0,
       Floor:parseInt(floor)||1,
       Active:'Y'
     });
@@ -1336,7 +1331,8 @@
       <div class="form-group"><label class="form-label-sm">Last Name <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="at-last"></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">ID Number <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="at-idnum"></div>
       <div class="form-group"><label class="form-label-sm">Telephone <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="at-tel"></div></div>
-      <div class="form-group"><label class="form-label-sm">Email <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="at-email" type="email"></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Email <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="at-email" type="email"></div>
+      <div class="form-group"><label class="form-label-sm">Address</label><input class="form-control-sm2" id="at-addr"></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Property <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="at-prop" onchange="loadUnitsMaster()">${propOptions()}</select></div>
       <div class="form-group"><label class="form-label-sm">Unit (Vacant only) <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="at-unit" onchange="fillRentDeposit()"></select></div></div>
       <div class="form-row">
@@ -1357,7 +1353,8 @@
 
   function loadUnitsMaster() {
     const pc = document.getElementById('at-prop').value;
-    const units = DB.find('propunits', {PropertyCode: pc}).filter(u => u.UnitStatus === 'Vacant');
+    const units = DB.find('propunits', {PropertyCode: pc}).filter(u => u.UnitStatus === 'Vacant')
+      .sort((a,b)=>(a.UnitNumber||'').localeCompare(b.UnitNumber||'',undefined,{numeric:true}));
     document.getElementById('at-unit').innerHTML = units.map(u =>
       `<option value="${u.UnitCode}" data-rent="${u.RentAmount}" data-dep="${u.DepositAmount}">${u.UnitNumber}</option>`
     ).join('') || '<option value="">— No vacant units —</option>';
@@ -1410,7 +1407,7 @@
       TenantID:id, TenantNumber:num,
       PropertyCode:propCode, UnitCode:unitCode,
       FirstName:first, LastName:last,
-      IDNumber:idnum, Address:'',
+      IDNumber:idnum, Address:document.getElementById('at-addr').value.trim(),
       Telephone:tel, Email:email,
       Photograph:photo,
       RentAmount:parseFloat(document.getElementById('at-rent').value)||0,
