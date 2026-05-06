@@ -39,9 +39,30 @@
     .pw-eye:hover { color: #333; }
     [data-theme="dark"] .pw-eye { color: rgba(255,255,255,.45); }
     [data-theme="dark"] .pw-eye:hover { color: rgba(255,255,255,.9); }
+    .btn-close-app {
+      display: block; margin: 32px auto 0; padding: 10px 32px;
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2);
+      color: rgba(255,255,255,.6); font-size: .88rem; font-weight: 500;
+      border-radius: 8px; cursor: pointer; letter-spacing: .02em;
+      transition: background .2s, color .2s, border-color .2s;
+    }
+    .btn-close-app:hover { background: rgba(220,50,50,.55); border-color: rgba(220,50,50,.7); color: #fff; }
+    #app-closed-screen {
+      display: none; position: fixed; inset: 0;
+      background: #0d0d0d; z-index: 9999;
+      align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+    }
+    #app-closed-screen.visible { display: flex; }
+    #app-closed-screen p { color: rgba(255,255,255,.5); font-size: .95rem; margin: 0; }
   </style>
 </head>
 <body>
+  <!-- Closed screen -->
+  <div id="app-closed-screen">
+    <i class="fa-solid fa-power-off" style="font-size:2.5rem;color:rgba(255,255,255,.25)"></i>
+    <p>App closed. You may close this tab.</p>
+  </div>
+
   <!-- Theme toggle -->
   <button class="theme-toggle theme-toggle-float" id="theme-btn" onclick="toggleTheme()" title="Toggle dark / light mode">
     <i class="fa-solid fa-moon" id="theme-icon"></i>
@@ -412,6 +433,10 @@
       </div>
 
     </div><!-- /cards-grid -->
+
+    <div style="text-align:center;margin-top:32px">
+      <button class="btn-close-app" onclick="closeApp()"><i class="fa-solid fa-power-off" style="margin-right:7px"></i>Close App</button>
+    </div>
 
     <footer class="app-footer">
       <strong>Property Management App</strong> &nbsp;&bull;&nbsp;
@@ -814,6 +839,11 @@
         if (!r.ok){document.getElementById('m-r-p2-err').textContent=d.error||'Reset failed.';return;}
         _afterReset('m');
       } catch(e){document.getElementById('m-r-p2-err').textContent='Connection error. Please try again.';}
+    }
+
+    function closeApp() {
+      document.getElementById('app-closed-screen').classList.add('visible');
+      window.close();
     }
 
     function togglePw(id) {
