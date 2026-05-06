@@ -673,62 +673,136 @@
   function renderTransactions() {
     const clientOpts = C().map(c=>`<option value="${c.ClientCode}">${c.ClientName}</option>`).join('');
     const propOpts   = P().map(p=>`<option value="${p.PropertyCode}">${p.PropertyName}</option>`).join('');
-    return `<div class="table-card">
-    <div class="table-card-header" style="flex-wrap:wrap;gap:8px;">
-      <h5>All Transactions</h5>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <select id="tx-client-filter" class="form-control-sm2" style="min-width:150px;font-size:.82rem;padding:4px 8px;" onchange="filterTxView()">
-          <option value="">All Clients</option>${clientOpts}
-        </select>
-        <select id="tx-prop-filter" class="form-control-sm2" style="min-width:150px;font-size:.82rem;padding:4px 8px;" onchange="filterTxView()">
-          <option value="">All Properties</option>${propOpts}
-        </select>
-      </div>
+    const from = window._mTxFrom||'', to = window._mTxTo||'';
+    return `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:10px 16px;background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+      <select id="tx-client-filter" class="form-control-sm2" style="min-width:150px;font-size:.82rem;padding:4px 8px;" onchange="filterTxView()">
+        <option value="">All Clients</option>${clientOpts}
+      </select>
+      <select id="tx-prop-filter" class="form-control-sm2" style="min-width:150px;font-size:.82rem;padding:4px 8px;" onchange="filterTxView()">
+        <option value="">All Properties</option>${propOpts}
+      </select>
+      <label style="font-size:.85rem;font-weight:600;color:#444;margin:0">Date:</label>
+      <input type="date" id="tx-from" value="${from}" class="form-control-sm2" style="width:150px">
+      <span style="color:#888;font-size:.9rem">to</span>
+      <input type="date" id="tx-to" value="${to}" class="form-control-sm2" style="width:150px">
+      <button class="btn-primary-custom bg-master" onclick="applyMasterTxFilter()" style="padding:5px 14px"><i class="fa-solid fa-filter"></i> Filter</button>
+      <button class="btn-back" onclick="clearMasterTxFilter()" style="padding:5px 14px">Clear</button>
+      <span id="tx-total-lbl" style="margin-left:auto;font-size:.9rem"></span>
     </div>
-    <div id="tx-table-wrap"></div></div>`;
+    <div id="tx-sections-wrap"></div>`;
+  }
+
+  function applyMasterTxFilter() {
+    window._mTxFrom = document.getElementById('tx-from').value;
+    window._mTxTo   = document.getElementById('tx-to').value;
+    filterTxView();
+  }
+
+  function clearMasterTxFilter() {
+    window._mTxFrom = ''; window._mTxTo = '';
+    document.getElementById('tx-from').value = '';
+    document.getElementById('tx-to').value   = '';
+    filterTxView();
   }
 
   function filterTxView() {
-    const clientCode = document.getElementById('tx-client-filter').value;
+    const clientCode = document.getElementById('tx-client-filter') ? document.getElementById('tx-client-filter').value : '';
     const propSel    = document.getElementById('tx-prop-filter');
-    const prevProp   = propSel.value;
+    const prevProp   = propSel ? propSel.value : '';
     const allProps   = P();
     const filteredProps = clientCode ? allProps.filter(p=>p.ClientCode===clientCode) : allProps;
-    propSel.innerHTML = '<option value="">All Properties</option>' +
-      filteredProps.map(p=>`<option value="${p.PropertyCode}" ${p.PropertyCode===prevProp?'selected':''}>${p.PropertyName}</option>`).join('');
-    const propCode = propSel.value;
-    let txs = DB.getAll('transactions').slice().sort((a,b)=>new Date(b.Date)-new Date(a.Date));
-    if(clientCode){
-      const cpCodes=allProps.filter(p=>p.ClientCode===clientCode).map(p=>p.PropertyCode);
-      txs=txs.filter(tx=>cpCodes.includes(tx.PropertyCode));
+    if (propSel) {
+      propSel.innerHTML = '<option value="">All Properties</option>' +
+        filteredProps.map(p=>`<option value="${p.PropertyCode}" ${p.PropertyCode===prevProp?'selected':''}>${p.PropertyName}</option>`).join('');
     }
-    if(propCode) txs=txs.filter(tx=>tx.PropertyCode===propCode);
-    const bal=txs.reduce((s,t)=>s+Number(t.Amount),0);
-    const wrap=document.getElementById('tx-table-wrap');
-    if(!wrap) return;
-    wrap.innerHTML=`<div style="padding:8px 16px 4px;font-size:.85rem">Total Balance: <strong style="color:${bal>=0?'#2d9b59':'#d62828'}">${fmtMoney(bal)}</strong> &nbsp;(${txs.length} records)</div>
-    <div class="table-responsive"><table class="data-table">
-      <thead><tr><th>Date</th><th>Tenant</th><th>Property</th><th>Description</th><th>Amount</th><th>Ref</th><th>Auth</th><th>Actions</th></tr></thead>
-      <tbody>${txs.map(tx=>{
-        const ten=DB.findOne('tenants',{TenantID:tx.TenantID})||{};
-        const p=DB.findOne('properties',{PropertyCode:tx.PropertyCode})||{};
-        const credit=Number(tx.Amount)>=0;
-        const hasDetail=(tx.TransactionNote||tx.TransactionDocument);
-        return`<tr>
-          <td>${fmtDate(tx.Date)}</td>
-          <td>${ten.FirstName||''} ${ten.LastName||''}</td>
-          <td style="font-size:.8rem">${p.PropertyName||tx.PropertyCode}</td>
-          <td>${tx.Description}</td>
-          <td style="font-weight:600;color:${credit?'#2d9b59':'#d62828'}">${credit?'+':''}${fmtMoney(tx.Amount)}</td>
-          <td style="font-size:.72rem;font-family:monospace">${hasDetail?`<a href="#" onclick="viewTxDetail('${tx.transactionRef}');return false;" style="color:#9b0000;text-decoration:underline">${tx.transactionRef}</a>`:tx.transactionRef}</td>
-          <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'✓':'Pend'}</span></td>
-          <td>
-            <button class="btn-${tx.Authenticated==='Y'?'view':'edit'}" onclick="toggleAuth('${tx.transactionRef}')">${tx.Authenticated==='Y'?'Unverify':'Verify'}</button>
-            <button class="btn-del" onclick="confirmDeleteTx('${tx.transactionRef}')"><i class="fa-solid fa-trash"></i></button>
-          </td>
-        </tr>`;
-      }).join('')||'<tr><td colspan="8" style="text-align:center;padding:40px;color:#aaa">No transactions.</td></tr>'}</tbody>
-    </table></div>`;
+    const propCode  = propSel ? propSel.value : '';
+    const fromDate  = window._mTxFrom || '';
+    const toDate    = window._mTxTo   || '';
+
+    let txs = DB.getAll('transactions').slice().sort((a,b)=>new Date(b.Date)-new Date(a.Date));
+    if (clientCode) { const cc=allProps.filter(p=>p.ClientCode===clientCode).map(p=>p.PropertyCode); txs=txs.filter(tx=>cc.includes(tx.PropertyCode)); }
+    if (propCode)   txs = txs.filter(tx=>tx.PropertyCode===propCode);
+    if (fromDate)   txs = txs.filter(tx=>tx.Date>=fromDate);
+    if (toDate)     txs = txs.filter(tx=>tx.Date<=toDate);
+
+    const bal = txs.reduce((s,t)=>s+Number(t.Amount),0);
+    const lbl = document.getElementById('tx-total-lbl');
+    if (lbl) lbl.innerHTML = `Total:&nbsp;<strong style="color:${bal>=0?'#2d9b59':'#d62828'}">${fmtMoney(bal)}</strong>&nbsp;<span style="color:#888;font-size:.82rem">(${txs.length} records)</span>`;
+
+    // Group by property
+    const byProp = {};
+    txs.forEach(tx=>{ if(!byProp[tx.PropertyCode]) byProp[tx.PropertyCode]=[]; byProp[tx.PropertyCode].push(tx); });
+
+    function renderTxRow(tx) {
+      const ten = DB.findOne('tenants',{TenantID:tx.TenantID})||{};
+      const isV = tx.Authenticated==='Y';
+      const amt = Number(tx.Amount), credit = amt>=0;
+      const amtColor = credit?'#2d9b59':'#d62828';
+      const amtFmt   = (credit?'+':'')+fmtMoney(tx.Amount);
+      const amtHtml  = tx.TransactionDocument
+        ? `<a href="#" onclick="viewTxDetail('${tx.transactionRef}');return false;" style="font-weight:600;color:${amtColor};text-decoration:underline dotted;cursor:pointer" title="View attached document">${amtFmt}</a>`
+        : `<span style="font-weight:600;color:${amtColor}">${amtFmt}</span>`;
+      return `<tr>
+        <td>${fmtDate(tx.Date)}</td>
+        <td>${ten.FirstName||''} ${ten.LastName||''}</td>
+        <td>${tx.Description}</td>
+        <td>${amtHtml}</td>
+        <td style="font-size:.72rem;font-family:monospace">${tx.transactionRef}</td>
+        <td><span class="badge-${isV?'active':'inactive'}">${isV?'Verified':'Pending'}</span></td>
+        <td>
+          <button class="btn-${isV?'view':'edit'}" onclick="toggleAuth('${tx.transactionRef}')">${isV?'Unverify':'Verify'}</button>
+          <button class="btn-del" onclick="confirmDeleteTx('${tx.transactionRef}')"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>`;
+    }
+
+    function renderStatusGroup(label, groupTxs) {
+      if (!groupTxs.length) return '';
+      return `<div style="margin-bottom:10px">
+        <div style="font-weight:600;font-size:.82rem;color:#555;padding:3px 10px;background:#f0f0f0;border-radius:4px;margin-bottom:5px">${label} (${groupTxs.length})</div>
+        <div class="table-responsive"><table class="data-table">
+          <thead><tr><th>Date</th><th>Tenant</th><th>Description</th><th>Amount</th><th>Ref</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>${groupTxs.map(renderTxRow).join('')}</tbody>
+        </table></div>
+      </div>`;
+    }
+
+    const codes = Object.keys(byProp).sort();
+    let sectionsHtml = codes.map(code => {
+      const prop = DB.findOne('properties',{PropertyCode:code})||{};
+      const propName = prop.PropertyName || code;
+      const propTxs  = byProp[code];
+      const propBal  = propTxs.reduce((s,t)=>s+Number(t.Amount),0);
+      const pending  = propTxs.filter(t=>t.Authenticated!=='Y');
+      const verified = propTxs.filter(t=>t.Authenticated==='Y');
+      const sid = 'mtx-'+code.replace(/[^a-z0-9]/gi,'_');
+      return `<div class="table-card" style="margin-bottom:14px">
+        <div class="table-card-header" style="cursor:pointer;user-select:none" onclick="toggleMTxSection('${sid}')">
+          <h5><i class="fa-solid fa-building" style="margin-right:7px;color:#9b0000"></i>${propName}</h5>
+          <span>Balance:&nbsp;<strong style="color:${propBal>=0?'#2d9b59':'#d62828'}">${fmtMoney(propBal)}</strong>
+            &nbsp;<i class="fa-solid fa-chevron-down" id="${sid}-icon" style="font-size:.8rem;color:#aaa;transition:transform .25s"></i></span>
+        </div>
+        <div id="${sid}">
+          ${renderStatusGroup('Pending', pending)}
+          ${renderStatusGroup('Verified', verified)}
+          ${!pending.length&&!verified.length?'<p style="text-align:center;padding:20px;color:#aaa">No transactions.</p>':''}
+        </div>
+      </div>`;
+    }).join('');
+
+    if (!codes.length) sectionsHtml = `<div class="table-card"><p style="text-align:center;padding:40px;color:#aaa">No transactions found.</p></div>`;
+
+    const wrap = document.getElementById('tx-sections-wrap');
+    if (wrap) wrap.innerHTML = sectionsHtml;
+  }
+
+  function toggleMTxSection(sid) {
+    const el   = document.getElementById(sid);
+    const icon = document.getElementById(sid+'-icon');
+    if (!el) return;
+    const collapsed = el.style.display==='none';
+    el.style.display = collapsed ? '' : 'none';
+    if (icon) icon.style.transform = collapsed ? '' : 'rotate(-90deg)';
   }
 
   function toggleAuth(ref) {
@@ -737,8 +811,8 @@
     if(idx===-1)return;
     all[idx].Authenticated=all[idx].Authenticated==='Y'?'N':'Y';
     DB.save('transactions',all);
-    showView('transactions', document.querySelector('[data-view="transactions"]'));
-    toast('Transaction auth toggled.','success');
+    filterTxView();
+    toast('Transaction '+(all[idx].Authenticated==='Y'?'verified':'marked as pending')+'.','success');
   }
 
   // Delete transaction — only if NOT authenticated
@@ -751,7 +825,7 @@
     if (!confirm('Delete transaction ' + ref + '? This cannot be undone.')) return;
     const all = DB.getAll('transactions').filter(t => t.transactionRef !== ref);
     DB.save('transactions', all);
-    showView('transactions', document.querySelector('[data-view="transactions"]'));
+    filterTxView();
     toast('Transaction deleted.', 'info');
   }
 
