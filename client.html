@@ -809,8 +809,6 @@
       <div class="form-group"><label class="form-label-sm">Unit Number</label><input class="form-control-sm2" id="f-unum" placeholder="e.g. 101" oninput="this.value=this.value.toUpperCase()"></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Rent Amount ($)</label><input class="form-control-sm2" id="f-urent" type="number"></div>
       <div class="form-group"><label class="form-label-sm">Deposit Amount ($)</label><input class="form-control-sm2" id="f-udep" type="number"></div></div>
-      <div class="form-row"><div class="form-group"><label class="form-label-sm">Bedrooms</label><input class="form-control-sm2" id="f-ubed" type="number" value="1"></div>
-      <div class="form-group"><label class="form-label-sm">Bathrooms</label><input class="form-control-sm2" id="f-ubath" type="number" value="1"></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Floor</label><input class="form-control-sm2" id="f-ufloor" type="number" value="1"></div>
       <div class="form-group"><label class="form-label-sm">Status</label><select class="form-control-sm2" id="f-ustatus"><option value="Vacant">Vacant</option><option value="Occupied">Occupied</option></select></div></div>
       <div class="form-group"><label class="form-label-sm">Notes</label><input class="form-control-sm2" id="f-unote"></div>`,
@@ -828,8 +826,7 @@
       UnitStatus:document.getElementById('f-ustatus').value,
       Date:new Date().toISOString().split('T')[0],
       Note:document.getElementById('f-unote').value,
-      Bedrooms:parseInt(document.getElementById('f-ubed').value)||1,
-      Bathrooms:parseInt(document.getElementById('f-ubath').value)||1,
+      Bedrooms:0, Bathrooms:0,
       Floor:parseInt(document.getElementById('f-ufloor').value)||1,
       Active:'Y'
     });
@@ -985,8 +982,8 @@
       <div class="form-group"><label class="form-label-sm">Last Name *</label><input class="form-control-sm2" id="ft-last"></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">ID Number</label><input class="form-control-sm2" id="ft-id"></div>
       <div class="form-group"><label class="form-label-sm">Telephone</label><input class="form-control-sm2" id="ft-tel"></div></div>
-      <div class="form-group"><label class="form-label-sm">Email</label><input class="form-control-sm2" id="ft-email" type="email"></div>
-      <div class="form-group"><label class="form-label-sm">Address</label><input class="form-control-sm2" id="ft-addr"></div>
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Email</label><input class="form-control-sm2" id="ft-email" type="email"></div>
+      <div class="form-group"><label class="form-label-sm">Address</label><input class="form-control-sm2" id="ft-addr"></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Property</label><select class="form-control-sm2" id="ft-prop" onchange="loadUnitsForProp()">${propOptions()}</select></div>
       <div class="form-group"><label class="form-label-sm">Unit</label><select class="form-control-sm2" id="ft-unit"></select></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Rent Amount ($)</label><input class="form-control-sm2" id="ft-rent" type="number"></div>
@@ -1003,8 +1000,9 @@
 
   function loadUnitsForProp() {
     const propCode = document.getElementById('ft-prop').value;
-    const units = DB.find('propunits',{PropertyCode:propCode}).filter(u => u.UnitStatus === 'Vacant');
-    document.getElementById('ft-unit').innerHTML = units.map(u=>`<option value="${u.UnitCode}">Unit ${u.UnitNumber}</option>`).join('') || '<option value="">No vacant units</option>';
+    const units = DB.find('propunits',{PropertyCode:propCode}).filter(u => u.UnitStatus === 'Vacant')
+      .sort((a,b)=>(a.UnitNumber||'').localeCompare(b.UnitNumber||'',undefined,{numeric:true}));
+    document.getElementById('ft-unit').innerHTML = units.map(u=>`<option value="${u.UnitCode}">${u.UnitNumber}</option>`).join('') || '<option value="">No vacant units</option>';
   }
 
   function saveAddTenant() {
