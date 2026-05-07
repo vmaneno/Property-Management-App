@@ -1395,9 +1395,14 @@
     const propCode = document.getElementById('ptx-prop').value;
     const prop = DB.findOne('properties',{PropertyCode:propCode})||{};
     document.getElementById('ptx-curr').value = prop.Currency||'USD';
-    const tens = DB.getAll('tenants').filter(t=>t.PropertyCode===propCode && t.Active==='Y');
+    const tens = DB.getAll('tenants')
+      .filter(t=>t.PropertyCode===propCode && t.Active==='Y')
+      .sort((a,b)=>(a.FirstName+' '+a.LastName).localeCompare(b.FirstName+' '+b.LastName));
     document.getElementById('ptx-tenant').innerHTML =
-      tens.map(t=>`<option value="${t.TenantID}">${t.FirstName} ${t.LastName} (${t.TenantNumber})</option>`).join('')
+      tens.map(t=>{
+        const u=DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
+        return `<option value="${t.TenantID}">${t.FirstName} ${t.LastName} | ${t.TenantNumber} | Unit ${u.UnitNumber||'?'}</option>`;
+      }).join('')
       || '<option value="">No active tenants</option>';
   }
 
@@ -1407,7 +1412,9 @@
     const firstPropCode = activeProps.length ? activeProps[0].PropertyCode : '';
     const firstProp = firstPropCode ? DB.findOne('properties',{PropertyCode:firstPropCode})||{} : {};
     const initTenants = firstPropCode
-      ? DB.getAll('tenants').filter(t=>t.PropertyCode===firstPropCode && t.Active==='Y')
+      ? DB.getAll('tenants')
+          .filter(t=>t.PropertyCode===firstPropCode && t.Active==='Y')
+          .sort((a,b)=>(a.FirstName+' '+a.LastName).localeCompare(b.FirstName+' '+b.LastName))
       : [];
     openModal('Post Transaction', `
       <div class="form-group"><label class="form-label-sm">Trans Ref (optional)</label><input class="form-control-sm2" id="ptx-transref" placeholder="Alphanumeric bank/external reference"></div>
@@ -1421,7 +1428,7 @@
         </div>
         <div class="form-group"><label class="form-label-sm">Tenant *</label>
           <select class="form-control-sm2" id="ptx-tenant">
-            ${initTenants.map(t=>`<option value="${t.TenantID}">${t.FirstName} ${t.LastName} (${t.TenantNumber})</option>`).join('')||'<option value="">No active tenants</option>'}
+            ${initTenants.map(t=>{const u=DB.findOne('propunits',{UnitCode:t.UnitCode})||{};return `<option value="${t.TenantID}">${t.FirstName} ${t.LastName} | ${t.TenantNumber} | Unit ${u.UnitNumber||'?'}</option>`;}).join('')||'<option value="">No active tenants</option>'}
           </select>
         </div>
       </div>
