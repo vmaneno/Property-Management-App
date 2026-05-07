@@ -751,6 +751,7 @@
         <td><span class="badge-${isV?'active':'inactive'}">${isV?'Verified':'Pending'}</span></td>
         <td>
           <button class="btn-${isV?'view':'edit'}" onclick="toggleAuth('${tx.transactionRef}')">${isV?'Unverify':'Verify'}</button>
+          <button class="btn-edit" onclick="openEditTxTenant('${tx.transactionRef}')" title="Reassign Tenant" style="background:#7b5ea7"><i class="fa-solid fa-user-pen"></i></button>
           <button class="btn-del" onclick="confirmDeleteTx('${tx.transactionRef}')"><i class="fa-solid fa-trash"></i></button>
         </td>
       </tr>`;
@@ -803,6 +804,36 @@
     const collapsed = el.style.display==='none';
     el.style.display = collapsed ? '' : 'none';
     if (icon) icon.style.transform = collapsed ? '' : 'rotate(-90deg)';
+  }
+
+  function openEditTxTenant(ref) {
+    const tx  = DB.getAll('transactions').find(t => t.transactionRef === ref);
+    if (!tx) return;
+    const ten = DB.findOne('tenants', {TenantID: tx.TenantID}) || {};
+    openModal('Reassign Tenant — ' + ref,
+      `<p style="font-size:.85rem;color:#666;margin-bottom:12px">Current tenant: <strong>${ten.FirstName||''} ${ten.LastName||''}</strong> (${ten.TenantNumber||tx.TenantID})</p>
+       <div class="form-group">
+         <label class="form-label-sm">New Tenant # *</label>
+         <input class="form-control-sm2" id="etx-tnum" placeholder="e.g. TN-001" oninput="this.value=this.value.toUpperCase()" style="width:100%">
+       </div>`,
+      `<button class="btn-primary-custom bg-master" onclick="saveEditTxTenant('${ref}')">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`
+    );
+  }
+
+  function saveEditTxTenant(ref) {
+    const input = document.getElementById('etx-tnum').value.trim();
+    if (!input) { toast('Enter a Tenant #.', 'error'); return; }
+    const newTen = DB.getAll('tenants').find(t => t.TenantNumber === input);
+    if (!newTen) { toast('Tenant # ' + input + ' not found.', 'error'); return; }
+    const all = DB.getAll('transactions');
+    const idx = all.findIndex(t => t.transactionRef === ref);
+    if (idx === -1) return;
+    all[idx].TenantID     = newTen.TenantID;
+    all[idx].PropertyCode = newTen.PropertyCode;
+    DB.save('transactions', all);
+    closeModal();
+    filterTxView();
+    toast('Transaction ' + ref + ' reassigned to ' + newTen.TenantNumber + '.', 'success');
   }
 
   function toggleAuth(ref) {
