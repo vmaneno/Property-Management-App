@@ -86,6 +86,14 @@ async function patchRecord(pool, table, tbl, key, updates) {
     sets.push(`property_code = $${idx++}`);
     params.push(clean.PropertyCode || null);
   }
+  if ('TransRef' in clean && table === 'transactions') {
+    sets.push(`trans_ref = $${idx++}`);
+    params.push(clean.TransRef || null);
+  }
+  if ('BankRec' in clean && table === 'transactions') {
+    sets.push(`bank_rec = $${idx++}`);
+    params.push(clean.BankRec || 'N');
+  }
 
   // Merge JSONB data
   sets.push(`data = data || $${idx++}::jsonb`);

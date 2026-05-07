@@ -44,10 +44,12 @@ CREATE TABLE IF NOT EXISTS tenants (
 );
 
 CREATE TABLE IF NOT EXISTS transactions (
-  transaction_ref VARCHAR(20) PRIMARY KEY,
-  tenant_id       VARCHAR(20) NOT NULL,
-  property_code   VARCHAR(20) NOT NULL,
-  data            JSONB       NOT NULL DEFAULT '{}'
+  transaction_ref VARCHAR(20)  PRIMARY KEY,
+  tenant_id       VARCHAR(20)  NOT NULL,
+  property_code   VARCHAR(20)  NOT NULL,
+  trans_ref       VARCHAR(100) UNIQUE,
+  bank_rec        CHAR(1)      NOT NULL DEFAULT 'N',
+  data            JSONB        NOT NULL DEFAULT '{}'
 );
 
 CREATE TABLE IF NOT EXISTS reset_tokens (

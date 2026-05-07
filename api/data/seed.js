@@ -149,9 +149,11 @@ module.exports = async (req, res) => {
       { Date:'2024-05-01', TenantID:'T007', Authenticated:'Y', PropertyCode:'PR001', Description:'May Rent Payment',      Amount: 1800, Currency:'USD', TransactionNote:'', TransactionDocument:'', UpdateUser:'System', transactionRef:'TXN-00025' },
     ];
     for (const tx of transactions) {
+      const txData = { ...tx, BankRec: tx.BankRec || 'N', TransRef: tx.TransRef || '' };
       await client.query(
-        `INSERT INTO transactions (transaction_ref,tenant_id,property_code,data) VALUES ($1,$2,$3,$4)`,
-        [tx.transactionRef, tx.TenantID, tx.PropertyCode, JSON.stringify(tx)]
+        `INSERT INTO transactions (transaction_ref,tenant_id,property_code,trans_ref,bank_rec,data) VALUES ($1,$2,$3,$4,$5,$6)`,
+        [tx.transactionRef, tx.TenantID, tx.PropertyCode,
+         tx.TransRef || null, tx.BankRec || 'N', JSON.stringify(txData)]
       );
     }
 

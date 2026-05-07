@@ -736,6 +736,7 @@
     function renderTxRow(tx) {
       const ten = DB.findOne('tenants',{TenantID:tx.TenantID})||{};
       const isV = tx.Authenticated==='Y';
+      const isBR = tx.BankRec==='Y';
       const amt = Number(tx.Amount), credit = amt>=0;
       const amtColor = credit?'#2d9b59':'#d62828';
       const amtFmt   = (credit?'+':'')+fmtMoney(tx.Amount);
@@ -748,7 +749,9 @@
         <td>${tx.Description}</td>
         <td>${amtHtml}</td>
         <td style="font-size:.72rem;font-family:monospace">${tx.transactionRef}</td>
+        <td style="font-size:.78rem;color:#555">${tx.TransRef||''}</td>
         <td><span class="badge-${isV?'active':'inactive'}">${isV?'Verified':'Pending'}</span></td>
+        <td><button onclick="toggleBankRec('${tx.transactionRef}')" style="border:none;border-radius:10px;padding:2px 8px;font-size:.72rem;cursor:pointer;font-weight:600;background:${isBR?'#1a6b3c':'#aaa'};color:#fff;white-space:nowrap">${isBR?'Rec: Y':'Rec: N'}</button></td>
         <td>
           <button class="btn-${isV?'view':'edit'}" onclick="toggleAuth('${tx.transactionRef}')">${isV?'Unverify':'Verify'}</button>
           <button class="btn-edit" onclick="openEditTxTenant('${tx.transactionRef}')" title="Reassign Tenant" style="background:#7b5ea7"><i class="fa-solid fa-user-pen"></i></button>
@@ -762,7 +765,7 @@
       return `<div style="margin-bottom:10px">
         <div style="font-weight:600;font-size:.82rem;color:#555;padding:3px 10px;background:#f0f0f0;border-radius:4px;margin-bottom:5px">${label} (${groupTxs.length})</div>
         <div class="table-responsive"><table class="data-table">
-          <thead><tr><th>Date</th><th>Tenant</th><th>Description</th><th>Amount</th><th>Ref</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Date</th><th>Tenant</th><th>Description</th><th>Amount</th><th>Ref</th><th>TransRef</th><th>Status</th><th>Bank Rec</th><th>Actions</th></tr></thead>
           <tbody>${groupTxs.map(renderTxRow).join('')}</tbody>
         </table></div>
       </div>`;
@@ -834,6 +837,15 @@
     closeModal();
     filterTxView();
     toast('Transaction ' + ref + ' reassigned to ' + newTen.TenantNumber + '.', 'success');
+  }
+
+  function toggleBankRec(ref) {
+    const all=DB.getAll('transactions');
+    const idx=all.findIndex(t=>t.transactionRef===ref);
+    if(idx===-1)return;
+    all[idx].BankRec=all[idx].BankRec==='Y'?'N':'Y';
+    DB.save('transactions',all);
+    filterTxView();
   }
 
   function toggleAuth(ref) {
@@ -1697,6 +1709,7 @@
     const today=new Date().toISOString().split('T')[0];
     const firstAg = A()[0]||{};
     openModal('Post Transaction',`
+      <div class="form-group"><label class="form-label-sm">Trans Ref (optional)</label><input class="form-control-sm2" id="pt-transref" placeholder="Alphanumeric bank/external reference"></div>
       <div class="form-row">
         <div class="form-group"><label class="form-label-sm">Date <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="pt-date" type="date" value="${today}"></div>
         <div class="form-group"><label class="form-label-sm">Agency <span style="color:#d62828">*</span></label><select class="form-control-sm2" id="pt-agency" onchange="ptCascadeClients()">${agencyOptions()}</select></div>
@@ -1725,8 +1738,13 @@
     const desc  = document.getElementById('pt-desc').value.trim();
     const amt   = parseFloat(document.getElementById('pt-amt').value);
     const note  = document.getElementById('pt-note').value.trim();
+    const transRef = document.getElementById('pt-transref').value.trim();
     const docInput = document.getElementById('pt-doc');
     if (!tenId||!propCode||!desc||isNaN(amt)) { toast('Fill all required fields.','error'); return; }
+    if (transRef) {
+      const dup = DB.getAll('transactions').find(t => t.TransRef && t.TransRef === transRef);
+      if (dup) { toast('TransRef "'+transRef+'" already used on '+dup.transactionRef+'.','error'); return; }
+    }
     function doInsert(docData) {
       const ref=DB.nextTxRef();
       DB.insert('transactions',{
@@ -1735,7 +1753,8 @@
         PropertyCode:propCode,
         Description:desc, Amount:amt,
         Currency:document.getElementById('pt-curr').value,
-        TransactionNote:note, TransactionDocument:docData, transactionRef:ref
+        TransactionNote:note, TransactionDocument:docData, transactionRef:ref,
+        TransRef:transRef, BankRec:'N'
       });
       closeModal(); showView('transactions', document.querySelector('[data-view="transactions"]'));
       toast('Transaction '+ref+' posted!','success');
@@ -1850,7 +1869,8 @@
         PropertyCode: cb.dataset.prop, Description: desc,
         Amount: parseFloat(cb.dataset.amt)||0, Currency: curr,
         TransactionNote: note, TransactionDocument: '',
-        transactionRef: DB.nextTxRef()
+        transactionRef: DB.nextTxRef(),
+        TransRef: '', BankRec: 'N'
       });
       count++;
     });
@@ -2148,20 +2168,22 @@
         <td>${ten.FirstName||''} ${ten.LastName||''}</td>
         <td>${tx.Description}</td>
         <td>${tx.transactionRef}</td>
+        <td style="font-size:.78rem">${tx.TransRef||''}</td>
         <td style="color:${credit?'#1a6b3c':'#d62828'}">${credit?fmtMoney(tx.Amount):''}</td>
         <td style="color:${!credit?'#d62828':''}">${!credit?fmtMoney(Math.abs(tx.Amount)):''}</td>
         <td style="font-weight:600;color:${runBal>=0?'#1a6b3c':'#d62828'}">${fmtMoney(runBal)}</td>
         <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td>
+        <td><span class="badge-${tx.BankRec==='Y'?'active':'inactive'}">${tx.BankRec==='Y'?'Rec':'Unrec'}</span></td>
       </tr>`;
     }).join('');
   }
 
   function _txTable(txs, closingBal) {
     return `<table class="data-table" style="width:100%;font-size:.82rem">
-      <thead><tr><th>Date</th><th>Tenant</th><th>Description</th><th>Ref</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Status</th></tr></thead>
+      <thead><tr><th>Date</th><th>Tenant</th><th>Description</th><th>Ref</th><th>TransRef</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Status</th><th>Bank Rec</th></tr></thead>
       <tbody>${_txTableRows(txs)}</tbody>
-      <tfoot><tr style="background:#f5f5f5;font-weight:700"><td colspan="6" style="text-align:right;padding:8px 12px">Closing Balance</td>
-        <td style="color:${closingBal>=0?'#1a6b3c':'#d62828'};padding:8px 12px">${fmtMoney(closingBal)}</td><td></td></tr></tfoot>
+      <tfoot><tr style="background:#f5f5f5;font-weight:700"><td colspan="7" style="text-align:right;padding:8px 12px">Closing Balance</td>
+        <td style="color:${closingBal>=0?'#1a6b3c':'#d62828'};padding:8px 12px">${fmtMoney(closingBal)}</td><td></td><td></td></tr></tfoot>
     </table>`;
   }
 

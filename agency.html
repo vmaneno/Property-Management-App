@@ -373,10 +373,11 @@
     const bal=txs.reduce((s,t)=>s+Number(t.Amount),0);
     return `<div class="table-card"><div class="table-card-header"><h5>Transactions (${txs.length})</h5><span>Balance: <strong style="color:${bal>=0?'#2d9b59':'#d62828'}">${fmtMoney(bal)}</strong></span></div>
     <div class="table-responsive"><table class="data-table">
-      <thead><tr><th>Date</th><th>Tenant</th><th>Property</th><th>Description</th><th>Amount</th><th>Ref</th><th>Status</th></tr></thead>
+      <thead><tr><th>Date</th><th>Tenant</th><th>Property</th><th>Description</th><th>Amount</th><th>Ref</th><th>TransRef</th><th>Status</th><th>Bank Rec</th></tr></thead>
       <tbody>${txs.map(tx=>{
         const ten=DB.findOne('tenants',{TenantID:tx.TenantID})||{};
         const p=DB.findOne('properties',{PropertyCode:tx.PropertyCode})||{};
+        const isBR=tx.BankRec==='Y';
         return`<tr>
           <td>${fmtDate(tx.Date)}</td>
           <td>${ten.FirstName||''} ${ten.LastName||''}</td>
@@ -384,9 +385,11 @@
           <td>${tx.Description}</td>
           <td style="font-weight:600;color:${Number(tx.Amount)>=0?'#2d9b59':'#d62828'}">${Number(tx.Amount)>=0?'+':''}${fmtMoney(tx.Amount)}</td>
           <td><button onclick="viewTxDetail('${tx.transactionRef}')" style="background:none;border:none;cursor:pointer;font-size:.75rem;font-family:monospace;font-weight:700;color:#4361ee;text-decoration:underline;padding:0">${tx.transactionRef}</button></td>
+          <td style="font-size:.78rem;color:#555">${tx.TransRef||''}</td>
           <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td>
+          <td><button onclick="toggleBankRec('${tx.transactionRef}')" style="border:none;border-radius:10px;padding:2px 8px;font-size:.72rem;cursor:pointer;font-weight:600;background:${isBR?'#1a6b3c':'#aaa'};color:#fff;white-space:nowrap">${isBR?'Rec: Y':'Rec: N'}</button></td>
         </tr>`;
-      }).join('')||'<tr><td colspan="7" style="text-align:center;padding:40px;color:#aaa">No transactions.</td></tr>'}</tbody>
+      }).join('')||'<tr><td colspan="9" style="text-align:center;padding:40px;color:#aaa">No transactions.</td></tr>'}</tbody>
     </table></div></div>`;
   }
 
@@ -409,6 +412,13 @@
       </div>`,
       `<button class="btn-back" onclick="closeModal()">Close</button>`
     );
+  }
+
+  function toggleBankRec(ref) {
+    const tx=DB.getAll('transactions').find(t=>t.transactionRef===ref);
+    if(!tx)return;
+    DB.update('transactions','transactionRef',ref,{BankRec:tx.BankRec==='Y'?'N':'Y'});
+    document.getElementById('view-container').innerHTML=renderTransactions();
   }
 
   // ── MODALS ─────────────────────────────────────────────
@@ -1095,6 +1105,7 @@
     const firstPropRec=firstProp?DB.findOne('properties',{PropertyCode:firstProp.PropertyCode})||{}:{};
     const initTens=firstProp?DB.getAll('tenants').filter(t=>t.PropertyCode===firstProp.PropertyCode&&t.Active==='Y'):[];
     openModal('Post Transaction',`
+      <div class="form-group"><label class="form-label-sm">Trans Ref (optional)</label><input class="form-control-sm2" id="pt-transref" placeholder="Alphanumeric bank/external reference"></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Date *</label><input class="form-control-sm2" id="pt-date" type="date" value="${today}"></div>
       <div class="form-group"><label class="form-label-sm">Currency</label><input class="form-control-sm2" id="pt-curr" value="${firstPropRec.Currency||'USD'}" readonly style="background:#f0f0f0;cursor:not-allowed"></div></div>
       <div class="form-group"><label class="form-label-sm">Client *</label>
@@ -1126,12 +1137,17 @@
     const desc=document.getElementById('pt-desc').value.trim();
     const amt=parseFloat(document.getElementById('pt-amt').value);
     const note=document.getElementById('pt-note').value.trim();
+    const transRef=document.getElementById('pt-transref').value.trim();
     const docInput=document.getElementById('pt-doc');
     if(!propCode){toast('Property is required.','error');return;}
     if(!tenId){toast('Tenant is required.','error');return;}
     if(!desc){toast('Description is required.','error');return;}
     if(isNaN(amt)){toast('Amount is required.','error');return;}
     if(!docInput.files[0]){toast('Document upload is required.','error');return;}
+    if(transRef){
+      const dup=DB.getAll('transactions').find(t=>t.TransRef&&t.TransRef===transRef);
+      if(dup){toast('TransRef "'+transRef+'" already used on '+dup.transactionRef+'.','error');return;}
+    }
     const prop=DB.findOne('properties',{PropertyCode:propCode})||{};
     const reader=new FileReader();
     reader.onload=e=>{
@@ -1143,7 +1159,8 @@
         Description:desc, Amount:amt,
         Currency:prop.Currency||'USD',
         TransactionNote:note, TransactionDocument:e.target.result,
-        transactionRef:ref, UpdateUser:agency.UserName
+        transactionRef:ref, UpdateUser:agency.UserName,
+        TransRef:transRef, BankRec:'N'
       });
       closeModal(); showView('transactions',document.querySelector('[data-view="transactions"]'));
       toast('Transaction '+ref+' posted!','success');
@@ -1283,7 +1300,8 @@
           TransactionNote: note,
           TransactionDocument: docData,
           transactionRef: ref,
-          UpdateUser: agency.UserName
+          UpdateUser: agency.UserName,
+          TransRef: '', BankRec: 'N'
         });
         count++;
       });
@@ -1530,10 +1548,12 @@
         <td>${p.PropertyName||tx.PropertyCode}</td>
         <td>${tx.Description}</td>
         <td style="font-family:monospace;font-size:.78rem">${tx.transactionRef}</td>
+        <td style="font-size:.78rem">${tx.TransRef||''}</td>
         <td style="text-align:right;color:#d62828">${!cr?fmtMoney(Math.abs(Number(tx.Amount))):'—'}</td>
         <td style="text-align:right;color:#1a6b3c">${cr?fmtMoney(Number(tx.Amount)):'—'}</td>
         <td style="text-align:right;font-weight:700;color:${runBal>=0?'#1a6b3c':'#d62828'}">${fmtMoney(runBal)}</td>
         <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td>
+        <td><span class="badge-${tx.BankRec==='Y'?'active':'inactive'}">${tx.BankRec==='Y'?'Rec':'Unrec'}</span></td>
       </tr>`;
     });
   }
@@ -1541,13 +1561,13 @@
   function _txTable(txs, closingBal) {
     const rows = _txTableRows(txs);
     return `<div class="table-responsive"><table class="data-table">
-      <thead><tr><th>Date</th><th>Tenant</th><th>Property</th><th>Description</th><th>Reference</th>
+      <thead><tr><th>Date</th><th>Tenant</th><th>Property</th><th>Description</th><th>Reference</th><th>TransRef</th>
         <th style="text-align:right">Debit</th><th style="text-align:right">Credit</th>
-        <th style="text-align:right">Balance</th><th>Status</th></tr></thead>
-      <tbody>${rows.join('')||'<tr><td colspan="9" style="text-align:center;padding:30px;color:#aaa">No transactions in this range.</td></tr>'}</tbody>
+        <th style="text-align:right">Balance</th><th>Status</th><th>Bank Rec</th></tr></thead>
+      <tbody>${rows.join('')||'<tr><td colspan="11" style="text-align:center;padding:30px;color:#aaa">No transactions in this range.</td></tr>'}</tbody>
       <tfoot><tr style="background:#f8f9ff">
-        <td colspan="7" style="text-align:right;font-weight:700;padding:12px 16px">Closing Balance:</td>
-        <td style="text-align:right;font-weight:700;color:${closingBal>=0?'#1a6b3c':'#d62828'};padding:12px 16px">${fmtMoney(closingBal)}</td><td></td>
+        <td colspan="8" style="text-align:right;font-weight:700;padding:12px 16px">Closing Balance:</td>
+        <td style="text-align:right;font-weight:700;color:${closingBal>=0?'#1a6b3c':'#d62828'};padding:12px 16px">${fmtMoney(closingBal)}</td><td></td><td></td>
       </tr></tfoot>
     </table></div>`;
   }

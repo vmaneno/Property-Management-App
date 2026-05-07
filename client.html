@@ -185,14 +185,16 @@
         </div>
       </div>
       <div class="table-responsive">
-        <table class="data-table"><thead><tr><th>Date</th><th>Tenant</th><th>Description</th><th>Amount</th><th>Ref</th><th>Status</th></tr></thead>
+        <table class="data-table"><thead><tr><th>Date</th><th>Tenant</th><th>Description</th><th>Amount</th><th>Ref</th><th>TransRef</th><th>Status</th><th>Bank Rec</th></tr></thead>
         <tbody id="dash-tx-tbody">${txs.slice(0,10).map(tx=>{
           const ten=DB.findOne('tenants',{TenantID:tx.TenantID})||{};
           return `<tr><td>${fmtDate(tx.Date)}</td><td>${ten.FirstName||''} ${ten.LastName||''}</td><td>${tx.Description}</td>
           <td style="font-weight:600;color:${Number(tx.Amount)>=0?'#2d9b59':'#d62828'}">${Number(tx.Amount)>=0?'+':''}${fmtMoney(tx.Amount)}</td>
           <td style="font-size:.78rem;font-family:monospace">${tx.transactionRef}</td>
-          <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td></tr>`;
-        }).join('')||'<tr><td colspan="6" style="text-align:center;padding:30px;color:#aaa">No transactions yet.</td></tr>'}</tbody>
+          <td style="font-size:.78rem">${tx.TransRef||''}</td>
+          <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td>
+          <td><span style="font-size:.75rem;font-weight:600;color:${tx.BankRec==='Y'?'#1a6b3c':'#aaa'}">${tx.BankRec==='Y'?'Y':'N'}</span></td></tr>`;
+        }).join('')||'<tr><td colspan="8" style="text-align:center;padding:30px;color:#aaa">No transactions yet.</td></tr>'}</tbody>
         </table>
       </div>
     </div>`;
@@ -212,8 +214,10 @@
       return `<tr><td>${fmtDate(tx.Date)}</td><td>${ten.FirstName||''} ${ten.LastName||''}</td><td>${tx.Description}</td>
       <td style="font-weight:600;color:${Number(tx.Amount)>=0?'#2d9b59':'#d62828'}">${Number(tx.Amount)>=0?'+':''}${fmtMoney(tx.Amount)}</td>
       <td style="font-size:.78rem;font-family:monospace">${tx.transactionRef}</td>
-      <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td></tr>`;
-    }).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:#aaa">No transactions yet.</td></tr>';
+      <td style="font-size:.78rem">${tx.TransRef||''}</td>
+      <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td>
+      <td><span style="font-size:.75rem;font-weight:600;color:${tx.BankRec==='Y'?'#1a6b3c':'#aaa'}">${tx.BankRec==='Y'?'Y':'N'}</span></td></tr>`;
+    }).join('') || '<tr><td colspan="8" style="text-align:center;padding:30px;color:#aaa">No transactions yet.</td></tr>';
   }
 
   function renderProperties() {
@@ -542,7 +546,9 @@
     function renderTxRow(tx) {
       const ten = DB.findOne('tenants',{TenantID:tx.TenantID})||{};
       const isVerified = tx.Authenticated==='Y';
+      const isBR = tx.BankRec==='Y';
       const canDel = !isVerified && client.ViewDelete==='Y';
+      const canToggleBR = client.Employee!=='Y';
       const amt = Number(tx.Amount);
       const amtColor = amt>=0?'#2d9b59':'#d62828';
       const amtFormatted = (amt>=0?'+':'')+fmtMoney(tx.Amount);
@@ -555,7 +561,11 @@
         <td>${tx.Description}</td>
         <td>${amtHtml}</td>
         <td style="font-size:.78rem;font-family:monospace">${tx.transactionRef}</td>
+        <td style="font-size:.78rem;color:#555">${tx.TransRef||''}</td>
         <td><span class="badge-${isVerified?'active':'inactive'}">${isVerified?'Verified':'Pending'}</span></td>
+        <td>${canToggleBR
+          ? `<button onclick="toggleBankRec('${tx.transactionRef}')" style="border:none;border-radius:10px;padding:2px 8px;font-size:.72rem;cursor:pointer;font-weight:600;background:${isBR?'#1a6b3c':'#aaa'};color:#fff;white-space:nowrap">${isBR?'Rec: Y':'Rec: N'}</button>`
+          : `<span style="font-size:.75rem;font-weight:600;color:${isBR?'#1a6b3c':'#aaa'}">${isBR?'Y':'N'}</span>`}</td>
         <td>
           <button class="btn-edit" onclick="openEditTx('${tx.transactionRef}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
           <button class="btn-edit" onclick="toggleVerifyTx('${tx.transactionRef}')" title="${isVerified?'Mark as Pending':'Verify'}" style="background:${isVerified?'#888':'#2d9b59'}"><i class="fa-solid fa-${isVerified?'rotate-left':'circle-check'}"></i></button>
@@ -571,7 +581,7 @@
       return `<div style="margin-bottom:10px">
         <div style="font-weight:600;font-size:.82rem;color:#555;padding:3px 10px;background:#f0f0f0;border-radius:4px;margin-bottom:5px">${label} (${groupTxs.length})</div>
         <div class="table-responsive"><table class="data-table">
-          <thead><tr><th>Date</th><th>Tenant</th><th>Description</th><th>Amount</th><th>Ref</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Date</th><th>Tenant</th><th>Description</th><th>Amount</th><th>Ref</th><th>TransRef</th><th>Status</th><th>Bank Rec</th><th>Actions</th></tr></thead>
           <tbody>${groupTxs.map(renderTxRow).join('')}</tbody>
         </table></div>
       </div>`;
@@ -669,6 +679,14 @@
     DB.update('transactions','transactionRef',ref,{Authenticated:newVal});
     document.getElementById('view-container').innerHTML = renderTransactions();
     toast(newVal==='Y' ? 'Transaction verified!' : 'Transaction marked as Pending.','success');
+  }
+
+  function toggleBankRec(ref) {
+    if (client.Employee==='Y') return;
+    const tx = DB.getAll('transactions').find(t=>t.transactionRef===ref);
+    if (!tx) return;
+    DB.update('transactions','transactionRef',ref,{BankRec:tx.BankRec==='Y'?'N':'Y'});
+    document.getElementById('view-container').innerHTML = renderTransactions();
   }
 
   function applyTxFilter() {
@@ -1350,7 +1368,8 @@
         Date:date, TenantID:cb.value, Authenticated:'N',
         PropertyCode:propCode, Description:desc, Amount:amount,
         Currency:prop.Currency||'USD', TransactionNote:note,
-        TransactionDocument:'', transactionRef:DB.nextTxRef(), UpdateUser:client.UserName
+        TransactionDocument:'', transactionRef:DB.nextTxRef(), UpdateUser:client.UserName,
+        TransRef:'', BankRec:'N'
       });
       count++;
     });
@@ -1389,6 +1408,7 @@
       ? DB.getAll('tenants').filter(t=>t.PropertyCode===firstPropCode && t.Active==='Y')
       : [];
     openModal('Post Transaction', `
+      <div class="form-group"><label class="form-label-sm">Trans Ref (optional)</label><input class="form-control-sm2" id="ptx-transref" placeholder="Alphanumeric bank/external reference"></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Date *</label><input class="form-control-sm2" id="ptx-date" type="date" value="${today}"></div>
       <div class="form-group"><label class="form-label-sm">Currency</label><input class="form-control-sm2" id="ptx-curr" value="${firstProp.Currency||'USD'}" readonly style="background:#f0f0f0;cursor:not-allowed"></div></div>
       <div class="form-row">
@@ -1419,12 +1439,17 @@
     const desc     = document.getElementById('ptx-desc').value.trim();
     const amt      = parseFloat(document.getElementById('ptx-amt').value);
     const note     = document.getElementById('ptx-note').value.trim();
+    const transRef = document.getElementById('ptx-transref').value.trim();
     const docInput = document.getElementById('ptx-doc');
     if (!propCode)       { toast('Property is required.','error'); return; }
     if (!tenId)          { toast('Tenant is required.','error'); return; }
     if (!desc)           { toast('Description is required.','error'); return; }
     if (isNaN(amt))      { toast('Amount is required.','error'); return; }
     if (!docInput.files[0]) { toast('Document upload is required.','error'); return; }
+    if (transRef) {
+      const dup = DB.getAll('transactions').find(t=>t.TransRef&&t.TransRef===transRef);
+      if (dup) { toast('TransRef "'+transRef+'" already used on '+dup.transactionRef+'.','error'); return; }
+    }
     const prop = DB.findOne('properties',{PropertyCode:propCode})||{};
     const reader = new FileReader();
     reader.onload = e => {
@@ -1436,7 +1461,8 @@
         Description:desc, Amount:amt,
         Currency:prop.Currency||'USD',
         TransactionNote:note, TransactionDocument:e.target.result,
-        transactionRef:ref, UpdateUser:client.UserName
+        transactionRef:ref, UpdateUser:client.UserName,
+        TransRef:transRef, BankRec:'N'
       });
       closeModal(); showView('transactions', document.querySelector('[data-view="transactions"]'));
       toast('Transaction '+ref+' posted!','success');
@@ -1843,10 +1869,12 @@
         <td>${ten.FirstName||''} ${ten.LastName||''}</td>
         <td>${tx.Description}</td>
         <td style="font-family:monospace;font-size:.78rem">${tx.transactionRef}</td>
+        <td style="font-size:.78rem">${tx.TransRef||''}</td>
         <td style="text-align:right;color:#d62828">${!cr?fmtMoney(Math.abs(Number(tx.Amount))):'—'}</td>
         <td style="text-align:right;color:#1a6b3c">${cr?fmtMoney(Number(tx.Amount)):'—'}</td>
         <td style="text-align:right;font-weight:700;color:${runBal>=0?'#1a6b3c':'#d62828'}">${fmtMoney(runBal)}</td>
         <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td>
+        <td><span class="badge-${tx.BankRec==='Y'?'active':'inactive'}">${tx.BankRec==='Y'?'Rec':'Unrec'}</span></td>
       </tr>`;
     }).join('');
     const out = document.getElementById('rpt-ptx-out');
@@ -1861,11 +1889,11 @@
       </div>
       <div class="table-responsive">
         <table class="data-table">
-          <thead><tr><th>Date</th><th>Tenant</th><th>Description</th><th>Reference</th><th style="text-align:right">Debit</th><th style="text-align:right">Credit</th><th style="text-align:right">Balance</th><th>Status</th></tr></thead>
-          <tbody>${rows||'<tr><td colspan="8" style="text-align:center;padding:30px;color:#aaa">No transactions in this range.</td></tr>'}</tbody>
+          <thead><tr><th>Date</th><th>Tenant</th><th>Description</th><th>Reference</th><th>TransRef</th><th style="text-align:right">Debit</th><th style="text-align:right">Credit</th><th style="text-align:right">Balance</th><th>Status</th><th>Bank Rec</th></tr></thead>
+          <tbody>${rows||'<tr><td colspan="10" style="text-align:center;padding:30px;color:#aaa">No transactions in this range.</td></tr>'}</tbody>
           <tfoot><tr style="background:#f8f9ff">
-            <td colspan="6" style="text-align:right;font-weight:700;padding:12px 16px">Closing Balance:</td>
-            <td style="text-align:right;font-weight:700;color:${runBal>=0?'#1a6b3c':'#d62828'};padding:12px 16px">${fmtMoney(runBal)}</td><td></td>
+            <td colspan="7" style="text-align:right;font-weight:700;padding:12px 16px">Closing Balance:</td>
+            <td style="text-align:right;font-weight:700;color:${runBal>=0?'#1a6b3c':'#d62828'};padding:12px 16px">${fmtMoney(runBal)}</td><td></td><td></td>
           </tr></tfoot>
         </table>
       </div>
@@ -1896,10 +1924,12 @@
           <td>${fmtDate(tx.Date)}</td>
           <td>${tx.Description}</td>
           <td style="font-family:monospace;font-size:.78rem">${tx.transactionRef}</td>
+          <td style="font-size:.78rem">${tx.TransRef||''}</td>
           <td style="text-align:right;color:#d62828">${!cr?fmtMoney(Math.abs(Number(tx.Amount))):'—'}</td>
           <td style="text-align:right;color:#1a6b3c">${cr?fmtMoney(Number(tx.Amount)):'—'}</td>
           <td style="text-align:right;font-weight:700;color:${runBal>=0?'#1a6b3c':'#d62828'}">${fmtMoney(runBal)}</td>
           <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td>
+          <td><span class="badge-${tx.BankRec==='Y'?'active':'inactive'}">${tx.BankRec==='Y'?'Rec':'Unrec'}</span></td>
         </tr>`;
       }).join('');
       return `
@@ -1912,11 +1942,11 @@
         </div>
         <div class="table-responsive">
           <table class="data-table">
-            <thead><tr><th>Date</th><th>Description</th><th>Reference</th><th style="text-align:right">Debit</th><th style="text-align:right">Credit</th><th style="text-align:right">Balance</th><th>Status</th></tr></thead>
-            <tbody>${rows||'<tr><td colspan="7" style="text-align:center;padding:20px;color:#aaa">No transactions.</td></tr>'}</tbody>
+            <thead><tr><th>Date</th><th>Description</th><th>Reference</th><th>TransRef</th><th style="text-align:right">Debit</th><th style="text-align:right">Credit</th><th style="text-align:right">Balance</th><th>Status</th><th>Bank Rec</th></tr></thead>
+            <tbody>${rows||'<tr><td colspan="9" style="text-align:center;padding:20px;color:#aaa">No transactions.</td></tr>'}</tbody>
             <tfoot><tr style="background:#f8f9ff">
-              <td colspan="5" style="text-align:right;font-weight:700;padding:10px 16px">Closing Balance:</td>
-              <td style="text-align:right;font-weight:700;color:${runBal>=0?'#1a6b3c':'#d62828'};padding:10px 16px">${fmtMoney(runBal)}</td><td></td>
+              <td colspan="6" style="text-align:right;font-weight:700;padding:10px 16px">Closing Balance:</td>
+              <td style="text-align:right;font-weight:700;color:${runBal>=0?'#1a6b3c':'#d62828'};padding:10px 16px">${fmtMoney(runBal)}</td><td></td><td></td>
             </tr></tfoot>
           </table>
         </div>

@@ -84,9 +84,10 @@ async function insertRecord(pool, table, d) {
     );
   } else if (table === 'transactions') {
     await pool.query(
-      `INSERT INTO transactions (transaction_ref,tenant_id,property_code,data)
-       VALUES ($1,$2,$3,$4) ON CONFLICT (transaction_ref) DO NOTHING`,
-      [data.transactionRef, data.TenantID, data.PropertyCode, JSON.stringify(data)]
+      `INSERT INTO transactions (transaction_ref,tenant_id,property_code,trans_ref,bank_rec,data)
+       VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (transaction_ref) DO NOTHING`,
+      [data.transactionRef, data.TenantID, data.PropertyCode,
+       data.TransRef || null, data.BankRec || 'N', JSON.stringify(data)]
     );
   }
 }
