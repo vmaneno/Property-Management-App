@@ -1688,9 +1688,10 @@
   }
   function ptCascadeTenants() {
     const pc = document.getElementById('pt-prop').value;
-    const tens = T().filter(t => t.PropertyCode === pc && t.Active === 'Y');
+    const tens = T().filter(t => t.PropertyCode === pc && t.Active === 'Y')
+      .sort((a,b)=>(a.FirstName+' '+a.LastName).localeCompare(b.FirstName+' '+b.LastName));
     document.getElementById('pt-tenant').innerHTML = tens.length
-      ? tens.map(t=>`<option value="${t.TenantID}">${t.FirstName} ${t.LastName} — ${t.TenantNumber}</option>`).join('')
+      ? tens.map(t=>{const u=DB.findOne('propunits',{UnitCode:t.UnitCode})||{};return `<option value="${t.TenantID}">${t.FirstName} ${t.LastName} | ${t.TenantNumber} | Unit ${u.UnitNumber||'?'}</option>`;}).join('')
       : '<option value="">— No active tenants —</option>';
     ptSetCurrency();
   }

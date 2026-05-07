@@ -1094,8 +1094,10 @@
     const propCode=document.getElementById('pt-prop').value;
     const prop=DB.findOne('properties',{PropertyCode:propCode})||{};
     document.getElementById('pt-curr').value=prop.Currency||'USD';
-    const tens=DB.getAll('tenants').filter(t=>t.PropertyCode===propCode&&t.Active==='Y');
-    document.getElementById('pt-tenant').innerHTML=tens.map(t=>`<option value="${t.TenantID}">${t.FirstName} ${t.LastName} (${t.TenantNumber})</option>`).join('')||'<option value="">No active tenants</option>';
+    const tens=DB.getAll('tenants')
+      .filter(t=>t.PropertyCode===propCode&&t.Active==='Y')
+      .sort((a,b)=>(a.FirstName+' '+a.LastName).localeCompare(b.FirstName+' '+b.LastName));
+    document.getElementById('pt-tenant').innerHTML=tens.map(t=>{const u=DB.findOne('propunits',{UnitCode:t.UnitCode})||{};return `<option value="${t.TenantID}">${t.FirstName} ${t.LastName} | ${t.TenantNumber} | Unit ${u.UnitNumber||'?'}</option>`;}).join('')||'<option value="">No active tenants</option>';
   }
 
   function openPostTx() {
@@ -1105,7 +1107,7 @@
     const firstProps=firstClient?DB.find('properties',{ClientCode:firstClient.ClientCode,AgencyCode:AC}).filter(p=>p.Active==='Y'):[];
     const firstProp=firstProps.length?firstProps[0]:null;
     const firstPropRec=firstProp?DB.findOne('properties',{PropertyCode:firstProp.PropertyCode})||{}:{};
-    const initTens=firstProp?DB.getAll('tenants').filter(t=>t.PropertyCode===firstProp.PropertyCode&&t.Active==='Y'):[];
+    const initTens=firstProp?DB.getAll('tenants').filter(t=>t.PropertyCode===firstProp.PropertyCode&&t.Active==='Y').sort((a,b)=>(a.FirstName+' '+a.LastName).localeCompare(b.FirstName+' '+b.LastName)):[];
     openModal('Post Transaction',`
       <div class="form-group"><label class="form-label-sm">Trans Ref (optional)</label><input class="form-control-sm2" id="pt-transref" placeholder="Alphanumeric bank/external reference"></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Date *</label><input class="form-control-sm2" id="pt-date" type="date" value="${today}"></div>
@@ -1122,7 +1124,7 @@
       </div>
       <div class="form-group"><label class="form-label-sm">Tenant *</label>
         <select class="form-control-sm2" id="pt-tenant">
-          ${initTens.map(t=>`<option value="${t.TenantID}">${t.FirstName} ${t.LastName} (${t.TenantNumber})</option>`).join('')||'<option value="">No active tenants</option>'}
+          ${initTens.map(t=>{const u=DB.findOne('propunits',{UnitCode:t.UnitCode})||{};return `<option value="${t.TenantID}">${t.FirstName} ${t.LastName} | ${t.TenantNumber} | Unit ${u.UnitNumber||'?'}</option>`;}).join('')||'<option value="">No active tenants</option>'}
         </select>
       </div>
       <div class="form-group"><label class="form-label-sm">Description *</label><input class="form-control-sm2" id="pt-desc"></div>
