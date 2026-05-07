@@ -1582,6 +1582,7 @@
   function openEditTenant(id) {
     const t=DB.findOne('tenants',{TenantID:id});if(!t)return;
     openModal('Edit Tenant — '+t.TenantNumber,`
+      <div class="form-row"><div class="form-group"><label class="form-label-sm">Tenant #</label><input class="form-control-sm2" id="et-tnum" value="${t.TenantNumber}" oninput="this.value=this.value.toUpperCase()"></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">First Name</label><input class="form-control-sm2" id="et-first" value="${t.FirstName}"></div>
       <div class="form-group"><label class="form-label-sm">Last Name</label><input class="form-control-sm2" id="et-last" value="${t.LastName}"></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label-sm">ID Number</label><input class="form-control-sm2" id="et-idnum" value="${t.IDNumber}"></div>
@@ -1601,6 +1602,7 @@
 
   function saveEditTenant(id) {
     const updates={
+      TenantNumber:document.getElementById('et-tnum').value.trim()||id,
       FirstName:document.getElementById('et-first').value,
       LastName:document.getElementById('et-last').value,
       IDNumber:document.getElementById('et-idnum').value,
