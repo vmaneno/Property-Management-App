@@ -841,7 +841,7 @@
     Promise.all([readFile(photoInput.files[0]),readFile(idcopyInput.files[0]),readFile(agreeInput.files[0])])
       .then(([photoData,idcopyData,agreeData])=>{
         const id=DB.nextCode('tenants','TenantID','T');
-        const num='TN-'+new Date().getFullYear()+'-'+String(DB.getAll('tenants').length+1).padStart(3,'0');
+        const num=DB.nextCode('tenants','TenantNumber','TN-');
         DB.insert('tenants',{
           TenantID:id, TenantNumber:num,
           PropertyCode:document.getElementById('at-prop').value,

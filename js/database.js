@@ -10,6 +10,20 @@ const DB = {
       this._seed();
       localStorage.setItem(this.VERSION + '_initialized', 'true');
     }
+    this._migrateTenantNumbers();
+  },
+
+  _migrateTenantNumbers() {
+    const tenants = this.getAll('tenants');
+    let changed = false;
+    const updated = tenants.map(t => {
+      if (t.TenantNumber && /^TN-\d{4}-/.test(t.TenantNumber)) {
+        changed = true;
+        return { ...t, TenantNumber: t.TenantNumber.replace(/^TN-\d{4}-/, 'TN-') };
+      }
+      return t;
+    });
+    if (changed) this.save('tenants', updated);
   },
 
   reset() {
@@ -106,14 +120,14 @@ const DB = {
 
     /* ---- Tenants ---- */
     this.save('tenants', [
-      { TenantID:'T001', TenantNumber:'TN-2024-001', PropertyCode:'PR001', UnitCode:'UN001', FirstName:'Alice',   LastName:'Cooper',    IDNumber:'ID-112233', Address:'100 Sunset Blvd #101, NY 10001',   Telephone:'(212) 555-3001', Email:'alice.cooper@email.com',   Photograph:'', RentAmount:1500, RentFrequency:'Monthly', DepositAmount:3000, MoveInDate:'2024-02-01', MoveOutDate:'', IDCopy:'',    RentAgreement:'', Active:'Y', UserName:'tenant1', Password:'tenant123', UpdateUser:'System' },
-      { TenantID:'T002', TenantNumber:'TN-2024-002', PropertyCode:'PR002', UnitCode:'UN004', FirstName:'Bob',     LastName:'Martinez',  IDNumber:'ID-223344', Address:'200 Oak Lane V-01, Queens, NY',    Telephone:'(718) 555-3002', Email:'bob.martinez@email.com',   Photograph:'', RentAmount:2500, RentFrequency:'Monthly', DepositAmount:5000, MoveInDate:'2024-03-01', MoveOutDate:'', IDCopy:'',    RentAgreement:'', Active:'Y', UserName:'tenant2', Password:'tenant123', UpdateUser:'System' },
-      { TenantID:'T003', TenantNumber:'TN-2024-003', PropertyCode:'PR003', UnitCode:'UN006', FirstName:'Carol',   LastName:'Williams',  IDNumber:'ID-334455', Address:'300 W Adams St L-301, Chicago',    Telephone:'(312) 555-3003', Email:'carol.williams@email.com', Photograph:'', RentAmount:2000, RentFrequency:'Monthly', DepositAmount:4000, MoveInDate:'2024-04-01', MoveOutDate:'', IDCopy:'',    RentAgreement:'', Active:'Y', UserName:'tenant3', Password:'tenant123', UpdateUser:'System' },
-      { TenantID:'T004', TenantNumber:'TN-2024-004', PropertyCode:'PR004', UnitCode:'UN008', FirstName:'David',   LastName:'Johnson',   IDNumber:'ID-445566', Address:'400 N Lake Shore Dr #401, Chicago', Telephone:'(312) 555-3004', Email:'david.johnson@email.com',  Photograph:'', RentAmount:1800, RentFrequency:'Monthly', DepositAmount:3600, MoveInDate:'2024-05-01', MoveOutDate:'', IDCopy:'',    RentAgreement:'', Active:'Y', UserName:'tenant4', Password:'tenant123', UpdateUser:'System' },
-      { TenantID:'T005', TenantNumber:'TN-2024-005', PropertyCode:'PR005', UnitCode:'UN009', FirstName:'Emma',    LastName:'Davis',     IDNumber:'ID-556677', Address:'500 Brickell Ave #501, Miami',      Telephone:'(305) 555-3005', Email:'emma.davis@email.com',     Photograph:'', RentAmount:1900, RentFrequency:'Monthly', DepositAmount:3800, MoveInDate:'2024-06-01', MoveOutDate:'', IDCopy:'',    RentAgreement:'', Active:'Y', UserName:'tenant5', Password:'tenant123', UpdateUser:'System' },
-      { TenantID:'T006', TenantNumber:'TN-2024-006', PropertyCode:'PR006', UnitCode:'UN010', FirstName:'Frank',   LastName:'Wilson',    IDNumber:'ID-667788', Address:'600 Wilshire Blvd #601, LA',        Telephone:'(310) 555-3006', Email:'frank.wilson@email.com',   Photograph:'', RentAmount:2200, RentFrequency:'Monthly', DepositAmount:4400, MoveInDate:'2024-07-01', MoveOutDate:'', IDCopy:'',    RentAgreement:'', Active:'Y', UserName:'tenant6', Password:'tenant123', UpdateUser:'System' },
-      { TenantID:'T007', TenantNumber:'TN-2024-007', PropertyCode:'PR001', UnitCode:'UN003', FirstName:'Grace',   LastName:'Lee',       IDNumber:'ID-778899', Address:'100 Sunset Blvd #201, NY 10001',   Telephone:'(212) 555-3007', Email:'grace.lee@email.com',      Photograph:'', RentAmount:1800, RentFrequency:'Monthly', DepositAmount:3600, MoveInDate:'2024-03-15', MoveOutDate:'', IDCopy:'',    RentAgreement:'', Active:'Y', UserName:'tenant7', Password:'tenant123', UpdateUser:'System' },
-      { TenantID:'T008', TenantNumber:'TN-2024-008', PropertyCode:'PR003', UnitCode:'UN007', FirstName:'Henry',   LastName:'Brown',     IDNumber:'ID-889900', Address:'300 W Adams St L-302, Chicago',    Telephone:'(312) 555-3008', Email:'henry.brown@email.com',    Photograph:'', RentAmount:2200, RentFrequency:'Monthly', DepositAmount:4400, MoveInDate:'2024-04-15', MoveOutDate:'2025-01-31', IDCopy:'', RentAgreement:'', Active:'N', UserName:'tenant8', Password:'tenant123', UpdateUser:'System' }
+      { TenantID:'T001', TenantNumber:'TN-001', PropertyCode:'PR001', UnitCode:'UN001', FirstName:'Alice',   LastName:'Cooper',    IDNumber:'ID-112233', Address:'100 Sunset Blvd #101, NY 10001',   Telephone:'(212) 555-3001', Email:'alice.cooper@email.com',   Photograph:'', RentAmount:1500, RentFrequency:'Monthly', DepositAmount:3000, MoveInDate:'2024-02-01', MoveOutDate:'', IDCopy:'',    RentAgreement:'', Active:'Y', UserName:'tenant1', Password:'tenant123', UpdateUser:'System' },
+      { TenantID:'T002', TenantNumber:'TN-002', PropertyCode:'PR002', UnitCode:'UN004', FirstName:'Bob',     LastName:'Martinez',  IDNumber:'ID-223344', Address:'200 Oak Lane V-01, Queens, NY',    Telephone:'(718) 555-3002', Email:'bob.martinez@email.com',   Photograph:'', RentAmount:2500, RentFrequency:'Monthly', DepositAmount:5000, MoveInDate:'2024-03-01', MoveOutDate:'', IDCopy:'',    RentAgreement:'', Active:'Y', UserName:'tenant2', Password:'tenant123', UpdateUser:'System' },
+      { TenantID:'T003', TenantNumber:'TN-003', PropertyCode:'PR003', UnitCode:'UN006', FirstName:'Carol',   LastName:'Williams',  IDNumber:'ID-334455', Address:'300 W Adams St L-301, Chicago',    Telephone:'(312) 555-3003', Email:'carol.williams@email.com', Photograph:'', RentAmount:2000, RentFrequency:'Monthly', DepositAmount:4000, MoveInDate:'2024-04-01', MoveOutDate:'', IDCopy:'',    RentAgreement:'', Active:'Y', UserName:'tenant3', Password:'tenant123', UpdateUser:'System' },
+      { TenantID:'T004', TenantNumber:'TN-004', PropertyCode:'PR004', UnitCode:'UN008', FirstName:'David',   LastName:'Johnson',   IDNumber:'ID-445566', Address:'400 N Lake Shore Dr #401, Chicago', Telephone:'(312) 555-3004', Email:'david.johnson@email.com',  Photograph:'', RentAmount:1800, RentFrequency:'Monthly', DepositAmount:3600, MoveInDate:'2024-05-01', MoveOutDate:'', IDCopy:'',    RentAgreement:'', Active:'Y', UserName:'tenant4', Password:'tenant123', UpdateUser:'System' },
+      { TenantID:'T005', TenantNumber:'TN-005', PropertyCode:'PR005', UnitCode:'UN009', FirstName:'Emma',    LastName:'Davis',     IDNumber:'ID-556677', Address:'500 Brickell Ave #501, Miami',      Telephone:'(305) 555-3005', Email:'emma.davis@email.com',     Photograph:'', RentAmount:1900, RentFrequency:'Monthly', DepositAmount:3800, MoveInDate:'2024-06-01', MoveOutDate:'', IDCopy:'',    RentAgreement:'', Active:'Y', UserName:'tenant5', Password:'tenant123', UpdateUser:'System' },
+      { TenantID:'T006', TenantNumber:'TN-006', PropertyCode:'PR006', UnitCode:'UN010', FirstName:'Frank',   LastName:'Wilson',    IDNumber:'ID-667788', Address:'600 Wilshire Blvd #601, LA',        Telephone:'(310) 555-3006', Email:'frank.wilson@email.com',   Photograph:'', RentAmount:2200, RentFrequency:'Monthly', DepositAmount:4400, MoveInDate:'2024-07-01', MoveOutDate:'', IDCopy:'',    RentAgreement:'', Active:'Y', UserName:'tenant6', Password:'tenant123', UpdateUser:'System' },
+      { TenantID:'T007', TenantNumber:'TN-007', PropertyCode:'PR001', UnitCode:'UN003', FirstName:'Grace',   LastName:'Lee',       IDNumber:'ID-778899', Address:'100 Sunset Blvd #201, NY 10001',   Telephone:'(212) 555-3007', Email:'grace.lee@email.com',      Photograph:'', RentAmount:1800, RentFrequency:'Monthly', DepositAmount:3600, MoveInDate:'2024-03-15', MoveOutDate:'', IDCopy:'',    RentAgreement:'', Active:'Y', UserName:'tenant7', Password:'tenant123', UpdateUser:'System' },
+      { TenantID:'T008', TenantNumber:'TN-008', PropertyCode:'PR003', UnitCode:'UN007', FirstName:'Henry',   LastName:'Brown',     IDNumber:'ID-889900', Address:'300 W Adams St L-302, Chicago',    Telephone:'(312) 555-3008', Email:'henry.brown@email.com',    Photograph:'', RentAmount:2200, RentFrequency:'Monthly', DepositAmount:4400, MoveInDate:'2024-04-15', MoveOutDate:'2025-01-31', IDCopy:'', RentAgreement:'', Active:'N', UserName:'tenant8', Password:'tenant123', UpdateUser:'System' }
     ]);
 
     /* ---- Transactions ---- */

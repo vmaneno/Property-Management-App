@@ -1402,7 +1402,7 @@
       readFile(document.getElementById('at-agrmt').files[0])
     ]);
     const id  = DB.nextCode('tenants','TenantID','T');
-    const num = 'TN-'+new Date().getFullYear()+'-'+String(DB.getAll('tenants').length+1).padStart(3,'0');
+    const num = DB.nextCode('tenants','TenantNumber','TN-');
     DB.insert('tenants',{
       TenantID:id, TenantNumber:num,
       PropertyCode:propCode, UnitCode:unitCode,
@@ -1548,7 +1548,7 @@
     rowData.forEach(({valid, row, propCode, resolvedUnitCode, effectiveRent, effectiveDep, normDate:nd}) => {
       if (!valid) return;
       const id  = DB.nextCode('tenants','TenantID','T');
-      const num = 'TN-'+new Date().getFullYear()+'-'+String(DB.getAll('tenants').length+1).padStart(3,'0');
+      const num = DB.nextCode('tenants','TenantNumber','TN-');
       DB.insert('tenants',{
         TenantID:id, TenantNumber:num, PropertyCode:propCode, UnitCode:resolvedUnitCode,
         FirstName:String(row.FirstName||'').trim(), LastName:String(row.LastName||'').trim(),
