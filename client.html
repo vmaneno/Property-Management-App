@@ -191,7 +191,7 @@
           return `<tr><td>${fmtDate(tx.Date)}</td><td>${ten.FirstName||''} ${ten.LastName||''}</td><td>${tx.Description}</td>
           <td style="font-weight:600;color:${Number(tx.Amount)>=0?'#2d9b59':'#d62828'}">${Number(tx.Amount)>=0?'+':''}${fmtMoney(tx.Amount)}</td>
           <td style="font-size:.78rem;font-family:monospace">${tx.transactionRef}</td>
-          <td style="font-size:.78rem">${tx.TransRef||''}</td>
+          <td style="font-size:.78rem">${txRefLink(tx)}</td>
           <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td>
           <td><span style="font-size:.75rem;font-weight:600;color:${tx.BankRec==='Y'?'#1a6b3c':'#aaa'}">${tx.BankRec==='Y'?'Y':'N'}</span></td></tr>`;
         }).join('')||'<tr><td colspan="8" style="text-align:center;padding:30px;color:#aaa">No transactions yet.</td></tr>'}</tbody>
@@ -214,7 +214,7 @@
       return `<tr><td>${fmtDate(tx.Date)}</td><td>${ten.FirstName||''} ${ten.LastName||''}</td><td>${tx.Description}</td>
       <td style="font-weight:600;color:${Number(tx.Amount)>=0?'#2d9b59':'#d62828'}">${Number(tx.Amount)>=0?'+':''}${fmtMoney(tx.Amount)}</td>
       <td style="font-size:.78rem;font-family:monospace">${tx.transactionRef}</td>
-      <td style="font-size:.78rem">${tx.TransRef||''}</td>
+      <td style="font-size:.78rem">${txRefLink(tx)}</td>
       <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td>
       <td><span style="font-size:.75rem;font-weight:600;color:${tx.BankRec==='Y'?'#1a6b3c':'#aaa'}">${tx.BankRec==='Y'?'Y':'N'}</span></td></tr>`;
     }).join('') || '<tr><td colspan="8" style="text-align:center;padding:30px;color:#aaa">No transactions yet.</td></tr>';
@@ -563,7 +563,7 @@
         <td>${tx.Description}</td>
         <td>${amtHtml}</td>
         <td style="font-size:.78rem;font-family:monospace">${tx.transactionRef}</td>
-        <td style="font-size:.78rem;color:#555">${tx.TransRef||''}</td>
+        <td style="font-size:.78rem;color:#555">${txRefLink(tx)}</td>
         <td><span class="badge-${isVerified?'active':'inactive'}">${isVerified?'Verified':'Pending'}</span></td>
         <td>${canToggleBR
           ? `<button onclick="toggleBankRec('${tx.transactionRef}')" style="border:none;border-radius:10px;padding:2px 8px;font-size:.72rem;cursor:pointer;font-weight:600;background:${isBR?'#1a6b3c':'#aaa'};color:#fff;white-space:nowrap">${isBR?'Rec: Y':'Rec: N'}</button>`
@@ -710,6 +710,15 @@
     const collapsed = el.style.display === 'none';
     el.style.display = collapsed ? '' : 'none';
     if (icon) icon.style.transform = collapsed ? '' : 'rotate(-90deg)';
+  }
+
+  function txRefLink(tx) {
+    const label = tx.TransRef || '';
+    if (!tx.TransactionDocument) return label;
+    const inner = label
+      ? `${label}&nbsp;<i class="fa-solid fa-paperclip" style="font-size:.68rem;opacity:.75"></i>`
+      : `<i class="fa-solid fa-paperclip" style="font-size:.75rem"></i>`;
+    return `<a href="#" onclick="viewTxDoc('${tx.transactionRef}');return false;" style="color:#2d9b59;text-decoration:none;font-size:inherit" title="View attached document">${inner}</a>`;
   }
 
   function viewTxDoc(ref) {
@@ -1878,7 +1887,7 @@
         <td>${ten.FirstName||''} ${ten.LastName||''}</td>
         <td>${tx.Description}</td>
         <td style="font-family:monospace;font-size:.78rem">${tx.transactionRef}</td>
-        <td style="font-size:.78rem">${tx.TransRef||''}</td>
+        <td style="font-size:.78rem">${txRefLink(tx)}</td>
         <td style="text-align:right;color:#d62828">${!cr?fmtMoney(Math.abs(Number(tx.Amount))):'—'}</td>
         <td style="text-align:right;color:#1a6b3c">${cr?fmtMoney(Number(tx.Amount)):'—'}</td>
         <td style="text-align:right;font-weight:700;color:${runBal>=0?'#1a6b3c':'#d62828'}">${fmtMoney(runBal)}</td>
@@ -1933,7 +1942,7 @@
           <td>${fmtDate(tx.Date)}</td>
           <td>${tx.Description}</td>
           <td style="font-family:monospace;font-size:.78rem">${tx.transactionRef}</td>
-          <td style="font-size:.78rem">${tx.TransRef||''}</td>
+          <td style="font-size:.78rem">${txRefLink(tx)}</td>
           <td style="text-align:right;color:#d62828">${!cr?fmtMoney(Math.abs(Number(tx.Amount))):'—'}</td>
           <td style="text-align:right;color:#1a6b3c">${cr?fmtMoney(Number(tx.Amount)):'—'}</td>
           <td style="text-align:right;font-weight:700;color:${runBal>=0?'#1a6b3c':'#d62828'}">${fmtMoney(runBal)}</td>
