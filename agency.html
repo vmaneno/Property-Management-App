@@ -373,13 +373,15 @@
     const bal=txs.reduce((s,t)=>s+Number(t.Amount),0);
     return `<div class="table-card"><div class="table-card-header"><h5>Transactions (${txs.length})</h5><span>Balance: <strong style="color:${bal>=0?'#2d9b59':'#d62828'}">${fmtMoney(bal)}</strong></span></div>
     <div class="table-responsive"><table class="data-table">
-      <thead><tr><th>Date</th><th>Tenant</th><th>Property</th><th>Description</th><th>Amount</th><th>Ref</th><th>TransRef</th><th>Status</th><th>Bank Rec</th></tr></thead>
+      <thead><tr><th>Date</th><th>Unit#</th><th>Tenant</th><th>Property</th><th>Description</th><th>Amount</th><th>Ref</th><th>TransRef</th><th>Status</th><th>Bank Rec</th></tr></thead>
       <tbody>${txs.map(tx=>{
         const ten=DB.findOne('tenants',{TenantID:tx.TenantID})||{};
+        const unit=DB.findOne('propunits',{UnitCode:ten.UnitCode})||{};
         const p=DB.findOne('properties',{PropertyCode:tx.PropertyCode})||{};
         const isBR=tx.BankRec==='Y';
         return`<tr>
           <td>${fmtDate(tx.Date)}</td>
+          <td style="font-size:.82rem">${unit.UnitNumber||'—'}</td>
           <td>${ten.FirstName||''} ${ten.LastName||''}</td>
           <td>${p.PropertyName||tx.PropertyCode}</td>
           <td>${tx.Description}</td>
@@ -389,7 +391,7 @@
           <td><span class="badge-${tx.Authenticated==='Y'?'active':'inactive'}">${tx.Authenticated==='Y'?'Verified':'Pending'}</span></td>
           <td><button onclick="toggleBankRec('${tx.transactionRef}')" style="border:none;border-radius:10px;padding:2px 8px;font-size:.72rem;cursor:pointer;font-weight:600;background:${isBR?'#1a6b3c':'#aaa'};color:#fff;white-space:nowrap">${isBR?'Rec: Y':'Rec: N'}</button></td>
         </tr>`;
-      }).join('')||'<tr><td colspan="9" style="text-align:center;padding:40px;color:#aaa">No transactions.</td></tr>'}</tbody>
+      }).join('')||'<tr><td colspan="10" style="text-align:center;padding:40px;color:#aaa">No transactions.</td></tr>'}</tbody>
     </table></div></div>`;
   }
 
