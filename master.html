@@ -1745,7 +1745,7 @@
     const docInput = document.getElementById('pt-doc');
     if (!tenId||!propCode||!desc||isNaN(amt)) { toast('Fill all required fields.','error'); return; }
     if (transRef) {
-      const dup = DB.getAll('transactions').find(t => t.TransRef && t.TransRef === transRef);
+      const dup = DB.getAll('transactions').find(t => t.TransRef && t.TransRef.toLowerCase() === transRef.toLowerCase());
       if (dup) { toast('TransRef "'+transRef+'" already used on '+dup.transactionRef+'.','error'); return; }
     }
     function doInsert(docData) {

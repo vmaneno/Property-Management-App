@@ -1456,7 +1456,7 @@
     if (isNaN(amt))      { toast('Amount is required.','error'); return; }
     if (!docInput.files[0]) { toast('Document upload is required.','error'); return; }
     if (transRef) {
-      const dup = DB.getAll('transactions').find(t=>t.TransRef&&t.TransRef===transRef);
+      const dup = DB.getAll('transactions').find(t=>t.TransRef&&t.TransRef.toLowerCase()===transRef.toLowerCase());
       if (dup) { toast('TransRef "'+transRef+'" already used on '+dup.transactionRef+'.','error'); return; }
     }
     const prop = DB.findOne('properties',{PropertyCode:propCode})||{};
