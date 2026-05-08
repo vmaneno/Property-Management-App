@@ -1289,11 +1289,12 @@
     if (!tenants.length) return '<div style="text-align:center;padding:20px;color:#aaa;font-size:.85rem">No active tenants on this property.</div>';
     return tenants.slice().sort((a,b)=>(a.FirstName+' '+a.LastName).localeCompare(b.FirstName+' '+b.LastName)).map(t => {
       const u = DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
-      return `<label style="display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:.88rem" onmouseover="this.style.background='#f5f7ff'" onmouseout="this.style.background=''">
-        <input type="checkbox" class="bptx-cb" value="${t.TenantID}" data-rent="${t.RentAmount}" data-prop="${t.PropertyCode}" checked style="width:16px;height:16px;cursor:pointer;accent-color:#4361ee">
-        <span style="flex:1"><strong>${t.FirstName} ${t.LastName}</strong> <span style="color:#888;font-size:.8rem">(${t.TenantNumber})</span></span>
-        <span style="color:#555;font-size:.8rem">Unit ${u.UnitNumber||'?'}</span>
-        <span style="font-weight:600;color:#2d9b59;min-width:70px;text-align:right">${fmtMoney(Number(t.RentAmount))}/mo</span>
+      const isZeroRent = Number(t.RentAmount||0) <= 0;
+      return `<label style="display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:.88rem;${isZeroRent?'background:#fff0f0;color:#cc0000':''}" onmouseover="this.style.background='${isZeroRent?'#ffe0e0':'#f5f7ff'}'" onmouseout="this.style.background='${isZeroRent?'#fff0f0':''}'">
+        <input type="checkbox" class="bptx-cb" value="${t.TenantID}" data-rent="${t.RentAmount}" data-prop="${t.PropertyCode}" ${isZeroRent?'':'checked'} style="width:16px;height:16px;cursor:pointer;accent-color:#4361ee">
+        <span style="flex:1"><strong>${t.FirstName} ${t.LastName}</strong> <span style="${isZeroRent?'color:#cc0000':'color:#888'};font-size:.8rem">(${t.TenantNumber})</span></span>
+        <span style="${isZeroRent?'color:#cc0000':'color:#555'};font-size:.8rem">Unit ${u.UnitNumber||'?'}</span>
+        <span style="font-weight:600;${isZeroRent?'color:#cc0000':'color:#2d9b59'};min-width:70px;text-align:right">${fmtMoney(Number(t.RentAmount))}/mo</span>
       </label>`;
     }).join('');
   }
