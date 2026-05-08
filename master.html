@@ -24,6 +24,8 @@
     .unit-status-btn { padding:5px 14px;border:1px solid #ddd;border-radius:16px;cursor:pointer;font-size:.8rem;background:#f9f9f9;font-weight:600;color:#666;transition:all .15s; }
     .unit-status-btn:hover { border-color:#9b0000;color:#9b0000; }
     .unit-status-btn.uf-active { background:#9b0000;color:#fff;border-color:#9b0000; }
+    .zero-rent-row { background:#fff0f0 !important; }
+    .zero-rent-row td, .zero-rent-row td * { color:#cc0000 !important; }
     .unit-group { border-bottom:1px solid #f0f0f0; }
     .unit-group:last-child { border-bottom:none; }
     .unit-group-hdr { display:flex;align-items:center;justify-content:space-between;padding:13px 20px;cursor:pointer;background:#fafafa;border-bottom:1px solid #f0f0f0;transition:background .15s;gap:12px;flex-wrap:wrap; }
@@ -605,7 +607,8 @@
       const rows = grp.tenants.map(t => {
         const u      = DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
         const canDel = t.Active !== 'Y' && !allTx.some(tx => tx.TenantID === t.TenantID);
-        return `<tr>
+        const isZeroRent = Number(t.RentAmount||0) <= 0;
+        return `<tr${isZeroRent ? ' class="zero-rent-row"' : ''}>
           <td style="font-size:.78rem;font-family:monospace">${t.TenantNumber}</td>
           <td><strong>${t.FirstName} ${t.LastName}</strong><br><span class="text-muted-sm">${t.Email}</span></td>
           <td style="font-size:.78rem">${t.IDNumber}</td>
