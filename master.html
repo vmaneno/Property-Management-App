@@ -1791,11 +1791,12 @@
     const tens = T().filter(t => t.PropertyCode === pc && t.Active === 'Y').sort((a,b)=>(a.FirstName+' '+a.LastName).localeCompare(b.FirstName+' '+b.LastName));
     const rows = tens.map(t => {
       const u = DB.findOne('propunits', {UnitCode: t.UnitCode}) || {};
-      return `<tr>
-        <td style="text-align:center;width:40px"><input type="checkbox" class="bulk-chk" value="${t.TenantID}" data-amt="${t.RentAmount}" data-prop="${t.PropertyCode}"></td>
-        <td><strong>${t.FirstName} ${t.LastName}</strong><br><span style="font-size:.75rem;color:#888">${t.TenantNumber}</span></td>
+      const isZeroRent = Number(t.RentAmount||0) <= 0;
+      return `<tr${isZeroRent?' style="background:#fff0f0;color:#cc0000"':''}>
+        <td style="text-align:center;width:40px"><input type="checkbox" class="bulk-chk" value="${t.TenantID}" data-amt="${t.RentAmount}" data-prop="${t.PropertyCode}" ${isZeroRent?'':'checked'}></td>
+        <td><strong>${t.FirstName} ${t.LastName}</strong><br><span style="font-size:.75rem;${isZeroRent?'color:#cc0000':'color:#888'}">${t.TenantNumber}</span></td>
         <td style="font-size:.82rem">Unit ${u.UnitNumber||'?'}</td>
-        <td style="font-weight:600">$${Number(t.RentAmount).toLocaleString()}</td>
+        <td style="font-weight:600;${isZeroRent?'color:#cc0000':''}">$${Number(t.RentAmount).toLocaleString()}</td>
       </tr>`;
     }).join('') || '<tr><td colspan="4" style="text-align:center;padding:16px;color:#aaa">No active tenants for this property.</td></tr>';
     document.getElementById('bp-tenant-list').innerHTML = rows;
