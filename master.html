@@ -169,7 +169,7 @@
     else if (view==='properties')   { c.innerHTML=renderProperties();   ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddProperty()"><i class="fa-solid fa-plus"></i> Add Property</button>`; }
     else if (view==='units')        { c.innerHTML=renderUnits(); buildUnitGroups(); ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddUnit()"><i class="fa-solid fa-plus"></i> Add Unit</button> <button class="btn-primary-custom bg-master" onclick="openUnitsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Units Upload</button>`; }
     else if (view==='tenants')      { c.innerHTML=renderTenants(); buildTenantGroups(); ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openAddTenant()"><i class="fa-solid fa-plus"></i> Add Tenant</button> <button class="btn-primary-custom bg-master" onclick="openTenantsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Tenants Upload</button>`; }
-    else if (view==='transactions') { c.innerHTML=renderTransactions(); filterTxView(); ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openPostTx()"><i class="fa-solid fa-plus"></i> Post Transaction</button><button class="btn-primary-custom" style="background:#1a6b3c;margin-left:8px" onclick="openBulkPostTx()"><i class="fa-solid fa-layer-group"></i> Bulk Posting</button>`; }
+    else if (view==='transactions') { c.innerHTML=renderTransactions(); filterTxView(); ta.innerHTML=`<button class="btn-primary-custom bg-master" onclick="openPostTx()"><i class="fa-solid fa-plus"></i> Post Transaction</button><button class="btn-primary-custom" style="background:#1a6b3c;margin-left:8px" onclick="openBulkPostTx()"><i class="fa-solid fa-layer-group"></i> Charge Bulk Posting</button>`; }
     else if (view==='profile')      { c.innerHTML=renderProfile(); }
     else if (view==='reports')      { c.innerHTML=renderReports(); }
   }
@@ -1821,7 +1821,7 @@
 
   function openBulkPostTx() {
     const today = new Date().toISOString().split('T')[0];
-    openModal('Bulk Post — Monthly Rent Charge', `
+    openModal('Charge Bulk Posting', `
       <div class="form-row">
         <div class="form-group"><label class="form-label-sm">Date <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="bp-date" type="date" value="${today}"></div>
         <div class="form-group"><label class="form-label-sm">Description <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="bp-desc" value="Monthly Rent Charge"></div>
@@ -1870,7 +1870,7 @@
       DB.insert('transactions', {
         Date: date, TenantID: cb.value, Authenticated: auth,
         PropertyCode: cb.dataset.prop, Description: desc,
-        Amount: parseFloat(cb.dataset.amt)||0, Currency: curr,
+        Amount: -Math.abs(parseFloat(cb.dataset.amt)||0), Currency: curr,
         TransactionNote: note, TransactionDocument: '',
         transactionRef: DB.nextTxRef(),
         TransRef: '', BankRec: 'N'

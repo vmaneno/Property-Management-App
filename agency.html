@@ -137,7 +137,7 @@
     else if (view==='properties')   { c.innerHTML = renderProperties();   ta.innerHTML=`<button class="btn-primary-custom bg-agency" onclick="openAddProperty()"><i class="fa-solid fa-plus"></i> Add Property</button>`; }
     else if (view==='units')        { c.innerHTML = renderUnits();        ta.innerHTML=`<button class="btn-primary-custom bg-agency" onclick="openAddUnit()"><i class="fa-solid fa-plus"></i> Add Unit</button> <button class="btn-primary-custom bg-agency" onclick="openUnitsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Units Upload</button>`; }
     else if (view==='tenants')      { c.innerHTML = renderTenants();      ta.innerHTML=`<button class="btn-primary-custom bg-agency" onclick="openAddTenant()"><i class="fa-solid fa-plus"></i> Add Tenant</button> <button class="btn-primary-custom bg-agency" onclick="openTenantsUpload()" style="margin-left:8px"><i class="fa-solid fa-file-arrow-up"></i> Tenants Upload</button>`; }
-    else if (view==='transactions') { c.innerHTML = renderTransactions(); ta.innerHTML=`<button class="btn-primary-custom bg-agency" onclick="openPostTx()"><i class="fa-solid fa-plus"></i> Post Transaction</button> <button class="btn-primary-custom bg-agency" onclick="openBulkPostTx()" style="margin-left:8px"><i class="fa-solid fa-layer-group"></i> Bulk Post</button>`; }
+    else if (view==='transactions') { c.innerHTML = renderTransactions(); ta.innerHTML=`<button class="btn-primary-custom bg-agency" onclick="openPostTx()"><i class="fa-solid fa-plus"></i> Post Transaction</button> <button class="btn-primary-custom bg-agency" onclick="openBulkPostTx()" style="margin-left:8px"><i class="fa-solid fa-layer-group"></i> Charge Bulk Posting</button>`; }
     else if (view==='profile')      { c.innerHTML = renderProfile(); }
     else if (view==='reports')      { c.innerHTML = renderReports(); }
   }
@@ -1291,7 +1291,7 @@
       selected.forEach(tenId => {
         const tenant = DB.findOne('tenants',{TenantID:tenId});
         if (!tenant) return;
-        const amount = chargeType === 'rent' ? Number(tenant.RentAmount) : customAmt;
+        const amount = chargeType === 'rent' ? -Math.abs(Number(tenant.RentAmount)) : -Math.abs(customAmt);
         const ref = DB.nextTxRef();
         DB.insert('transactions',{
           Date: date,
