@@ -1788,7 +1788,7 @@
   }
   function bpLoadTenants() {
     const pc = document.getElementById('bp-prop').value;
-    const tens = T().filter(t => t.PropertyCode === pc && t.Active === 'Y');
+    const tens = T().filter(t => t.PropertyCode === pc && t.Active === 'Y').sort((a,b)=>(a.FirstName+' '+a.LastName).localeCompare(b.FirstName+' '+b.LastName));
     const rows = tens.map(t => {
       const u = DB.findOne('propunits', {UnitCode: t.UnitCode}) || {};
       return `<tr>

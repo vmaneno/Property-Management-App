@@ -1231,7 +1231,7 @@
 
   function renderBulkTenantList(tenants) {
     if (!tenants.length) return '<div style="text-align:center;padding:20px;color:#aaa;font-size:.85rem">No active tenants on this property.</div>';
-    return tenants.map(t => {
+    return tenants.slice().sort((a,b)=>(a.FirstName+' '+a.LastName).localeCompare(b.FirstName+' '+b.LastName)).map(t => {
       const u = DB.findOne('propunits',{UnitCode:t.UnitCode})||{};
       return `<label style="display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:.88rem" onmouseover="this.style.background='#f5f7ff'" onmouseout="this.style.background=''">
         <input type="checkbox" class="bp-tenant-cb" value="${t.TenantID}" checked style="width:16px;height:16px;cursor:pointer;accent-color:#4361ee">
