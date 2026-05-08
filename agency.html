@@ -15,6 +15,8 @@
       .table-card { box-shadow:none !important; border:1px solid #ccc; }
       .data-table th,.data-table td { font-size:.8rem; }
     }
+    .zero-rent-row { background:#fff0f0 !important; }
+    .zero-rent-row td, .zero-rent-row td * { color:#cc0000 !important; }
   </style>
 </head>
 <body>
@@ -338,7 +340,8 @@
         const hasTxs=DB.getAll('transactions').some(tx=>tx.TenantID===t.TenantID);
         const canDel=t.Active!=='Y'&&!hasTxs;
         const delTitle=t.Active==='Y'?'Tenant is active':hasTxs?'Tenant has transactions':'Delete tenant';
-        return`<tr>
+        const isZeroRent=Number(t.RentAmount||0)<=0;
+        return`<tr${isZeroRent?' class="zero-rent-row"':''}>
           <td style="font-size:.78rem;font-family:monospace">${t.TenantNumber}</td>
           <td><strong>${t.FirstName} ${t.LastName}</strong><br><span class="text-muted-sm">${t.Email}</span></td>
           <td>${p.PropertyName||'?'} / Unit ${u.UnitNumber||'?'}</td>
