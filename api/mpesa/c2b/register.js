@@ -1,4 +1,4 @@
-const { registerC2BUrls } = require('../lib/daraja');
+const { registerC2BUrls } = require('../../lib/daraja');
 const { requireAuth }    = require('../../lib/auth');
 const cors               = require('../../lib/cors');
 

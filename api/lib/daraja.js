@@ -2,7 +2,6 @@ const BASE = process.env.MPESA_ENV === 'production'
   ? 'https://api.safaricom.co.ke'
   : 'https://sandbox.safaricom.co.ke';
 
-// Token cache — valid for this serverless invocation's lifetime
 let _tok = null, _exp = 0;
 
 async function getAccessToken() {
