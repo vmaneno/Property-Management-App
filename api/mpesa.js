@@ -1,6 +1,6 @@
-const { getPool }     = require('../lib/db');
-const { requireAuth } = require('../lib/auth');
-const cors            = require('../lib/cors');
+const { getPool }     = require('./lib/db');
+const { requireAuth } = require('./lib/auth');
+const cors            = require('./lib/cors');
 
 const BASE = process.env.MPESA_ENV === 'production'
   ? 'https://api.safaricom.co.ke'
@@ -148,12 +148,11 @@ module.exports = async (req, res) => {
   if (cors(req, res)) return;
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { path } = req.query;
-  const route = Array.isArray(path) ? path.join('/') : path;
+  const { action } = req.query;
 
-  if (route === 'c2b/register') return handleRegister(req, res);
-  if (route === 'c2b/validate') return handleValidate(req, res);
-  if (route === 'c2b/confirm')  return handleConfirm(req, res);
+  if (action === 'register') return handleRegister(req, res);
+  if (action === 'validate') return handleValidate(req, res);
+  if (action === 'confirm')  return handleConfirm(req, res);
 
-  return res.status(404).json({ error: 'Unknown M-Pesa route' });
+  return res.status(404).json({ error: 'Unknown action' });
 };
