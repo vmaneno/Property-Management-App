@@ -3,10 +3,6 @@
     {
       "path": "/api/ping",
       "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/rent",
-      "schedule": "0 6 1 * *"
     }
   ],
   "headers": [
