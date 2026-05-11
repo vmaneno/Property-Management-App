@@ -57,7 +57,7 @@ async function postMonthlyRent(pool) {
         `INSERT INTO transactions (transaction_ref, tenant_id, property_code, trans_ref, bank_rec, data)
          VALUES ($1, $2, $3, $4, $5, $6)
          ON CONFLICT (transaction_ref) DO NOTHING`,
-        [txRef, t.tenant_id, d.PropertyCode || t.property_code || '', '', 'N', JSON.stringify(txData)]
+        [txRef, t.tenant_id, d.PropertyCode || t.property_code || '', null, 'N', JSON.stringify(txData)]
       );
       charged++;
     } catch (err) {
