@@ -50,6 +50,37 @@ async function handleRegister(req, res) {
   }
 }
 
+async function handleSimulate(req, res) {
+  const user = requireAuth(req);
+  if (!user || user.role !== 'master') {
+    return res.status(403).json({ error: 'Forbidden — master admin only' });
+  }
+  const { Amount, Msisdn, BillRefNumber } = req.body || {};
+  if (!Amount || !Msisdn || !BillRefNumber) {
+    return res.status(400).json({ error: 'Amount, Msisdn and BillRefNumber are required' });
+  }
+  try {
+    const token = await getAccessToken();
+    const r = await fetch(`${BASE}/mpesa/c2b/v1/simulate`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ShortCode:   process.env.MPESA_SHORTCODE,
+        CommandID:   'CustomerPayBillOnline',
+        Amount:      String(Amount),
+        Msisdn:      String(Msisdn),
+        BillRefNumber: String(BillRefNumber),
+      }),
+    });
+    const result = await r.json();
+    console.log('C2B simulate result:', result);
+    return res.json({ ok: true, result });
+  } catch (err) {
+    console.error('mpesa/simulate:', err);
+    return res.status(500).json({ error: 'Simulate failed', detail: err.message });
+  }
+}
+
 async function handleValidate(req, res) {
   const { BillRefNumber } = req.body || {};
   if (!BillRefNumber) {
@@ -151,6 +182,7 @@ module.exports = async (req, res) => {
   const { action } = req.query;
 
   if (action === 'register') return handleRegister(req, res);
+  if (action === 'simulate') return handleSimulate(req, res);
   if (action === 'validate') return handleValidate(req, res);
   if (action === 'confirm')  return handleConfirm(req, res);
 
