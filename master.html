@@ -1227,7 +1227,10 @@
       <div class="form-row"><div class="form-group"><label class="form-label-sm">Manager</label><input class="form-control-sm2" id="ep-mgr" value="${p.Manager}"></div>
       <div class="form-group"><label class="form-label-sm">Phone</label><input class="form-control-sm2" id="ep-mgrph" value="${p.ManagerPhone}"></div></div>
       <div class="form-row">
+        <div class="form-group"><label class="form-label-sm">Currency</label><select class="form-control-sm2" id="ep-curr"><option value="KSH" ${(p.Currency||'KSH')==='KSH'?'selected':''}>KSH</option><option value="UGX" ${p.Currency==='UGX'?'selected':''}>UGX</option><option value="TZS" ${p.Currency==='TZS'?'selected':''}>TZS</option></select></div>
         <div class="form-group"><label class="form-label-sm">Utilities?</label><select class="form-control-sm2" id="ep-util"><option value="Y" ${p.Utilities==='Y'?'selected':''}>Yes</option><option value="N" ${p.Utilities==='N'?'selected':''}>No</option></select></div>
+      </div>
+      <div class="form-row">
         <div class="form-group"><label class="form-label-sm">Active</label><select class="form-control-sm2" id="ep-active"><option value="Y" ${p.Active==='Y'?'selected':''}>Yes</option><option value="N" ${p.Active==='N'?'selected':''}>No</option></select></div>
       </div>`,
       `<button class="btn-primary-custom bg-master" onclick="saveEditProperty('${code}')">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`,true
@@ -1235,6 +1238,7 @@
   }
 
   function saveEditProperty(code) {
+    const newCurr = document.getElementById('ep-curr').value;
     DB.update('properties','PropertyCode',code,{
       PropertyName:document.getElementById('ep-name').value,
       AgencyCode:document.getElementById('ep-agency').value,
@@ -1247,8 +1251,12 @@
       ManagerPhone:document.getElementById('ep-mgrph').value,
       Utilities:document.getElementById('ep-util').value,
       Active:document.getElementById('ep-active').value,
+      Currency:newCurr,
       UpdateUser:masterAgency.UserName
     });
+    const allTx = DB.getAll('transactions');
+    allTx.forEach(t => { if (t.PropertyCode === code) t.Currency = newCurr; });
+    DB.save('transactions', allTx);
     closeModal(); showView('properties', document.querySelector('[data-view="properties"]'));
     toast('Property updated!','success');
   }
@@ -1765,7 +1773,7 @@
     const currEl  = document.getElementById('pt-curr');
     if (!propSel||!currEl) return;
     const opt = propSel.options[propSel.selectedIndex];
-    currEl.value = opt ? (opt.dataset.curr||'USD') : 'USD';
+    currEl.value = opt ? (opt.dataset.curr||'KSH') : 'KSH';
   }
 
   function openPostTx() {
@@ -1785,7 +1793,7 @@
       <div class="form-group"><label class="form-label-sm">Description <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="pt-desc"></div>
       <div class="form-row">
         <div class="form-group"><label class="form-label-sm">Amount (neg=debit) <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="pt-amt" type="number" step="0.01"></div>
-        <div class="form-group"><label class="form-label-sm">Currency</label><input class="form-control-sm2" id="pt-curr" readonly style="background:#f4f4f4;color:#555;cursor:default" value="USD"></div>
+        <div class="form-group"><label class="form-label-sm">Currency</label><input class="form-control-sm2" id="pt-curr" readonly style="background:#f4f4f4;color:#555;cursor:default" value="KSH"></div>
       </div>
       <div class="form-group"><label class="form-label-sm">Authenticated</label><select class="form-control-sm2" id="pt-auth"><option value="Y">Yes</option><option value="N">No</option></select></div>
       <div class="form-group"><label class="form-label-sm">Note (optional)</label><textarea class="form-control-sm2" id="pt-note" rows="2" placeholder="Any additional notes..."></textarea></div>
