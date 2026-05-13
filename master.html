@@ -759,6 +759,7 @@
         <td><button onclick="toggleBankRec('${tx.transactionRef}')" style="border:none;border-radius:10px;padding:2px 8px;font-size:.72rem;cursor:pointer;font-weight:600;background:${isBR?'#1a6b3c':'#aaa'};color:#fff;white-space:nowrap">${isBR?'Rec: Y':'Rec: N'}</button></td>
         <td>
           <button class="btn-${isV?'view':'edit'}" onclick="toggleAuth('${tx.transactionRef}')">${isV?'Unverify':'Verify'}</button>
+          <button class="btn-edit" onclick="openEditTx('${tx.transactionRef}')" title="Edit Transaction"><i class="fa-solid fa-pen-to-square"></i></button>
           <button class="btn-edit" onclick="openEditTxTenant('${tx.transactionRef}')" title="Reassign Tenant" style="background:#7b5ea7"><i class="fa-solid fa-user-pen"></i></button>
           <button class="btn-del" onclick="confirmDeleteTx('${tx.transactionRef}')"><i class="fa-solid fa-trash"></i></button>
         </td>
@@ -842,6 +843,64 @@
     closeModal();
     filterTxView();
     toast('Transaction ' + ref + ' reassigned to ' + newTen.TenantNumber + '.', 'success');
+  }
+
+  function openEditTx(ref) {
+    const tx = DB.getAll('transactions').find(t => t.transactionRef === ref);
+    if (!tx) return;
+    openModal('Edit Transaction — ' + ref,
+      `<div class="form-group"><label class="form-label-sm">Trans Ref (optional)</label><input class="form-control-sm2" id="etx-transref" value="${tx.TransRef||''}" placeholder="Alphanumeric bank/external reference"></div>
+       <div class="form-row">
+         <div class="form-group"><label class="form-label-sm">Date <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="etx-date" type="date" value="${tx.Date||''}"></div>
+         <div class="form-group"><label class="form-label-sm">Authenticated</label><select class="form-control-sm2" id="etx-auth"><option value="Y"${tx.Authenticated==='Y'?' selected':''}>Yes</option><option value="N"${tx.Authenticated!=='Y'?' selected':''}>No</option></select></div>
+       </div>
+       <div class="form-group"><label class="form-label-sm">Description <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="etx-desc" value="${(tx.Description||'').replace(/"/g,'&quot;')}"></div>
+       <div class="form-row">
+         <div class="form-group"><label class="form-label-sm">Amount (neg=debit) <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="etx-amt" type="number" step="0.01" value="${tx.Amount||''}"></div>
+         <div class="form-group"><label class="form-label-sm">Currency</label><select class="form-control-sm2" id="etx-curr"><option${(tx.Currency||'USD')==='USD'?' selected':''}>USD</option><option${tx.Currency==='EUR'?' selected':''}>EUR</option><option${tx.Currency==='GBP'?' selected':''}>GBP</option><option${tx.Currency==='CAD'?' selected':''}>CAD</option></select></div>
+       </div>
+       <div class="form-group"><label class="form-label-sm">Note (optional)</label><textarea class="form-control-sm2" id="etx-note" rows="2">${tx.TransactionNote||''}</textarea></div>
+       <div class="form-group"><label class="form-label-sm">Replace Document (optional)</label><input class="form-control-sm2" id="etx-doc" type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"></div>`,
+      `<button class="btn-primary-custom bg-master" onclick="saveEditTx('${ref}')">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`,
+      true
+    );
+  }
+
+  function saveEditTx(ref) {
+    const date = document.getElementById('etx-date').value;
+    const desc = document.getElementById('etx-desc').value.trim();
+    const amt  = parseFloat(document.getElementById('etx-amt').value);
+    if (!date || !desc || isNaN(amt)) { toast('Fill all required fields.', 'error'); return; }
+    const transRef = document.getElementById('etx-transref').value.trim();
+    if (transRef) {
+      const dup = DB.getAll('transactions').find(t => t.TransRef && t.TransRef.toLowerCase() === transRef.toLowerCase() && t.transactionRef !== ref);
+      if (dup) { toast('TransRef "' + transRef + '" already used on ' + dup.transactionRef + '.', 'error'); return; }
+    }
+    function doSave(docData) {
+      const all = DB.getAll('transactions');
+      const idx = all.findIndex(t => t.transactionRef === ref);
+      if (idx === -1) return;
+      all[idx].Date              = date;
+      all[idx].Description       = desc;
+      all[idx].Amount            = amt;
+      all[idx].Currency          = document.getElementById('etx-curr').value;
+      all[idx].Authenticated     = document.getElementById('etx-auth').value;
+      all[idx].TransactionNote   = document.getElementById('etx-note').value.trim();
+      all[idx].TransRef          = transRef;
+      if (docData !== null) all[idx].TransactionDocument = docData;
+      DB.save('transactions', all);
+      closeModal();
+      filterTxView();
+      toast('Transaction ' + ref + ' updated.', 'success');
+    }
+    const docInput = document.getElementById('etx-doc');
+    if (docInput.files[0]) {
+      const reader = new FileReader();
+      reader.onload = e => doSave(e.target.result);
+      reader.readAsDataURL(docInput.files[0]);
+    } else {
+      doSave(null);
+    }
   }
 
   function toggleBankRec(ref) {
