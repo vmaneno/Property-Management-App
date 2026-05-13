@@ -1762,15 +1762,10 @@
   }
   function ptSetCurrency() {
     const propSel = document.getElementById('pt-prop');
-    const currSel = document.getElementById('pt-curr');
-    if (!propSel||!currSel) return;
+    const currEl  = document.getElementById('pt-curr');
+    if (!propSel||!currEl) return;
     const opt = propSel.options[propSel.selectedIndex];
-    const curr = opt ? (opt.dataset.curr||'USD') : 'USD';
-    for (let i=0;i<currSel.options.length;i++) {
-      if (currSel.options[i].value === curr) { currSel.selectedIndex=i; return; }
-    }
-    const o=document.createElement('option');
-    o.value=curr; o.textContent=curr; o.selected=true; currSel.appendChild(o);
+    currEl.value = opt ? (opt.dataset.curr||'USD') : 'USD';
   }
 
   function openPostTx() {
@@ -1790,7 +1785,7 @@
       <div class="form-group"><label class="form-label-sm">Description <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="pt-desc"></div>
       <div class="form-row">
         <div class="form-group"><label class="form-label-sm">Amount (neg=debit) <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="pt-amt" type="number" step="0.01"></div>
-        <div class="form-group"><label class="form-label-sm">Currency</label><select class="form-control-sm2" id="pt-curr"><option>USD</option><option>EUR</option><option>GBP</option><option>CAD</option></select></div>
+        <div class="form-group"><label class="form-label-sm">Currency</label><input class="form-control-sm2" id="pt-curr" readonly style="background:#f4f4f4;color:#555;cursor:default" value="USD"></div>
       </div>
       <div class="form-group"><label class="form-label-sm">Authenticated</label><select class="form-control-sm2" id="pt-auth"><option value="Y">Yes</option><option value="N">No</option></select></div>
       <div class="form-group"><label class="form-label-sm">Note (optional)</label><textarea class="form-control-sm2" id="pt-note" rows="2" placeholder="Any additional notes..."></textarea></div>
