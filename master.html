@@ -845,16 +845,27 @@
     toast('Transaction ' + ref + ' reassigned to ' + newTen.TenantNumber + '.', 'success');
   }
 
+  function etxCascadeUnits() {
+    const propCode = document.getElementById('etx-prop').value;
+    const units = U().filter(u => u.PropertyCode === propCode)
+      .sort((a,b) => String(a.UnitNumber).localeCompare(String(b.UnitNumber), undefined, {numeric:true}));
+    document.getElementById('etx-unit').innerHTML = units.length
+      ? units.map(u => `<option value="${u.UnitCode}">${u.UnitNumber}</option>`).join('')
+      : '<option value="">— No units —</option>';
+  }
+
   function openEditTx(ref) {
-    const tx   = DB.getAll('transactions').find(t => t.transactionRef === ref);
+    const tx        = DB.getAll('transactions').find(t => t.transactionRef === ref);
     if (!tx) return;
-    const ten  = DB.findOne('tenants',{TenantID:tx.TenantID})||{};
-    const unit = DB.findOne('propunits',{UnitCode:ten.UnitCode})||{};
-    const prop = DB.findOne('properties',{PropertyCode:tx.PropertyCode})||{};
+    const ten       = DB.findOne('tenants',{TenantID:tx.TenantID})||{};
+    const propUnits = U().filter(u => u.PropertyCode === tx.PropertyCode)
+      .sort((a,b) => String(a.UnitNumber).localeCompare(String(b.UnitNumber), undefined, {numeric:true}));
+    const unitOpts  = propUnits.map(u => `<option value="${u.UnitCode}"${u.UnitCode===ten.UnitCode?' selected':''}>${u.UnitNumber}</option>`).join('') || '<option value="">— No units —</option>';
+    const propOpts  = P().map(p => `<option value="${p.PropertyCode}"${p.PropertyCode===tx.PropertyCode?' selected':''}>${p.PropertyName} (${p.PropertyCode})</option>`).join('');
     openModal('Edit Transaction — ' + ref,
       `<div class="form-row">
-         <div class="form-group"><label class="form-label-sm">Unit#</label><input class="form-control-sm2" value="${unit.UnitNumber||'—'}" readonly style="background:#f4f4f4;color:#555"></div>
-         <div class="form-group"><label class="form-label-sm">Property</label><input class="form-control-sm2" value="${(prop.PropertyName||tx.PropertyCode||'—').replace(/"/g,'&quot;')}" readonly style="background:#f4f4f4;color:#555"></div>
+         <div class="form-group"><label class="form-label-sm">Property</label><select class="form-control-sm2" id="etx-prop" onchange="etxCascadeUnits()">${propOpts}</select></div>
+         <div class="form-group"><label class="form-label-sm">Unit#</label><select class="form-control-sm2" id="etx-unit">${unitOpts}</select></div>
        </div>
        <div class="form-group"><label class="form-label-sm">Trans Ref (optional)</label><input class="form-control-sm2" id="etx-transref" value="${tx.TransRef||''}" placeholder="Alphanumeric bank/external reference"></div>
        <div class="form-row">
@@ -880,6 +891,11 @@
       const dup = DB.getAll('transactions').find(t => t.TransRef && t.TransRef.toLowerCase() === transRef.toLowerCase() && t.transactionRef !== ref);
       if (dup) { toast('TransRef "' + transRef + '" already used on ' + dup.transactionRef + '.', 'error'); return; }
     }
+    const propCode = document.getElementById('etx-prop').value;
+    const unitCode = document.getElementById('etx-unit').value;
+    const tenant   = DB.getAll('tenants').find(t => t.UnitCode === unitCode && t.Active === 'Y')
+                  || DB.getAll('tenants').find(t => t.UnitCode === unitCode);
+    if (!tenant) { toast('No tenant found for the selected unit.', 'error'); return; }
     function doSave(docData) {
       const all = DB.getAll('transactions');
       const idx = all.findIndex(t => t.transactionRef === ref);
@@ -890,6 +906,8 @@
       all[idx].Authenticated     = document.getElementById('etx-auth').value;
       all[idx].TransactionNote   = document.getElementById('etx-note').value.trim();
       all[idx].TransRef          = transRef;
+      all[idx].PropertyCode      = propCode;
+      all[idx].TenantID          = tenant.TenantID;
       if (docData !== null) all[idx].TransactionDocument = docData;
       DB.save('transactions', all);
       closeModal();
