@@ -846,19 +846,23 @@
   }
 
   function openEditTx(ref) {
-    const tx = DB.getAll('transactions').find(t => t.transactionRef === ref);
+    const tx   = DB.getAll('transactions').find(t => t.transactionRef === ref);
     if (!tx) return;
+    const ten  = DB.findOne('tenants',{TenantID:tx.TenantID})||{};
+    const unit = DB.findOne('propunits',{UnitCode:ten.UnitCode})||{};
+    const prop = DB.findOne('properties',{PropertyCode:tx.PropertyCode})||{};
     openModal('Edit Transaction — ' + ref,
-      `<div class="form-group"><label class="form-label-sm">Trans Ref (optional)</label><input class="form-control-sm2" id="etx-transref" value="${tx.TransRef||''}" placeholder="Alphanumeric bank/external reference"></div>
+      `<div class="form-row">
+         <div class="form-group"><label class="form-label-sm">Unit#</label><input class="form-control-sm2" value="${unit.UnitNumber||'—'}" readonly style="background:#f4f4f4;color:#555"></div>
+         <div class="form-group"><label class="form-label-sm">Property</label><input class="form-control-sm2" value="${(prop.PropertyName||tx.PropertyCode||'—').replace(/"/g,'&quot;')}" readonly style="background:#f4f4f4;color:#555"></div>
+       </div>
+       <div class="form-group"><label class="form-label-sm">Trans Ref (optional)</label><input class="form-control-sm2" id="etx-transref" value="${tx.TransRef||''}" placeholder="Alphanumeric bank/external reference"></div>
        <div class="form-row">
          <div class="form-group"><label class="form-label-sm">Date <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="etx-date" type="date" value="${tx.Date||''}"></div>
          <div class="form-group"><label class="form-label-sm">Authenticated</label><select class="form-control-sm2" id="etx-auth"><option value="Y"${tx.Authenticated==='Y'?' selected':''}>Yes</option><option value="N"${tx.Authenticated!=='Y'?' selected':''}>No</option></select></div>
        </div>
        <div class="form-group"><label class="form-label-sm">Description <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="etx-desc" value="${(tx.Description||'').replace(/"/g,'&quot;')}"></div>
-       <div class="form-row">
-         <div class="form-group"><label class="form-label-sm">Amount (neg=debit) <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="etx-amt" type="number" step="0.01" value="${tx.Amount||''}"></div>
-         <div class="form-group"><label class="form-label-sm">Currency</label><select class="form-control-sm2" id="etx-curr"><option${(tx.Currency||'USD')==='USD'?' selected':''}>USD</option><option${tx.Currency==='EUR'?' selected':''}>EUR</option><option${tx.Currency==='GBP'?' selected':''}>GBP</option><option${tx.Currency==='CAD'?' selected':''}>CAD</option></select></div>
-       </div>
+       <div class="form-group"><label class="form-label-sm">Amount (neg=debit) <span style="color:#d62828">*</span></label><input class="form-control-sm2" id="etx-amt" type="number" step="0.01" value="${tx.Amount||''}"></div>
        <div class="form-group"><label class="form-label-sm">Note (optional)</label><textarea class="form-control-sm2" id="etx-note" rows="2">${tx.TransactionNote||''}</textarea></div>
        <div class="form-group"><label class="form-label-sm">Replace Document (optional)</label><input class="form-control-sm2" id="etx-doc" type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"></div>`,
       `<button class="btn-primary-custom bg-master" onclick="saveEditTx('${ref}')">Save</button><button class="btn-back" onclick="closeModal()">Cancel</button>`,
@@ -883,7 +887,6 @@
       all[idx].Date              = date;
       all[idx].Description       = desc;
       all[idx].Amount            = amt;
-      all[idx].Currency          = document.getElementById('etx-curr').value;
       all[idx].Authenticated     = document.getElementById('etx-auth').value;
       all[idx].TransactionNote   = document.getElementById('etx-note').value.trim();
       all[idx].TransRef          = transRef;
